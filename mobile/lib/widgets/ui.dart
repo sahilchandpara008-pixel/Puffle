@@ -124,16 +124,17 @@ String fmtDuration(Duration d) {
 
 /// 16:9 video card image: thumbnail (or a placeholder), duration chip and a Premium badge.
 class VideoThumb extends StatelessWidget {
-  const VideoThumb({super.key, this.url, this.seconds, this.premium = false, this.radius = 14});
+  const VideoThumb({super.key, this.url, this.seconds, this.premium = false, this.radius = 14, this.aspectRatio = 16 / 9});
   final String? url;
   final int? seconds;
   final bool premium;
   final double radius;
+  final double aspectRatio;
   @override
   Widget build(BuildContext context) => ClipRRect(
         borderRadius: BorderRadius.circular(radius),
         child: AspectRatio(
-          aspectRatio: 16 / 9,
+          aspectRatio: aspectRatio,
           child: Stack(fit: StackFit.expand, children: [
             Container(
               decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFF123542), Color(0xFF175E68)], begin: Alignment.topLeft, end: Alignment.bottomRight)),
@@ -168,3 +169,53 @@ class VideoThumb extends StatelessWidget {
         ),
       );
 }
+
+/// Shared poster grid across Home, Explore, channel pages and suggestions.
+class VideoGrid extends StatelessWidget {
+  const VideoGrid({super.key, required this.itemCount, required this.itemBuilder, this.shrinkWrap = false, this.padding = const EdgeInsets.fromLTRB(16, 8, 16, 24)});
+  final int itemCount;
+  final IndexedWidgetBuilder itemBuilder;
+  final bool shrinkWrap;
+  final EdgeInsets padding;
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(builder: (context, box) {
+    final columns = (box.maxWidth / 180).floor().clamp(2, 6);
+    final width = (box.maxWidth - padding.horizontal - 12 * (columns - 1)) / columns;
+    final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    return GridView.builder(
+      shrinkWrap: shrinkWrap,
+      physics: shrinkWrap ? const NeverScrollableScrollPhysics() : const AlwaysScrollableScrollPhysics(),
+      padding: padding,
+      itemCount: itemCount,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: columns, crossAxisSpacing: 12, mainAxisSpacing: 18,
+        mainAxisExtent: width * 1.5 + 78 * scale,
+      ),
+      itemBuilder: itemBuilder,
+    );
+  });
+}
+
+class VideoCard extends StatelessWidget {
+  const VideoCard({super.key, required this.title, required this.onTap, this.channel = '', this.url, this.premium = false, this.seconds});
+  final String title, channel;
+  final String? url;
+  final bool premium;
+  final int? seconds;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true, label: 'Play $title',
+    child: InkWell(
+      borderRadius: BorderRadius.circular(12), onTap: onTap,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Expanded(child: VideoThumb(url: url, seconds: seconds, premium: premium, radius: 12, aspectRatio: 2 / 3)),
+        const SizedBox(height: 8),
+        SizedBox(height: MediaQuery.textScalerOf(context).scale(14) * 2.6, child: Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14, height: 1.3, fontWeight: FontWeight.w600))),
+        const SizedBox(height: 3),
+        Text(channel, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, height: 1.3, color: Tokens.muted)),
+      ]),
+    ),
+  );
+}
+

@@ -29,6 +29,7 @@ class _PostPageState extends State<PostPage> {
   late final List<String> _history = [_postId];
   int _historyIndex = 0;
   List<Map<String, dynamic>> _suggestions = [];
+  final Map<String, String> _suggestionThumbs = {};
   Map<String, dynamic>? _post;
   List<Map<String, dynamic>> _items = [];
   VideoPlayerController? _vc;
@@ -88,9 +89,22 @@ class _PostPageState extends State<PostPage> {
       if (p != null) {
         try {
           // RLS enforces approval, channel visibility and audience for every suggestion.
-          const fields = 'id,title,channel_id,status,hidden,channels(name)';
+          const fields = 'id,title,channel_id,status,hidden,channels(name),post_items(thumbnail_key,is_premium)';
           final same = await sb.from('posts').select(fields).eq('channel_id', p['channel_id']).neq('id', _postId).eq('status', 'published').eq('hidden', false).order('created_at', ascending: false).limit(6);
           final other = await sb.from('posts').select(fields).neq('channel_id', p['channel_id']).eq('status', 'published').eq('hidden', false).order('created_at', ascending: false).limit(6);
+          final keys = <String>{
+            for (final video in [...same, ...other])
+              for (final item in (video['post_items'] as List? ?? []))
+                if (item['thumbnail_key'] is String) item['thumbnail_key'] as String,
+          };
+          if (keys.isNotEmpty) {
+            try {
+              final urls = await sb.storage.from('media').createSignedUrls(keys.toList(), 3600);
+              for (final url in urls) {
+                if (url.path != null) _suggestionThumbs[url.path!] = url.signedUrl;
+              }
+            } catch (_) { /* Poster placeholders remain usable. */ }
+          }
           if (mounted) setState(() => _suggestions = List<Map<String, dynamic>>.from([...same, ...other]));
         } catch (_) { /* Recommendations never block playback. */ }
       }
@@ -294,15 +308,26 @@ class _PostPageState extends State<PostPage> {
                   if (_suggestions.isNotEmpty) ...[
                     const Text('Up next', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 8),
-                    for (final video in _suggestions)
-                      Card(margin: const EdgeInsets.only(bottom: 8), child: ListTile(
-                        leading: const Icon(Icons.play_circle_outline_rounded, color: Tokens.accent, size: 32),
-                        title: Text(video['title'] as String? ?? 'Video', maxLines: 2, overflow: TextOverflow.ellipsis),
-                        subtitle: Text(video['channel_id'] == p['channel_id'] ? 'From this channel' : ((video['channels'] as Map?)?['name'] as String? ?? 'Another channel')),
-                        trailing: const Icon(Icons.chevron_right_rounded),
-                        enabled: !_opening,
-                        onTap: () => _switchVideo(video['id'] as String),
-                      )),
+                    VideoGrid(
+                      shrinkWrap: true,
+                      padding: const EdgeInsets.only(top: 8, bottom: 16),
+                      itemCount: _suggestions.length,
+                      itemBuilder: (_, index) {
+                        final video = _suggestions[index];
+                        final items = video['post_items'] as List? ?? [];
+                        String? thumbnail;
+                        for (final item in items) {
+                          thumbnail ??= _suggestionThumbs[item['thumbnail_key']];
+                        }
+                        return VideoCard(
+                          title: video['title'] as String? ?? 'Video',
+                          channel: video['channel_id'] == p['channel_id'] ? 'From this channel' : ((video['channels'] as Map?)?['name'] as String? ?? 'Another channel'),
+                          url: thumbnail,
+                          premium: items.any((item) => item['is_premium'] == true),
+                          onTap: () => _switchVideo(video['id'] as String),
+                        );
+                      },
+                    ),
                     const SizedBox(height: 12),
                   ],
                   if (_items.length > 1) ...[

@@ -100,41 +100,28 @@ class _PostListState extends State<PostList> {
   @override
   Widget build(BuildContext context) {
     if (_loading && _rows.isEmpty) {
-      return ListView.builder(itemCount: 5, itemBuilder: (_, __) => const Padding(padding: EdgeInsets.fromLTRB(16, 8, 16, 8), child: _Skeleton()));
+      return VideoGrid(itemCount: 6, itemBuilder: (_, __) => const _Skeleton());
     }
     return RefreshIndicator(
       onRefresh: () => _load(reset: true),
       child: _rows.isEmpty
-          ? ListView(children: [const SizedBox(height: 40), EmptyState(icon: Icons.video_library_outlined, title: widget.query.isNotEmpty ? 'No results' : 'No posts yet', message: widget.query.isNotEmpty ? 'Try a different word.' : 'New videos will show up here.')])
-          : ListView.builder(
-              padding: const EdgeInsets.only(bottom: 12),
+          ? ListView(physics: const AlwaysScrollableScrollPhysics(), children: [const SizedBox(height: 40), EmptyState(icon: Icons.video_library_outlined, title: widget.query.isNotEmpty ? 'No results' : 'No posts yet', message: widget.query.isNotEmpty ? 'Try a different word.' : 'New videos will show up here.')])
+          : VideoGrid(
               itemCount: _rows.length + (_more ? 1 : 0),
               itemBuilder: (_, i) {
-                if (i == _rows.length) { WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) _load(); }); return const Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator())); }
-                final r = _rows[i];
-                final ch = ((r['channels'] as Map?)?['name'] ?? '').toString();
-                final first = _first(r);
-                final premium = ((r['post_items'] as List?) ?? []).any((e) => e['is_premium'] == true);
-                return InkWell(
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PostPage(postId: r['id'] as String))),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      VideoThumb(url: _thumbs[first?['thumbnail_key']], seconds: first?['duration_s'] as int?, premium: premium),
-                      const SizedBox(height: 8),
-                      Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        InitialAvatar(name: ch, size: 36),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Text(r['title'] ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-                            const SizedBox(height: 2),
-                            Text(ch, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Tokens.muted, fontSize: 12)),
-                          ]),
-                        ),
-                      ]),
-                    ]),
-                  ),
+                if (i == _rows.length) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) _load(); });
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final post = _rows[i];
+                final first = _first(post);
+                return VideoCard(
+                  title: post['title'] as String? ?? '',
+                  channel: (post['channels'] as Map?)?['name'] as String? ?? '',
+                  url: _thumbs[first?['thumbnail_key']],
+                  seconds: first?['duration_s'] as int?,
+                  premium: ((post['post_items'] as List?) ?? []).any((item) => item['is_premium'] == true),
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PostPage(postId: post['id'] as String))),
                 );
               },
             ),
@@ -180,13 +167,14 @@ class _ExploreScreenState extends State<ExploreScreen> {
         child: TextField(
           key: const Key('explore_search'),
           textInputAction: TextInputAction.search,
-          decoration: const InputDecoration(hintText: 'Search', prefixIcon: Icon(Icons.search), isDense: true),
+          decoration: const InputDecoration(hintText: 'Search videos', prefixIcon: Icon(Icons.search), isDense: true),
           onSubmitted: (v) => setState(() => _q = v),
         ),
       ),
-      SizedBox(
-        height: 42,
-        child: ListView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 12), children: [
+      SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        child: Row(children: [
           for (final c in [null, ...cats])
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 4),
@@ -198,3 +186,4 @@ class _ExploreScreenState extends State<ExploreScreen> {
     ]);
   }
 }
+

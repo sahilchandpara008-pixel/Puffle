@@ -31,7 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final c = await sb.from('channels').select('id,name').order('created_at', ascending: false).limit(10);
       _channels = List<Map<String, dynamic>>.from(c);
-      final p = await sb.from('posts').select('id,title,post_items(thumbnail_key,position)').order('created_at', ascending: false).limit(12);
+      final p = await sb.from('posts').select('id,title,channels(name),post_items(thumbnail_key,position,is_premium,duration_s)').order('created_at', ascending: false).limit(12);
       _posts = List<Map<String, dynamic>>.from(p);
       final keys = <String>[
         for (final r in _posts)
@@ -72,7 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final app = AppScope.of(context);
     return RefreshIndicator(
       onRefresh: _load,
-      child: ListView(physics: const AlwaysScrollableScrollPhysics(), padding: const EdgeInsets.fromLTRB(20, 20, 20, 28), children: [
+      child: ListView(physics: const AlwaysScrollableScrollPhysics(), padding: const EdgeInsets.fromLTRB(16, 16, 16, 24), children: [
         Row(children: [
           ClipRRect(borderRadius: BorderRadius.circular(14), child: Image.asset('assets/icon.png', width: 44, height: 44)),
           const SizedBox(width: 12),
@@ -81,29 +81,15 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(width: 10),
           _SquareButton(key: const Key('home_avatar'), onTap: widget.onProfile, child: Text(_initial(app), style: const TextStyle(color: Tokens.primary, fontWeight: FontWeight.w700, fontSize: 16))),
         ]),
-        const SizedBox(height: 24),
-        Container(
-          padding: const EdgeInsets.all(22),
-          decoration: BoxDecoration(gradient: Tokens.gradient, borderRadius: BorderRadius.circular(24)),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('YOUR SPACE, ALL IN ONE', style: TextStyle(fontSize: 10, letterSpacing: 1.8, fontWeight: FontWeight.w700, color: Colors.white70)),
-            const SizedBox(height: 10),
-            const Text('Discover something\nworth watching.', style: TextStyle(fontSize: 26, height: 1.15, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 12),
-            const Text('Your favourite channels. Your personal cloud.', style: TextStyle(fontSize: 12, color: Colors.white70)),
-            const SizedBox(height: 12),
-            TextButton.icon(onPressed: widget.onSearch, style: TextButton.styleFrom(foregroundColor: Colors.white, backgroundColor: Colors.white12), icon: const Icon(Icons.explore_outlined, size: 18), label: const Text('Explore videos')),
-          ]),
-        ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 12),
+        TextButton.icon(onPressed: widget.onSearch, icon: const Icon(Icons.explore_outlined, color: Tokens.accent), label: const Text('Find your next watch', style: TextStyle(color: Tokens.accent))),
+        const SizedBox(height: 12),
         Row(children: [
-          ClipRRect(borderRadius: BorderRadius.circular(14), child: Image.asset('assets/icon.png', width: 44, height: 44)),
-          const SizedBox(width: 12),
           const Expanded(child: Text('Channels', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600))),
           TextButton(style: TextButton.styleFrom(visualDensity: VisualDensity.compact, padding: const EdgeInsets.symmetric(horizontal: 8)), onPressed: widget.onSeeAllChannels, child: const Text('See all', style: TextStyle(color: Tokens.accent, fontSize: 13))),
         ]),
         SizedBox(
-          height: 92,
+          height: 104 * (MediaQuery.textScalerOf(context).scale(12) / 12),
           child: _channels.isEmpty
               ? Center(child: Text(_loading ? '' : 'No channels yet', style: const TextStyle(color: Tokens.muted)))
               : ListView.separated(
@@ -114,10 +100,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     final name = (_channels[i]['name'] as String?) ?? '';
                     return GestureDetector(
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChannelPage(channelId: _channels[i]['id'] as String, name: name))),
-                      child: SizedBox(width: 68, child: Column(children: [
-                        InitialAvatar(name: name, size: 68),
+                      child: SizedBox(width: 80, child: Column(children: [
+                        InitialAvatar(name: name, size: 52),
                         const SizedBox(height: 4),
-                        Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Tokens.muted, fontSize: 12)),
+                        Text(name, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Tokens.muted, fontSize: 12)),
                       ])),
                     );
                   },
@@ -131,33 +117,22 @@ class _HomeScreenState extends State<HomeScreen> {
         else if (_posts.isEmpty)
           const EmptyState(icon: Icons.movie_outlined, title: 'No shows yet', message: 'New videos from channels will appear here.')
         else
-          GridView.builder(
+          Padding(padding: const EdgeInsets.symmetric(horizontal: 0), child: VideoGrid(
+            padding: const EdgeInsets.only(top: 8, bottom: 24),
             shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
             itemCount: _posts.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, crossAxisSpacing: 14, mainAxisSpacing: 18, childAspectRatio: .85),
             itemBuilder: (_, i) {
-              final r = _posts[i];
-              final url = _thumbFor(r);
-              return GestureDetector(
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PostPage(postId: r['id'] as String))),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(18),
-                      child: SizedBox.expand(
-                        child: url == null
-                            ? Container(decoration: const BoxDecoration(gradient: Tokens.gradient), alignment: Alignment.center, child: const Icon(Icons.play_arrow_rounded, size: 36, color: Colors.white70))
-                            : Image.network(url, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(color: Tokens.surface)),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text((r['title'] as String?) ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Tokens.text, fontWeight: FontWeight.w600, fontSize: 13)),
-                ]),
+              final post = _posts[i];
+              final items = (post['post_items'] as List?) ?? const [];
+              return VideoCard(
+                title: post['title'] as String? ?? '',
+                channel: (post['channels'] as Map?)?['name'] as String? ?? '',
+                url: _thumbFor(post),
+                premium: items.any((item) => item['is_premium'] == true),
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PostPage(postId: post['id'] as String))),
               );
             },
-          ),
+          )),
       ]),
     );
   }
@@ -174,3 +149,4 @@ class _SquareButton extends StatelessWidget {
         child: Container(width: 44, height: 44, decoration: BoxDecoration(color: Tokens.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: Tokens.border)), alignment: Alignment.center, child: child),
       );
 }
+
