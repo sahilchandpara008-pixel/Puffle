@@ -22,8 +22,14 @@ void main() {
         expect(tester.takeException(), isNull);
         final cards = find.byType(VideoCard);
         expect(tester.getTopLeft(cards.at(0)).dy, tester.getTopLeft(cards.at(1)).dy);
+        if (width <= 390) {
+          expect(tester.getTopLeft(cards.at(0)).dy, tester.getTopLeft(cards.at(2)).dy);
+          expect(tester.getTopLeft(cards.at(3)).dy, greaterThan(tester.getTopLeft(cards.at(0)).dy));
+        }
         final posters = find.byType(VideoThumb);
         expect(tester.getSize(posters.at(0)), tester.getSize(posters.at(1)));
+        final posterSize = tester.getSize(posters.at(0));
+        expect(posterSize.width / posterSize.height, closeTo(2 / 3, .001));
         await tester.tap(cards.at(1));
         expect(selected, 1);
       });

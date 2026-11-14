@@ -148,11 +148,7 @@ class VideoThumb extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(color: Colors.black.withValues(alpha: .65), borderRadius: BorderRadius.circular(8)),
-                  child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(Icons.workspace_premium, color: Tokens.gold, size: 14),
-                    SizedBox(width: 4),
-                    Text('Premium', style: TextStyle(color: Tokens.gold, fontSize: 11, fontWeight: FontWeight.w600)),
-                  ]),
+                  child: const Tooltip(message: 'Premium', child: Icon(Icons.workspace_premium, color: Tokens.gold, size: 14)),
                 ),
               ),
             if (seconds != null && seconds! > 0)
@@ -179,8 +175,10 @@ class VideoGrid extends StatelessWidget {
   final EdgeInsets padding;
   @override
   Widget build(BuildContext context) => LayoutBuilder(builder: (context, box) {
-    final columns = (box.maxWidth / 180).floor().clamp(2, 6);
-    final width = (box.maxWidth - padding.horizontal - 12 * (columns - 1)) / columns;
+    final available = box.maxWidth - padding.horizontal;
+    final columns = available < 280 ? 2 : (available / 140).floor().clamp(3, 6);
+    const gap = 8.0;
+    final width = (available - gap * (columns - 1)) / columns;
     final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
     return GridView.builder(
       shrinkWrap: shrinkWrap,
@@ -188,8 +186,8 @@ class VideoGrid extends StatelessWidget {
       padding: padding,
       itemCount: itemCount,
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: columns, crossAxisSpacing: 12, mainAxisSpacing: 18,
-        mainAxisExtent: width * 1.5 + 78 * scale,
+        crossAxisCount: columns, crossAxisSpacing: gap, mainAxisSpacing: 12,
+        mainAxisExtent: width * 1.5 + 12 + 52 * scale,
       ),
       itemBuilder: itemBuilder,
     );
@@ -209,7 +207,7 @@ class VideoCard extends StatelessWidget {
     child: InkWell(
       borderRadius: BorderRadius.circular(12), onTap: onTap,
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Expanded(child: VideoThumb(url: url, seconds: seconds, premium: premium, radius: 12, aspectRatio: 2 / 3)),
+        VideoThumb(url: url, seconds: seconds, premium: premium, radius: 16, aspectRatio: 2 / 3),
         const SizedBox(height: 8),
         SizedBox(height: MediaQuery.textScalerOf(context).scale(14) * 2.6, child: Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14, height: 1.3, fontWeight: FontWeight.w600))),
         const SizedBox(height: 3),
