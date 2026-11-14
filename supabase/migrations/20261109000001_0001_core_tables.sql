@@ -65,7 +65,7 @@ create table public.profiles (
 );
 
 create table private.owner_bootstrap (email text primary key);
-insert into private.owner_bootstrap (email) values ('liveperfumes7@gmail.com');
+-- Puffle owner email must be configured explicitly after verifying ownership; never inherit Orbix owner.
 
 create table public.admins (
   user_id uuid primary key references auth.users(id) on delete cascade,
