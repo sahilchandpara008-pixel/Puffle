@@ -37,7 +37,7 @@ class OrbixNavBar extends StatelessWidget {
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 180),
                         padding: const EdgeInsets.symmetric(vertical: 6),
-                        decoration: BoxDecoration(color: i == index ? Tokens.primary : Colors.transparent, borderRadius: BorderRadius.circular(24)),
+                        decoration: BoxDecoration(gradient: i == index ? Tokens.gradient : null, color: i == index ? null : Colors.transparent, borderRadius: BorderRadius.circular(24)),
                         child: Column(mainAxisSize: MainAxisSize.min, children: [
                           Icon(i == index ? (items[i].selectedIcon ?? items[i].icon) : items[i].icon, size: 22, color: i == index ? Colors.white : Tokens.muted),
                           const SizedBox(height: 1),
