@@ -10,6 +10,7 @@ declare
   c jsonb; c2 jsonb; r jsonb; v_o1 uuid; v_o2 uuid; v_o3 uuid; v_o4 uuid; v_ref text; v_st text; v_n int; v_raised boolean; v_t text;
   v_end timestamptz; i int; plans uuid[]; fail_list text; total int; failed int;
 begin
+  insert into private.owner_bootstrap(email) values ('owner@example.test') on conflict do nothing;
   create temp table t_res (n text, ok boolean) on commit drop;
   create function pg_temp.rec(nm text, o boolean) returns void language plpgsql security definer as $f$ begin insert into pg_temp.t_res values (nm, coalesce(o,false)); end $f$;
   create function pg_temp.imp(uid uuid, anon boolean) returns void language plpgsql as $f$
