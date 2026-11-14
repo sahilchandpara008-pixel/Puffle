@@ -124,7 +124,7 @@ class _LoginSheetState extends State<LoginSheet> {
     final title = widget.saveMode ? 'Save your plan' : (_signup ? 'Create your account' : 'Welcome back');
     final sub = widget.saveMode
         ? 'Add an email and password. Your plan stays on this account and works on any phone.'
-        : (_signup ? 'Free account with 15 GB cloud storage.' : 'Log in to your Orbix account.');
+        : (_signup ? 'Free account with 15 GB cloud storage.' : 'Log in to your Puffle account.');
     return Padding(
       padding: EdgeInsets.fromLTRB(20, 10, 20, MediaQuery.of(context).viewInsets.bottom + 20),
       child: SingleChildScrollView(
