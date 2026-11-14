@@ -58,7 +58,7 @@ void main() {
     final channels=List.generate(3,(i)=><String,dynamic>{'id':'ch$i','name':names[i],'description':'Ideas and videos to inspire your day.','review_status':'approved','created_by':'creator$i','members_count':12+i});
     final posts=List.generate(6,(i)=><String,dynamic>{'id':'post$i','title':titles[i],'channel_id':'ch${i%3}','created_at':'2026-11-14T10:00:00Z','channels':{'name':names[i%3],'category':'Lifestyle'},'post_items':[{'thumbnail_key':'thumb$i','position':0,'is_premium':i%3==0,'duration_s':120+i*31}]});
     final raw=<String,dynamic>{'user_id':'sample-user','is_guest':false,'is_premium':true,'can_play_premium':true,'source':'organic','has_ads_access':false,'access_status':'pending','free_mode':false,'plans_visible':false,'payments_available':false,'quota_bytes':2199023255552,'used_bytes':234881024,'plan_name':'Gold','plan_ends_at':'2027-01-01T00:00:00Z'};
-    await Supabase.initialize(url:'https://assets.puffle.test',anonKey:'sample-public-key',httpClient:MockClient((request) async {
+    await Supabase.initialize(url:'https://assets.puffle.test',anonKey:'sample-public-key',authOptions:const FlutterAuthClientOptions(detectSessionInUri:false,autoRefreshToken:false),httpClient:MockClient((request) async {
       dynamic data=[];
       final path=request.url.path;
       if(path.endsWith('/channels')) data=channels;
