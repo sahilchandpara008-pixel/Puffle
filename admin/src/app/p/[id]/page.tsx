@@ -15,7 +15,7 @@ async function preview(id: string) {
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   const p = await preview(params.id);
-  return p ? { title: p.title, description: p.description ?? `Shared from ${p.channel} on Orbix` } : { title: "Orbix post" };
+  return p ? { title: p.title, description: p.description ?? `Shared from ${p.channel} on Puffle` } : { title: "Puffle post" };
 }
 
 export default async function Post({ params }: { params: { id: string } }) {
@@ -23,7 +23,7 @@ export default async function Post({ params }: { params: { id: string } }) {
   return (
     <SiteShell>
       <main className="mx-auto max-w-md px-4 py-14 text-center space-y-3">
-        <h1 className="text-xl font-bold">{p?.title ?? "Open this post in Orbix"}</h1>
+        <h1 className="text-xl font-bold">{p?.title ?? "Open this post in Puffle"}</h1>
         {p && <p className="text-sm text-muted">{p.channel}</p>}
         {p?.description && <p className="text-sm">{p.description}</p>}
         <a href="/d" className="btn mt-4">Get the app</a>
