@@ -61,7 +61,6 @@ void main() {
     await Supabase.initialize(url:'https://assets.puffle.test',anonKey:'sample-public-key',authOptions:const FlutterAuthClientOptions(detectSessionInUri:false,autoRefreshToken:false),httpClient:MockClient((request) async {
       dynamic data=[];
       final path=request.url.path;
-      print('CAPTURE request: $path');
       if(path.endsWith('/channels')) data=channels;
       else if(path.endsWith('/posts')) data=posts;
       else if(path.endsWith('/cloud_files')) data=[{'id':'f1','name':'Travel photos.zip','size_bytes':104857600,'mime':'application/zip','created_at':'2026-11-14T10:00:00Z'},{'id':'f2','name':'Project notes.pdf','size_bytes':2097152,'mime':'application/pdf','created_at':'2026-11-14T10:00:00Z'}];
@@ -69,10 +68,9 @@ void main() {
         final body=jsonDecode(request.body) as Map;
         data=[for(final key in body['paths'] as List) {'path':key,'signedURL':'/object/sign/media/$key','error':null}];
       } else if(path.endsWith('/rpc/my_status')) data=raw;
-      return http.Response(jsonEncode(data),200,headers:{'content-type':'application/json'});
+      return http.Response(jsonEncode(data),200,request:request,headers:{'content-type':'application/json'});
     }));
     final check = await tester.runAsync(() => Supabase.instance.client.from('channels').select('id,name'));
-    print('CAPTURE channel result: $check');
     expect(check,hasLength(3));
     final app=AppState()..status=AppStatus(raw)..loaded=true;
     tester.view.physicalSize=const Size(1170,2532); tester.view.devicePixelRatio=3;
