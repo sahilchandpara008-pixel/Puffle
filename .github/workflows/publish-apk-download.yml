@@ -24,4 +24,4 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           gh release view v1.0.3 >/dev/null 2>&1 || gh release create v1.0.3 --target 72ab0d4d74e92cda09a2dec6b33f9ba0885b056a --title "Puffle v1.0.3" --notes "Updated browsing grids, video suggestions and next/previous controls, and admin approval for channel videos. Install Puffle.apk." --latest
-          gh release upload v1.0.3 Puffle.apk checksums.txt --clobber
+          gh release upload v1.0.3 Puffle.apk Puffle-ads.apk checksums.txt --clobber
