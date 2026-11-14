@@ -32,7 +32,7 @@ export default function PlanPicker({ plans }: { plans: P[] }) {
         ))}
       </div>
       <Link href="/d" className="btn mt-5 w-full py-3">Get the app to buy {cur ? `${cur.name} Plan` : "a plan"}</Link>
-      <p className="mt-2 text-center text-xs text-slate-500">Plans are bought inside the Orbix app with UPI. No payment is taken on this website.</p>
+      <p className="mt-2 text-center text-xs text-slate-500">Plans are bought inside the Puffle app with UPI. No payment is taken on this website.</p>
     </div>
   );
 }
