@@ -86,3 +86,8 @@ body { @apply bg-bg text-white font-sans antialiased; }
   .admin-content { padding: 34px 36px; }
 }
 @media (prefers-reduced-motion: reduce) { .admin-workspace * { transition: none !important; } }
+
+.admin-nav { scrollbar-width: thin; scrollbar-color: #34515a transparent; }
+.admin-nav::-webkit-scrollbar { width: 4px; height: 4px; }
+.admin-nav::-webkit-scrollbar-track { background: transparent; }
+.admin-nav::-webkit-scrollbar-thumb { background: #34515a; border-radius: 4px; }

@@ -181,7 +181,7 @@ export default function BulkUpload({ channels, initialChannelId }: { channels: C
       {row.postId && <Link className="text-sm text-violet-700 underline" href={`/admin/posts/${row.postId}`}>View saved post</Link>}
       {!row.postId && <button type="button" className="ml-3 text-sm text-gray-600 underline" disabled={busy} onClick={() => setEntries(rows => rows.filter(item => item.id !== row.id))}>Remove from batch</button>}
     </article>)}</div>
-    <div className="sticky bottom-4 z-10 flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur">
+    <div className="md:sticky bottom-4 z-10 flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur">
       <button type="button" className="btn disabled:opacity-50" disabled={busy || !channel || !entries.some(row => row.state !== "done")} onClick={start}>Upload / retry remaining posts</button>
       {busy && <button type="button" className="rounded-lg border px-4 py-2" onClick={() => { stop.current = true; setMessage("Will pause after the current file finishes."); }}>Pause after current file</button>}
       {!busy && entries.length > 0 && <button type="button" className="rounded-lg border px-4 py-2" onClick={() => { setEntries([]); setMessage("Batch cleared. Already saved posts are kept in Posts."); }}>Start a new batch</button>}
