@@ -26,7 +26,7 @@ function LoginForm() {
   return (
     <form onSubmit={submit} className="w-full max-w-sm space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
       <div className="flex items-center gap-3">
-        <div className="grid h-10 w-10 place-items-center rounded-lg bg-violet-600 font-bold text-white">OB</div>
+        <div className="grid h-10 w-10 place-items-center rounded-lg bg-violet-600 font-bold text-white">PF</div>
         <div>
           <div className="font-semibold text-gray-900">Puffle Admin</div>
           <div className="text-xs text-gray-500">Sign in with your admin account</div>
