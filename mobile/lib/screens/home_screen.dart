@@ -74,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
       onRefresh: _load,
       child: ListView(padding: const EdgeInsets.fromLTRB(16, 12, 16, 24), children: [
         Row(children: [
-          const Expanded(child: Text('Home', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700))),
+          const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Puffle', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700)), Text('Your cloud & channels', style: TextStyle(color: Tokens.muted, fontSize: 12))])),
           _SquareButton(key: const Key('home_search'), onTap: widget.onSearch, child: const Icon(Icons.search)),
           const SizedBox(width: 10),
           _SquareButton(key: const Key('home_avatar'), onTap: widget.onProfile, child: Text(_initial(app), style: const TextStyle(color: Tokens.primary, fontWeight: FontWeight.w700, fontSize: 16))),
@@ -106,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
         ),
         const SizedBox(height: 10),
-        const Text('New shows', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+        const Text('Latest', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
         const SizedBox(height: 10),
         if (_loading)
           const Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator()))
