@@ -72,15 +72,33 @@ class _HomeScreenState extends State<HomeScreen> {
     final app = AppScope.of(context);
     return RefreshIndicator(
       onRefresh: _load,
-      child: ListView(padding: const EdgeInsets.fromLTRB(16, 12, 16, 24), children: [
+      child: ListView(physics: const AlwaysScrollableScrollPhysics(), padding: const EdgeInsets.fromLTRB(20, 20, 20, 28), children: [
         Row(children: [
+          ClipRRect(borderRadius: BorderRadius.circular(14), child: Image.asset('assets/icon.png', width: 44, height: 44)),
+          const SizedBox(width: 12),
           const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Puffle', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700)), Text('Your cloud & channels', style: TextStyle(color: Tokens.muted, fontSize: 12))])),
           _SquareButton(key: const Key('home_search'), onTap: widget.onSearch, child: const Icon(Icons.search)),
           const SizedBox(width: 10),
           _SquareButton(key: const Key('home_avatar'), onTap: widget.onProfile, child: Text(_initial(app), style: const TextStyle(color: Tokens.primary, fontWeight: FontWeight.w700, fontSize: 16))),
         ]),
-        const SizedBox(height: 14),
+        const SizedBox(height: 24),
+        Container(
+          padding: const EdgeInsets.all(22),
+          decoration: BoxDecoration(gradient: Tokens.gradient, borderRadius: BorderRadius.circular(24)),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('YOUR SPACE, ALL IN ONE', style: TextStyle(fontSize: 10, letterSpacing: 1.8, fontWeight: FontWeight.w700, color: Colors.white70)),
+            const SizedBox(height: 10),
+            const Text('Discover something\nworth watching.', style: TextStyle(fontSize: 26, height: 1.15, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 12),
+            const Text('Your favourite channels. Your personal cloud.', style: TextStyle(fontSize: 12, color: Colors.white70)),
+            const SizedBox(height: 12),
+            TextButton.icon(onPressed: widget.onSearch, style: TextButton.styleFrom(foregroundColor: Colors.white, backgroundColor: Colors.white12), icon: const Icon(Icons.explore_outlined, size: 18), label: const Text('Explore videos')),
+          ]),
+        ),
+        const SizedBox(height: 20),
         Row(children: [
+          ClipRRect(borderRadius: BorderRadius.circular(14), child: Image.asset('assets/icon.png', width: 44, height: 44)),
+          const SizedBox(width: 12),
           const Expanded(child: Text('Channels', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600))),
           TextButton(style: TextButton.styleFrom(visualDensity: VisualDensity.compact, padding: const EdgeInsets.symmetric(horizontal: 8)), onPressed: widget.onSeeAllChannels, child: const Text('See all', style: TextStyle(color: Tokens.accent, fontSize: 13))),
         ]),
@@ -117,7 +135,7 @@ class _HomeScreenState extends State<HomeScreen> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: _posts.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: .62),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, crossAxisSpacing: 14, mainAxisSpacing: 18, childAspectRatio: .85),
             itemBuilder: (_, i) {
               final r = _posts[i];
               final url = _thumbFor(r);
@@ -135,7 +153,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Text((r['title'] as String?) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Tokens.muted, fontWeight: FontWeight.w500, fontSize: 12)),
+                  Text((r['title'] as String?) ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Tokens.text, fontWeight: FontWeight.w600, fontSize: 13)),
                 ]),
               );
             },

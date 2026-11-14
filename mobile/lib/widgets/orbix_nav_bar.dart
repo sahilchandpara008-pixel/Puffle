@@ -22,7 +22,7 @@ class OrbixNavBar extends StatelessWidget {
         child: SafeArea(
           top: false,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
+            padding: const EdgeInsets.fromLTRB(8, 10, 8, 10),
             child: Row(children: [
               for (var i = 0; i < items.length; i++)
                 Expanded(
@@ -32,16 +32,16 @@ class OrbixNavBar extends StatelessWidget {
                     label: items[i].label,
                     child: InkWell(
                       key: Key('tab_${items[i].label}'),
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(16),
                       onTap: () => onTap(i),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 180),
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        decoration: BoxDecoration(gradient: i == index ? Tokens.gradient : null, color: i == index ? null : Colors.transparent, borderRadius: BorderRadius.circular(24)),
+                        padding: const EdgeInsets.symmetric(vertical: 9),
+                        decoration: BoxDecoration(color: i == index ? Tokens.primary.withValues(alpha: .22) : Colors.transparent, borderRadius: BorderRadius.circular(16)),
                         child: Column(mainAxisSize: MainAxisSize.min, children: [
-                          Icon(i == index ? (items[i].selectedIcon ?? items[i].icon) : items[i].icon, size: 22, color: i == index ? Colors.white : Tokens.muted),
-                          const SizedBox(height: 1),
-                          Text(items[i].label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11, fontWeight: i == index ? FontWeight.w600 : FontWeight.w400, color: i == index ? Colors.white : Tokens.muted)),
+                          Icon(i == index ? (items[i].selectedIcon ?? items[i].icon) : items[i].icon, size: 22, color: i == index ? Tokens.accent : Tokens.muted),
+                          const SizedBox(height: 4),
+                          Text(items[i].label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11, fontWeight: i == index ? FontWeight.w600 : FontWeight.w400, color: i == index ? Tokens.accent : Tokens.muted)),
                         ]),
                       ),
                     ),

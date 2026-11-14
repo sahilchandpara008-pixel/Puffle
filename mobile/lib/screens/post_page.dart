@@ -256,7 +256,7 @@ class _PostPageState extends State<PostPage> {
   }
 }
 
-/// MX-Player-style player.
+/// Puffle player with accessible transport controls and gesture shortcuts.
 /// Swipe sideways to seek, swipe up/down on the left for brightness and on the right for volume,
 /// double-tap the sides to skip 10 s, double-tap the middle to pause, hold to play at 2x, lock the controls.
 class _Player extends StatefulWidget {
@@ -273,6 +273,7 @@ enum _Drag { seek, brightness, volume }
 
 class _PlayerState extends State<_Player> {
   bool _show = true, _locked = false, _wasPlaying = false;
+  bool _holding = false;
   Timer? _hide, _hintTimer;
   IconData? _hintIcon;
   String? _hintText;
@@ -299,9 +300,25 @@ class _PlayerState extends State<_Player> {
   @override
   void dispose() {
     c.removeListener(_onTick);
+    _keepAwake(false);
     _hide?.cancel();
     _hintTimer?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant _Player oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != c) {
+      oldWidget.controller.removeListener(_onTick);
+      c.addListener(_onTick);
+      _volume = c.value.volume;
+      _wasPlaying = c.value.isPlaying;
+      _keepAwake(_wasPlaying);
+      _show = true;
+      _locked = false;
+      _arm();
+    }
   }
 
   Future<void> _initBrightness() async {
@@ -356,11 +373,23 @@ class _PlayerState extends State<_Player> {
   }
 
   Future<void> _speed() async {
-    final i = _speeds.indexOf(c.value.playbackSpeed);
-    final next = _speeds[(i + 1) % _speeds.length];
-    await c.setPlaybackSpeed(next);
-    _flash(Icons.speed_rounded, '${next}x');
-    _arm();
+    _hide?.cancel();
+    final next = await showModalBottomSheet<double>(
+      context: context,
+      builder: (context) => SafeArea(child: SingleChildScrollView(child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Padding(padding: EdgeInsets.all(20), child: Text('Playback speed', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600))),
+          for (final speed in _speeds)
+            ListTile(title: Text(speed == 1 ? 'Normal · 1x' : '${speed}x'),
+              trailing: c.value.playbackSpeed == speed ? const Icon(Icons.check_rounded, color: Tokens.accent) : null,
+              onTap: () => Navigator.pop(context, speed)),
+        ],
+      ))),
+    );
+    if (!mounted) return;
+    if (next != null) await c.setPlaybackSpeed(next);
+    if (mounted) _arm();
   }
 
   // ---- gestures ----
@@ -429,13 +458,15 @@ class _PlayerState extends State<_Player> {
 
   void _holdStart() {
     if (_locked || !c.value.isPlaying) return;
+    _holding = true;
     _prevSpeed = c.value.playbackSpeed;
     c.setPlaybackSpeed(2.0);
     _flash(Icons.fast_forward_rounded, '2x', ms: 60000);
   }
 
   void _holdEnd() {
-    if (c.value.playbackSpeed == 2.0 && _prevSpeed != 2.0) {
+    if (_holding) {
+      _holding = false;
       c.setPlaybackSpeed(_prevSpeed);
       _hintTimer?.cancel();
       setState(() { _hintIcon = null; _hintText = null; });
@@ -473,8 +504,8 @@ class _PlayerState extends State<_Player> {
           _btn(Icons.replay_10_rounded, () => _skip(-10), size: 34, label: 'Back 10 seconds'),
           const SizedBox(width: 12),
           Container(
-            decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
-            child: _btn(ended ? Icons.replay_rounded : (v.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded), ended ? () { c.seekTo(Duration.zero); c.play(); } : _playPause, size: 44, label: v.isPlaying ? 'Pause' : 'Play'),
+            decoration: BoxDecoration(color: Tokens.primary, shape: BoxShape.circle, border: Border.all(color: Colors.white24)),
+            child: _btn(ended ? Icons.replay_rounded : (v.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded), ended ? () { c.seekTo(Duration.zero); c.play(); } : _playPause, size: 44, label: ended ? 'Replay' : (v.isPlaying ? 'Pause' : 'Play')),
           ),
           const SizedBox(width: 12),
           _btn(Icons.forward_10_rounded, () => _skip(10), size: 34, label: 'Forward 10 seconds'),
@@ -523,14 +554,17 @@ class _PlayerState extends State<_Player> {
               onLongPressStart: (_) => _holdStart(),
               onLongPressEnd: (_) => _holdEnd(),
               onLongPressCancel: _holdEnd,
-              onPanStart: _panStart,
-              onPanUpdate: _panUpdate,
-              onPanEnd: _panEnd,
+              onPanStart: widget.fullscreen ? _panStart : null,
+              onPanUpdate: widget.fullscreen ? _panUpdate : null,
+              onPanEnd: widget.fullscreen ? _panEnd : null,
+              onHorizontalDragStart: widget.fullscreen ? null : _panStart,
+              onHorizontalDragUpdate: widget.fullscreen ? null : _panUpdate,
+              onHorizontalDragEnd: widget.fullscreen ? null : _panEnd,
               child: ColoredBox(
                 color: Colors.black,
                 child: Stack(fit: StackFit.expand, children: [
                   Center(child: AspectRatio(aspectRatio: v.aspectRatio == 0 ? 16 / 9 : v.aspectRatio, child: VideoPlayer(c))),
-                  if (v.isBuffering) const Center(child: CircularProgressIndicator()),
+                  if (v.isBuffering) const Positioned(top: 12, right: 12, child: SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Tokens.accent))),
                   AnimatedOpacity(
                     opacity: showControls ? 1 : 0,
                     duration: const Duration(milliseconds: 180),
@@ -569,7 +603,7 @@ class _PlayerState extends State<_Player> {
             if (widget.fullscreen) return surface;
             // Inline: 16:9 for landscape clips, taller (up to 1:1.2) for portrait clips.
             final double ratio = v.aspectRatio == 0 ? 16 / 9 : v.aspectRatio.clamp(0.7, 2.4).toDouble();
-            return ClipRRect(borderRadius: BorderRadius.circular(14), child: AspectRatio(aspectRatio: ratio < 1.2 ? 1.2 : ratio, child: surface));
+            return ClipRRect(borderRadius: BorderRadius.circular(22), child: AspectRatio(aspectRatio: ratio < 1.2 ? 1.2 : ratio, child: surface));
           },
         );
       });

@@ -19,7 +19,7 @@ class EmptyState extends StatelessWidget {
           Container(
             width: 72,
             height: 72,
-            decoration: BoxDecoration(color: Tokens.primary.withValues(alpha: .12), shape: BoxShape.circle),
+            decoration: BoxDecoration(color: Tokens.primary.withValues(alpha: .12), borderRadius: BorderRadius.circular(24)),
             child: Icon(icon, color: Tokens.primary, size: 32),
           ),
           const SizedBox(height: 16),
@@ -136,7 +136,7 @@ class VideoThumb extends StatelessWidget {
           aspectRatio: 16 / 9,
           child: Stack(fit: StackFit.expand, children: [
             Container(
-              decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFF1B1B30), Color(0xFF2A2145)], begin: Alignment.topLeft, end: Alignment.bottomRight)),
+              decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFF123542), Color(0xFF175E68)], begin: Alignment.topLeft, end: Alignment.bottomRight)),
               child: const Center(child: Icon(Icons.play_circle_outline_rounded, color: Colors.white38, size: 44)),
             ),
             if (url != null) Image.network(url!, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
