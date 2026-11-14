@@ -1,0 +1,23 @@
+name: Import Orbix into Puffle (exact source mirror)
+on:
+  push:
+    paths:
+      - '.github/workflows/import-orbix.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  mirror-original-main:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mirror Orbix main branch into this repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git clone --branch main --single-branch --no-tags https://github.com/liveperfumes7-crypto/Orbix.git source
+          cd source
+          git remote add destination "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push --force destination HEAD:refs/heads/main
