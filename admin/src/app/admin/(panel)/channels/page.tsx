@@ -16,7 +16,7 @@ export default async function Channels() {
   const channels = (list.data ?? []).filter((c) => c.review_status !== "pending");
   return (
     <>
-      <PageHeader title="Channels" sub="New channels stay hidden in the app until you approve them.">
+      <PageHeader title="Channels" sub="Approve new channels and choose whether ads users, organic users, or both can see them.">
         {owner && <LinkButton href="/admin/channels/new" variant="primary">New channel</LinkButton>}
       </PageHeader>
       <ErrorNote error={req.error ?? list.error} />
@@ -44,7 +44,7 @@ export default async function Channels() {
                       <Hidden name="id" value={r.id as string} /><Hidden name="approve" value="1" />
                       <label className="text-xs font-medium text-gray-700">Audience
                         <Select name="audience" defaultValue="all" className="mt-1 !w-40">
-                          <option value="all">Everyone</option><option value="organic">Organic only</option><option value="ads">Ads only</option>
+                          <option value="all">Both ads and organic</option><option value="organic">Organic only</option><option value="ads">Ads only</option>
                         </Select>
                       </label>
                       <SubmitButton variant="success">Approve</SubmitButton>
@@ -99,3 +99,4 @@ export default async function Channels() {
     </>
   );
 }
+

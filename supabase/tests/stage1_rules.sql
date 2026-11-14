@@ -132,6 +132,16 @@ begin
   perform pg_temp.imp(m,false); perform public.accept_consent('v1');
   insert into public.posts (channel_id, title, status, audience) values (c_new,'my post','published','ads') returning id into p_new; reset role;
   perform pg_temp.rec('creator posts to own approved channel; audience forced to channel', (select audience='organic' and created_by=m from public.posts where id=p_new));
+  perform pg_temp.rec('creator upload forced to draft', (select status='draft' and publish_at is null from public.posts where id=p_new));
+  perform pg_temp.imp(m,false); update public.posts set status='published' where id=p_new; reset role;
+  perform pg_temp.rec('creator cannot self-publish video', (select status='draft' from public.posts where id=p_new));
+  perform pg_temp.imp(b,true); select count(*) into n from public.posts where id=p_new; reset role;
+  perform pg_temp.rec('pending video hidden from viewers', n=0);
+  perform pg_temp.imp(owner_id,false); update public.posts set status='published', audience='organic' where id=p_new; reset role;
+  perform pg_temp.imp(b,true); select count(*) into n from public.posts where id=p_new; reset role;
+  perform pg_temp.rec('approved organic video visible to organic viewer', n=1);
+  perform pg_temp.imp(a,true); select count(*) into n from public.posts where id=p_new; reset role;
+  perform pg_temp.rec('organic video hidden from ads viewer', n=0);
   perform pg_temp.imp(m,false); raised := false;
   begin insert into public.posts (channel_id, title, status) values (c_all,'hack','published'); exception when others then raised := true; end; reset role;
   perform pg_temp.rec('cannot post to someone elses channel', raised);
@@ -222,3 +232,4 @@ begin
   select count(*), count(*) filter (where not r.ok), string_agg(r.n, ' | ') filter (where not r.ok) into total, failed, fail_list from t_res r;
   raise exception 'RESULT total=% failed=% :: %', total, failed, coalesce(fail_list,'none');
 end $outer$;
+

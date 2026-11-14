@@ -68,7 +68,7 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
       builder: (_) => const _CreateChannelSheet(),
     );
     if (ok != true || !mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Channel sent for review. It appears for everyone once approved.')));
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Channel created and sent for approval. The admin will choose who can see it.')));
     await _load();
   }
 
@@ -212,10 +212,11 @@ class _CreateChannelSheetState extends State<_CreateChannelSheet> {
             ),
             if (_err != null) Padding(padding: const EdgeInsets.only(top: 10), child: Text(_err!, style: const TextStyle(color: Tokens.danger, fontSize: 13))),
             const SizedBox(height: 16),
-            GradientButton(label: _busy ? 'Sending…' : 'Send for review', onPressed: _busy ? null : _submit),
+            GradientButton(label: _busy ? 'Creating…' : 'Create', onPressed: _busy ? null : _submit),
             const SizedBox(height: 4),
             TextButton(onPressed: _busy ? null : () => Navigator.pop(context, false), child: const Text('Cancel', style: TextStyle(color: Tokens.muted))),
           ]),
         ),
       );
 }
+

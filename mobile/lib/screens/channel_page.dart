@@ -70,7 +70,10 @@ class _ChannelPageState extends State<ChannelPage> {
 
   Future<void> _newPost() async {
     final done = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => NewPostScreen(channelId: widget.channelId)));
-    if (done == true && mounted) setState(() => _rev++);
+    if (done == true && mounted) {
+      setState(() => _rev++);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Video submitted for approval. The admin will choose who can see it.')));
+    }
   }
 
   @override
@@ -228,12 +231,12 @@ class _NewPostScreenState extends State<NewPostScreen> {
         thumbKey = null;
       }
 
-      if (mounted) setState(() => _stage = 'Publishing…');
+      if (mounted) setState(() => _stage = 'Submitting…');
       final post = await sb.from('posts').insert({
         'channel_id': widget.channelId,
         'title': _title.text.trim(),
         'description': _desc.text.trim(),
-        'status': 'published',
+        'status': 'draft',
       }).select('id').single();
       try {
         await sb.from('post_items').insert({
@@ -251,7 +254,7 @@ class _NewPostScreenState extends State<NewPostScreen> {
     } on PostgrestException catch (e) {
       _err = e.message;
     } catch (_) {
-      _err = 'Could not publish. Check your connection and try again.';
+      _err = 'Could not submit. Check your connection and try again.';
     }
     if (uploaded.isNotEmpty) {
       try { await media.remove(uploaded); } catch (_) {}
@@ -344,10 +347,11 @@ class _NewPostScreenState extends State<NewPostScreen> {
             ]),
           ),
         const SizedBox(height: 18),
-        GradientButton(label: _busy ? 'Publishing…' : 'Publish', onPressed: _busy ? null : _publish),
+        GradientButton(label: _busy ? 'Submitting…' : 'Submit for approval', onPressed: _busy ? null : _publish),
         const SizedBox(height: 10),
         const Text('Posts must follow the Community Guidelines. Content that breaks them is removed.', textAlign: TextAlign.center, style: TextStyle(color: Tokens.muted, fontSize: 12)),
       ]),
     );
   }
 }
+

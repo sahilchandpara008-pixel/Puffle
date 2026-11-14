@@ -54,6 +54,18 @@ export async function setHidden(fd: FormData) {
 }
 
 // ---------------- posts ----------------
+export async function approveVideo(fd: FormData) {
+  const { sb } = await requireAdmin();
+  const id = str(fd, "id"), audience = str(fd, "audience");
+  if (!UUID.test(id) || !["all", "ads", "organic"].includes(audience)) {
+    flash("/admin/posts", { message: "Choose a valid video and audience." }, "");
+  }
+  const { data: media, error: mediaError } = await sb.from("post_items").select("id").eq("post_id", id).limit(1);
+  if (mediaError || !media?.length) flash("/admin/posts", mediaError ?? { message: "Add media before approving this video." }, "");
+  const { data, error } = await sb.from("posts").update({ status: "published", audience, publish_at: null }).eq("id", id).eq("status", "draft").select("id").single();
+  flash("/admin/posts", error ?? (!data ? { message: "Video could not be approved." } : null), "Video approved for the selected audience.");
+}
+
 const istToUtc = (local: string) => (local ? new Date(local + ":00+05:30").toISOString() : null);
 
 export async function createPost(fd: FormData) {
@@ -265,3 +277,4 @@ export async function removeAdmin(fd: FormData) {
   const { error } = await sb.from("admins").delete().eq("user_id", id);
   flash("/admin/admins", error, "Admin removed.");
 }
+

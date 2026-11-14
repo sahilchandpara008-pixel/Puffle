@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { requireAdmin, allowedChannels } from "@/lib/admin";
 import { ist } from "@/lib/format";
-import { PageHeader, Table, Th, Td, Empty, AudienceBadge, StatusBadge, LinkButton, Select, Input, Badge, Button, ErrorNote } from "@/components/admin/ui";
+import { PageHeader, Table, Th, Td, Empty, AudienceBadge, StatusBadge, LinkButton, Select, Input, Badge, Button, ErrorNote, Hidden } from "@/components/admin/ui";
+
+import { approveVideo } from "../actions";
+import { SubmitButton } from "@/components/admin/client";
 
 type Q = { channel?: string; audience?: string; status?: string; q?: string };
 const NONE = "00000000-0000-0000-0000-000000000000";
@@ -27,18 +30,18 @@ export default async function Posts({ searchParams }: { searchParams: Q }) {
   }
   return (
     <>
-      <PageHeader title="Posts" sub="Latest 200 posts."><LinkButton href="/admin/posts/new" variant="primary">New post</LinkButton></PageHeader>
+      <PageHeader title="Posts" sub="Review uploaded videos, choose their audience, then approve them. Draft videos stay hidden from viewers."><LinkButton href="/admin/posts/new" variant="primary">New post</LinkButton></PageHeader>
       <ErrorNote error={error} />
       <form className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-5">
         <Select name="channel" defaultValue={searchParams.channel ?? ""} aria-label="Channel"><option value="">All channels</option>{(channels ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</Select>
-        <Select name="audience" defaultValue={searchParams.audience ?? ""} aria-label="Audience"><option value="">Any audience</option><option value="all">Everyone</option><option value="organic">Organic only</option><option value="ads">Ads only</option></Select>
-        <Select name="status" defaultValue={searchParams.status ?? ""} aria-label="Status"><option value="">Any status</option><option value="draft">Draft</option><option value="published">Published</option><option value="scheduled">Scheduled</option></Select>
+        <Select name="audience" defaultValue={searchParams.audience ?? ""} aria-label="Audience"><option value="">Any audience</option><option value="all">Both ads and organic</option><option value="organic">Organic only</option><option value="ads">Ads only</option></Select>
+        <Select name="status" defaultValue={searchParams.status ?? ""} aria-label="Status"><option value="">Any status</option><option value="draft">Pending / draft</option><option value="published">Published</option><option value="scheduled">Scheduled</option></Select>
         <Input name="q" defaultValue={searchParams.q ?? ""} placeholder="Search title" aria-label="Search title" />
         <Button variant="secondary">Filter</Button>
       </form>
       {(posts ?? []).length === 0 ? <Empty>No posts match. Create one with “New post”.</Empty> : (
         <Table min={760}>
-          <thead><tr><Th></Th><Th>Title</Th><Th>Channel</Th><Th>Audience</Th><Th>Status</Th><Th>Premium</Th><Th>Date</Th></tr></thead>
+          <thead><tr><Th></Th><Th>Title</Th><Th>Channel</Th><Th>Audience</Th><Th>Status</Th><Th>Premium</Th><Th>Date</Th><Th>Approval</Th></tr></thead>
           <tbody>
             {(posts ?? []).map((p) => {
               const items = (p.post_items ?? []) as { thumbnail_key: string | null; is_premium: boolean }[];
@@ -58,6 +61,15 @@ export default async function Posts({ searchParams }: { searchParams: Q }) {
                   <Td><StatusBadge value={p.status} />{p.status === "scheduled" && p.publish_at && <div className="mt-1 text-xs text-gray-500">{ist(p.publish_at)}</div>}</Td>
                   <Td>{items.some((i) => i.is_premium) ? <Badge tone="amber">Premium</Badge> : <span className="text-gray-400">Free</span>}</Td>
                   <Td className="whitespace-nowrap text-xs text-gray-500">{ist(p.created_at)}</Td>
+                  <Td>{p.status === "draft" && items.length > 0 ? (
+                    <form action={approveVideo} className="flex flex-wrap gap-2">
+                      <Hidden name="id" value={p.id} />
+                      <Select name="audience" defaultValue={p.audience} aria-label="Video audience">
+                        <option value="all">Both ads and organic</option><option value="ads">Ads only</option><option value="organic">Organic only</option>
+                      </Select>
+                      <SubmitButton small variant="success">Approve video</SubmitButton>
+                    </form>
+                  ) : p.status === "draft" ? <Badge tone="amber">Waiting for media</Badge> : <StatusBadge value={p.status} />}</Td>
                 </tr>
               );
             })}
@@ -67,3 +79,4 @@ export default async function Posts({ searchParams }: { searchParams: Q }) {
     </>
   );
 }
+
