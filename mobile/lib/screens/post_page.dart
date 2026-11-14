@@ -147,6 +147,11 @@ class _PostPageState extends State<PostPage> {
       return;
     }
     final old = _vc;
+    if ((it['mime'] as String? ?? '').startsWith('image/')) {
+      setState(() { _vc = null; _imageUrl = url; _opening = false; _trailer = false; });
+      await old?.dispose();
+      return;
+    }
     final c = VideoPlayerController.networkUrl(Uri.parse(url));
     try {
       await c.initialize();
