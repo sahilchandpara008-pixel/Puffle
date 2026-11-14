@@ -1,4 +1,4 @@
-package com.puffle.app
+package com.pufflecloud.app
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

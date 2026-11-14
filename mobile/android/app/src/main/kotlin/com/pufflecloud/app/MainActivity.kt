@@ -1,4 +1,4 @@
-package com.puffle.app
+package com.pufflecloud.app
 
 import android.app.Activity
 import android.content.ActivityNotFoundException

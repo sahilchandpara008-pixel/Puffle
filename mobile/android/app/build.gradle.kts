@@ -13,7 +13,7 @@ val keyProps = Properties().apply {
 }
 
 android {
-    namespace = "com.puffle.app"
+    namespace = "com.pufflecloud.app"
     compileSdk = 35
     ndkVersion = flutter.ndkVersion
 
@@ -45,8 +45,8 @@ android {
     productFlavors {
         create("direct") {
             dimension = "dist"
-            applicationId = "com.puffle.app"
-            manifestPlaceholders["authScheme"] = "com.puffle.app"
+            applicationId = "com.pufflecloud.app"
+            manifestPlaceholders["authScheme"] = "com.pufflecloud.app"
         }
         create("play") {
             dimension = "dist"

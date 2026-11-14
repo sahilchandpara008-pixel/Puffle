@@ -13,7 +13,7 @@ class Config {
 
   /// Set by CI for the ads APK: utm_source=meta&utm_medium=paid_social&utm_campaign=apk_download
   static const apkReferrer = String.fromEnvironment('APK_REFERRER');
-  static const authScheme = String.fromEnvironment('AUTH_SCHEME', defaultValue: 'com.puffle.app');
+  static const authScheme = String.fromEnvironment('AUTH_SCHEME', defaultValue: 'com.pufflecloud.app');
 
   /// Kept in sync with pubspec.yaml; a test fails when they differ.
   static const versionLabel = '1.0.1';
