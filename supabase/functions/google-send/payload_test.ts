@@ -1,0 +1,4 @@
+import {purchasePayload,type Purchase} from './payload.ts';
+const p=():Purchase=>({order_id:'11111111-2222-4333-8444-555555555555',app_instance_id:'0123456789abcdef0123456789abcdef',created_at:new Date().toISOString(),amount_paise:4900,plan_name:'Premium'});
+Deno.test('verified amount, transaction dedup ID and currency',()=>{const b=purchasePayload(p());if(b.events[0].params.value!==49||b.events[0].params.currency!=='INR'||b.events[0].params.transaction_id!==p().order_id)throw Error('incorrect purchase');if('user_id'in b||'email'in b||'client_id'in b)throw Error('wrong identity');});
+Deno.test('requires a genuine Firebase instance and positive order',()=>{for(const change of [{app_instance_id:'made-up-uuid'},{amount_paise:0},{amount_paise:1.5},{created_at:new Date(Date.now()-73*3600000).toISOString()}]){let denied=false;try{purchasePayload({...p(),...change});}catch{denied=true;}if(!denied)throw Error('invalid purchase accepted');}});

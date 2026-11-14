@@ -1,3 +1,5 @@
+import {range,pageNumber,type ReportQuery} from "@/lib/reporting";
+import {Pagination} from "@/components/admin/ReportFilters";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
 import { inr, ist, rowsOf } from "@/lib/format";
@@ -5,19 +7,18 @@ import { PageHeader, Card, Stat, Table, Th, Td, Empty, StatusBadge, Badge, Field
 import { SubmitButton } from "@/components/admin/client";
 import { savePaymentSettings, clearUpi, orderAction } from "../actions";
 
-type Q = { status?: string; plan?: string; from?: string; to?: string; q?: string; sort?: string; verify?: string };
+type Q = ReportQuery;
 const STATUSES = ["pending", "submitted", "review", "paid", "failed", "cancelled", "rejected", "revoked"];
 const LABEL: Record<string, string> = { payment_settings: "UPI settings", plans: "Plan", app_mode: "App mode" };
 const n = (v: unknown) => new Intl.NumberFormat("en-IN").format(Number(v ?? 0));
-const date = (s?: string) => (s && /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : null);
 
 export default async function Payments({ searchParams: q }: { searchParams: Q }) {
   const { sb } = await requireAdmin(true);
-  const [ps, stats, dash, orders, plans, audit] = await Promise.all([
+  const dates=range(q);
+  const [ps, stats, orders, plans, audit] = await Promise.all([
     sb.from("payment_settings").select("*").eq("id", 1).single(),
-    sb.rpc("admin_payment_stats"),
-    sb.rpc("admin_dashboard"),
-    sb.rpc("admin_payments", { p_status: q.status ?? null, p_plan: q.plan ?? null, p_from: date(q.from), p_to: date(q.to), p_search: q.q ?? null, p_sort: q.sort ?? "newest", p_verify: q.verify ?? null, p_limit: 200 }),
+    sb.rpc("admin_analytics",{p_from:dates.from,p_to:dates.to,p_source:q.source||null,p_plan:q.plan||null}),
+    sb.rpc("admin_payments_filtered", { p_status: q.status ?? null, p_plan: q.plan ?? null, p_from: dates.from, p_to: dates.to, p_search: q.q ?? null, p_sort: q.sort ?? "newest", p_verify: q.verify ?? null, p_source:q.source||null,p_customer:q.customer||null,p_date_basis:q.date_basis||"created",p_limit:100,p_offset:(pageNumber(q.page)-1)*100 }),
     sb.from("plans").select("code,name").order("position"),
     sb.rpc("admin_audit", { p_limit: 40 }),
   ]);
@@ -55,11 +56,11 @@ export default async function Payments({ searchParams: q }: { searchParams: Q })
       </Card>
 
       <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-5">
-        <Stat label="Revenue today" value={inr(Number(st.revenue_today ?? 0))} />
-        <Stat label="This month" value={inr(Number((dash.data as Record<string, unknown> | null)?.revenue_month ?? 0))} />
+        <Stat label="Verified revenue · range" value={inr(Number(st.verified_revenue ?? 0))} />
+        <Stat label="Unverified revenue · range" value={inr(Number(st.unverified_revenue ?? 0))} />
         <Stat label="Successful orders" value={n(st.paid_orders)} />
-        <Stat label="Pending orders" value={n(st.pending_orders)} />
-        <Stat label="To verify" value={n(st.to_verify)} tone={Number(st.to_verify) > 0 ? "warn" : undefined} />
+        <Stat label="Paying users · range" value={n(st.paying_users)} />
+        <Stat label="Repeat buyers · range" value={n(st.repeat_buyers)} />
       </div>
 
       <div className="mb-3 flex flex-wrap gap-2">
@@ -73,10 +74,11 @@ export default async function Payments({ searchParams: q }: { searchParams: Q })
         <Input type="date" name="from" defaultValue={q.from ?? ""} aria-label="From date" />
         <Input type="date" name="to" defaultValue={q.to ?? ""} aria-label="To date" />
         <Input name="q" defaultValue={q.q ?? ""} placeholder="Reference, UTR, email" aria-label="Search" />
-        <Select name="sort" defaultValue={q.sort ?? "newest"} aria-label="Sort"><option value="newest">Newest first</option><option value="highest">Highest amount</option></Select>
-        <Button variant="secondary">Filter</Button>
+        <Select name="sort" defaultValue={q.sort ?? "newest"} aria-label="Sort"><option value="newest">Newest first</option><option value="highest">Highest amount</option><option value="lowest">Lowest amount</option><option value="oldest">Oldest first</option><option value="activated">Recently activated</option></Select>
+        <Select name="source" defaultValue={q.source??""} aria-label="Source"><option value="">All sources</option><option value="ads">Ads</option><option value="organic">Organic</option></Select><Select name="customer" defaultValue={q.customer??""} aria-label="Customer"><option value="">All customers</option><option value="repeat">Repeat buyers</option><option value="first">One paid order</option></Select><Select name="date_basis" defaultValue={q.date_basis??"created"} aria-label="Date basis"><option value="created">Order creation date</option><option value="activated">Plan activation date</option></Select><Select name="verify" defaultValue={q.verify??""} aria-label="Bank verification"><option value="">Any verification</option><option value="verified">Bank verified</option><option value="unverified">Not bank verified</option><option value="all">Outstanding bank checks</option><option value="today">Today's bank checks</option></Select><Button variant="secondary">Filter</Button>
       </form>
 
+      <p className="mb-3 text-xs text-gray-500">Revenue summaries use activation date and the source/plan filters. The orders below also use status, search, customer and verification filters.</p><Pagination path="/workspace-7f3c9a2e/payments" q={q} total={Number((orders.data as {total?:number}|null)?.total??0)} size={100}/>
       {rows.length === 0 ? <Empty>No payments in this view.</Empty> : (
         <Table min={900}>
           <thead><tr><Th>Date</Th><Th>User and plan</Th><Th>Amount</Th><Th>Reference</Th><Th>Status</Th><Th>Actions</Th></tr></thead>
@@ -133,16 +135,16 @@ export default async function Payments({ searchParams: q }: { searchParams: Q })
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
         <Card title="Sales per plan">
-          {rowsOf(st.sales_per_plan).length === 0 ? <p className="text-sm text-gray-500">No paid orders yet.</p> : (
+          {rowsOf(st.plans).length === 0 ? <p className="text-sm text-gray-500">No paid orders yet.</p> : (
             <table className="w-full text-sm"><tbody>
-              {rowsOf(st.sales_per_plan).map((r, i) => <tr key={i} className="border-b border-gray-100 last:border-0"><td className="py-1.5">{String(r.plan_name)}</td><td className="py-1.5 text-gray-500">{n(r.orders)} orders</td><td className="py-1.5 text-right font-medium">{inr(Number(r.revenue))}</td></tr>)}
+              {rowsOf(st.plans).map((r, i) => <tr key={i} className="border-b border-gray-100 last:border-0"><td className="py-1.5">{String(r.plan_name)}</td><td className="py-1.5 text-gray-500">{n(r.orders)} orders</td><td className="py-1.5 text-right font-medium">{inr(Number(r.revenue))}</td></tr>)}
             </tbody></table>
           )}
         </Card>
         <Card title="Repeat buyers">
-          {rowsOf(st.repeat_buyers).length === 0 ? <p className="text-sm text-gray-500">No repeat buyers yet.</p> : (
+          {rowsOf(st.repeat_customers).length === 0 ? <p className="text-sm text-gray-500">No repeat buyers yet.</p> : (
             <table className="w-full text-sm"><tbody>
-              {rowsOf(st.repeat_buyers).map((r, i) => <tr key={i} className="border-b border-gray-100 last:border-0"><td className="py-1.5">{r.email ? <Link className="text-violet-700 underline" href={`/workspace-7f3c9a2e/payments?q=${encodeURIComponent(String(r.email))}`}>{String(r.email)}</Link> : "Guest"}</td><td className="py-1.5 text-gray-500">{n(r.paid_orders)} orders</td><td className="py-1.5 text-right font-medium">{inr(Number(r.spent))}</td></tr>)}
+              {rowsOf(st.repeat_customers).map((r, i) => <tr key={i} className="border-b border-gray-100 last:border-0"><td className="py-1.5">{r.email ? <Link className="text-violet-700 underline" href={`/workspace-7f3c9a2e/payments?q=${encodeURIComponent(String(r.user_id))}`}>{String(r.email)}</Link> : "Guest"}</td><td className="py-1.5 text-gray-500">{n(r.orders_in_range)} orders</td><td className="py-1.5 text-right font-medium">{inr(Number(r.spent))}</td></tr>)}
             </tbody></table>
           )}
         </Card>
@@ -165,3 +167,4 @@ export default async function Payments({ searchParams: q }: { searchParams: Q })
     </>
   );
 }
+

@@ -6,6 +6,7 @@ import '../services/app_scope.dart';
 import '../services/app_state.dart';
 import '../theme.dart';
 import 'channels_screen.dart';
+import 'measurement_preferences.dart';
 import 'login_sheet.dart';
 import 'payment_status_screen.dart';
 import 'plans_page.dart';
@@ -81,6 +82,7 @@ class AccountView extends StatelessWidget {
           ]),
           const SizedBox(height: 12),
           _Group(children: [
+            _Row(Icons.tune, 'Measurement preferences', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MeasurementPreferences()))),
             _Row(Icons.privacy_tip_outlined, 'Privacy policy', onTap: () => _web('/privacy')),
             _Row(Icons.description_outlined, 'Terms', onTap: () => _web('/terms')),
             _Row(Icons.currency_rupee, 'Refund policy', onTap: () => _web('/refund')),
@@ -112,9 +114,9 @@ class AccountView extends StatelessWidget {
   }
 
   String _planLine(dynamic s, DateTime? d) {
-    if (s.isGuest) return 'Log in for 15 GB free cloud storage';
+    if (s.isGuest && !s.isPremium) return 'Add an email to save your account';
     if (s.isPremium) return '${s.planName ?? 'Premium'} active${d == null ? '' : ' until ${d.day}/${d.month}/${d.year}'}';
-    return 'Free account';
+    return 'No active Premium plan';
   }
 
   Future<void> _deleteAccount(BuildContext context, AppState app) async {
@@ -224,8 +226,9 @@ class _Group extends StatelessWidget {
   const _Group({required this.children});
   final List<Widget> children;
   @override
-  Widget build(BuildContext context) => Container(
-        decoration: BoxDecoration(color: Tokens.surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: Tokens.border)),
+  Widget build(BuildContext context) => Material(
+        color: Tokens.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: const BorderSide(color: Tokens.border)),
         clipBehavior: Clip.antiAlias,
         child: Column(children: [
           for (var i = 0; i < children.length; i++) ...[
@@ -252,3 +255,4 @@ class _Row extends StatelessWidget {
         onTap: onTap,
       );
 }
+

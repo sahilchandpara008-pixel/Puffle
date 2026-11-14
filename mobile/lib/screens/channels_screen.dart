@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../services/app_scope.dart';
 import '../services/app_state.dart';
+import '../services/measurement.dart';
 import '../theme.dart';
 import '../widgets/ui.dart';
 import 'channel_page.dart';
@@ -74,6 +75,7 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
         await sb.from('channel_members').delete().eq('channel_id', id).eq('user_id', uid);
       } else {
         await sb.from('channel_members').insert({'channel_id': id, 'user_id': uid});
+        Measurement.instance.track('ChannelJoined');
       }
     } catch (_) {
       messenger.showSnackBar(const SnackBar(content: Text('Could not update. Please try again.')));
@@ -188,6 +190,7 @@ class _CreateChannelSheetState extends State<_CreateChannelSheet> {
     setState(() { _busy = true; _err = null; });
     try {
       await sb.from('channels').insert({'name': name, 'description': _desc.text.trim()});
+      Measurement.instance.track('ChannelCreated');
       if (mounted) Navigator.pop(context, true);
       return;
     } on PostgrestException catch (e) {
@@ -246,4 +249,5 @@ class _CreateChannelSheetState extends State<_CreateChannelSheet> {
         ),
       );
 }
+
 

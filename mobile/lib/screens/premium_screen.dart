@@ -7,6 +7,7 @@ import '../config.dart';
 import '../payments/upi.dart';
 import '../services/app_scope.dart';
 import '../services/app_state.dart';
+import '../services/measurement.dart';
 import '../theme.dart';
 import 'login_sheet.dart';
 import 'payment_status_screen.dart';
@@ -175,6 +176,7 @@ class _PlansWebViewState extends State<PlansWebView> {
 /// Buy flow: free plan -> claim; otherwise native UPI checkout. All decisions are the server's.
 Future<void> startPurchase(BuildContext context, String planId) async {
   final app = AppScope.of(context);
+  Measurement.instance.track('PlanViewed',{'screen':'Premium'});
   final messenger = ScaffoldMessenger.of(context);
   final nav = Navigator.of(context);
 
@@ -252,3 +254,4 @@ Future<void> _manualSheet(BuildContext context, Map<String, dynamic> o) => showM
         ]),
       ),
     );
+

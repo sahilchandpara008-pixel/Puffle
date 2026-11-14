@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config.dart';
 import '../services/app_scope.dart';
 import '../services/app_state.dart';
+import '../services/measurement.dart';
 import '../theme.dart';
 
 /// Returns true when the user ended up with a real account.
@@ -68,6 +69,7 @@ class _LoginSheetState extends State<LoginSheet> {
         if (sb.auth.currentSession == null) {
           final r = await sb.auth.signUp(email: email, password: _pass.text, emailRedirectTo: '${Config.authScheme}://login-callback');
           if (r.session != null) {
+            await Measurement.instance.start();await Measurement.instance.track('CompleteRegistration');
             if (mounted) Navigator.pop(context, true);
           } else {
             setState(() => _info = 'We sent a confirmation link to $email. Open it, then come back and log in.');
@@ -80,12 +82,14 @@ class _LoginSheetState extends State<LoginSheet> {
           emailRedirectTo: '${Config.authScheme}://login-callback',
         );
         if (sb.auth.currentUser?.isAnonymous == false) {
+          await Measurement.instance.start();await Measurement.instance.track('CompleteRegistration');
           if (mounted) Navigator.pop(context, true);
         } else {
           setState(() => _info = 'We sent a confirmation link to $email. Tap it to finish saving your account.');
         }
       } else {
         await sb.auth.signInWithPassword(email: email, password: _pass.text);
+        await Measurement.instance.start();await Measurement.instance.track('Login');
         if (mounted) Navigator.pop(context, true);
       }
     } on AuthException catch (e) {
@@ -124,7 +128,7 @@ class _LoginSheetState extends State<LoginSheet> {
     final title = widget.saveMode ? 'Save your plan' : (_signup ? 'Create your account' : 'Welcome back');
     final sub = widget.saveMode
         ? 'Add an email and password. Your plan stays on this account and works on any phone.'
-        : (_signup ? 'Free account with 15 GB cloud storage.' : 'Log in to your Puffle account.');
+        : (_signup ? 'Create your account with email and password.' : 'Log in to your Puffle account.');
     return Padding(
       padding: EdgeInsets.fromLTRB(20, 10, 20, MediaQuery.of(context).viewInsets.bottom + 20),
       child: SingleChildScrollView(

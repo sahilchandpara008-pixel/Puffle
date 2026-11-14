@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/app_scope.dart';
 import '../services/app_state.dart';
+import '../services/measurement.dart';
 import '../theme.dart';
 import '../widgets/ui.dart';
 import 'post_page.dart';
@@ -186,7 +187,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
           key: const Key('explore_search'),
           textInputAction: TextInputAction.search,
           decoration: const InputDecoration(hintText: 'Search videos', prefixIcon: Icon(Icons.search), isDense: true),
-          onSubmitted: (v) => setState(() => _q = v),
+          onSubmitted: (v) {setState(() => _q = v);if(v.trim().isNotEmpty)Measurement.instance.track('SearchUsed');},
         ),
       ),
       SingleChildScrollView(
@@ -204,4 +205,5 @@ class _ExploreScreenState extends State<ExploreScreen> {
     ]);
   }
 }
+
 

@@ -10,11 +10,12 @@ export default function Download() {
       <main className="mx-auto max-w-md px-4 py-16 text-center space-y-4">
         <div className="mx-auto h-20 w-20 rounded-3xl bg-brand grid place-items-center text-2xl font-bold text-white">PF</div>
         <h1 className="text-3xl font-bold text-slate-900">Get Puffle for Android</h1>
-        <p className="text-slate-600">15 GB free cloud storage, creator channels and Premium plans.</p>
+        <p className="text-slate-600">Private cloud storage, approved creator channels and Premium plans. Storage allowances and content access depend on your account, plan and admin-selected audience.</p>
         <DownloadButton />
         <p className="text-xs text-slate-500">If your phone asks, allow “install unknown apps” for your browser. Android 7.0 or newer.</p>
-      </main>
+      <p className="text-xs text-slate-500">By using Puffle, follow our <a href="/terms" className="underline">Terms</a> and <a href="/community-guidelines" className="underline">Community Guidelines</a>. Read our <a href="/privacy" className="underline">Privacy Policy</a>. Optional ad measurement is your choice.</p></main>
     </SiteShell>
   );
 }
+
 

@@ -2,106 +2,37 @@ import Link from "next/link";
 import SiteShell from "@/components/SiteShell";
 import DownloadButton from "./d/DownloadButton";
 import PlanPicker from "@/components/PlanPicker";
-import { loadPlans, durationLabel } from "@/lib/plans";
-import { inr } from "@/lib/format";
-
-export const revalidate = 60;
-
-const CloudIcon = () => (
-  <svg viewBox="0 0 120 120" className="h-40 w-40" aria-hidden>
-    <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#6A5CFF" /><stop offset=".5" stopColor="#9B5CFF" /><stop offset="1" stopColor="#FF5CA8" /></linearGradient></defs>
-    <path d="M34 88a22 22 0 0 1-2-43.9A28 28 0 0 1 86 40a24 24 0 0 1 2 48z" fill="url(#g)" />
-    <path d="M60 80V52m0 0-10 10m10-10 10 10" stroke="#fff" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-  </svg>
-);
-const ShieldIcon = () => (
-  <svg viewBox="0 0 120 120" className="h-40 w-40" aria-hidden>
-    <path d="M60 10 100 24v30c0 28-17 46-40 56C37 100 20 82 20 54V24z" fill="#7C5CFF" opacity=".15" />
-    <path d="M60 18 92 29v25c0 22-13 37-32 46-19-9-32-24-32-46V29z" fill="#7C5CFF" />
-    <path d="m44 60 12 12 22-24" stroke="#fff" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-  </svg>
-);
-
-const FAQ = [
-  ["Is Puffle free?", "Creating an account gives you 15 GB of cloud storage. Premium plans give you 2 TB, full-length premium videos and downloads."],
-  ["How do I pay?", "Inside the Puffle Android app, with the UPI app you already use. We never see your UPI PIN."],
-  ["Is my data private?", "Yes. Your files are private to your account and are opened only through short-lived secure links."],
-  ["How do I delete my account?", "In the app: Profile → Delete account. Or on this website at Delete Account."],
+import {loadPlans,durationLabel} from "@/lib/plans";
+import {inr} from "@/lib/format";
+export const revalidate=60;
+const features=[
+ ["01","A home for your files","Keep photos, videos and documents in your private cloud. Your storage allowance follows your account and active plan."],
+ ["02","Channels worth exploring","Browse a consistent video grid, discover approved channels and find your next watch. Content availability follows the audience set by the admin."],
+ ["03","A player that keeps up","Watch previews, move between suggested videos and enjoy full Premium videos when your plan and content access allow it."],
 ];
-
-export default async function Home() {
-  const plans = await loadPlans();
-  const picker = plans.map((p) => ({ id: p.id, name: p.name, price: inr(p.price_inr), label: durationLabel(p.duration_days, p.duration_hours), badge: p.badge }));
-  return (
-    <SiteShell>
-      <section className="bg-gradient-to-b from-violet-100 to-white">
-        <div className="mx-auto max-w-4xl px-4 py-20 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold text-slate-900 leading-tight">15 GB free cloud storage for everyone</h1>
-          <p className="mt-4 text-slate-600">Simple, secure and swift. Your digital life, organised. Up to 2 TB with Premium.</p>
-          <DownloadButton className="btn mt-8 px-8 py-3" label="Download for Android" />
-        </div>
-      </section>
-
-      <section id="features" className="mx-auto max-w-5xl px-4 py-20 grid gap-10 md:grid-cols-2 items-center">
-        <div className="mx-auto"><CloudIcon /></div>
-        <div>
-          <h2 className="text-3xl font-semibold text-slate-900">Backup and share with ease</h2>
-          <p className="mt-3 text-slate-600">Back up your photos, videos and documents. Open them from your phone any time. Rename, organise and delete in a tap, and watch your storage meter fill as you go.</p>
-        </div>
-      </section>
-
-      <section id="security" className="bg-slate-50">
-        <div className="mx-auto max-w-5xl px-4 py-20 grid gap-10 md:grid-cols-2 items-center">
-          <div>
-            <h2 className="text-3xl font-semibold text-slate-900">Puffle protects your data</h2>
-            <p className="mt-3 text-slate-600">Your files are private to your account. They are opened only through short-lived secure links, and our access rules are enforced on the server, not just in the app.</p>
-            <div className="mt-5 flex items-start gap-3">
-              <span className="mt-1 text-primary">✔</span>
-              <div><div className="font-medium text-slate-900">Keep your data safe</div><div className="text-xs text-slate-500">Encrypted in transit · Private by default · Delete your account any time</div></div>
-            </div>
-            <Link href="/privacy" className="btn-ghost mt-6 inline-flex">View more details →</Link>
-          </div>
-          <div className="mx-auto"><ShieldIcon /></div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-5xl px-4 py-20 text-center">
-        <h2 className="text-3xl font-semibold text-slate-900">Channels from creators you will love</h2>
-        <p className="mt-3 text-slate-600 max-w-2xl mx-auto">Discover channels, join the ones you like and share your own. Every channel is reviewed, and you can report or block anything in one tap. See our <Link className="text-primary underline" href="/community-guidelines">Community Guidelines</Link>.</p>
-      </section>
-
-      <section id="pricing" className="bg-slate-50">
-        <div className="mx-auto max-w-5xl px-4 py-20">
-          <h2 className="text-center text-3xl font-semibold text-slate-900">Choose your best Puffle plan</h2>
-          <p className="mt-2 text-center text-sm text-slate-500">Unlock premium privileges and supercharge your cloud storage.</p>
-          <div className="mt-10 grid gap-6 md:grid-cols-2">
-            <div className="card p-6">
-              <h3 className="text-2xl font-semibold text-slate-900">Premium <span className="ml-1 align-middle rounded bg-primary px-2 py-0.5 text-xs text-white">Popular</span></h3>
-              <p className="mt-2 text-sm text-slate-600">For individuals and power users who want more space and features.</p>
-              <ul className="mt-6 space-y-2 text-sm">
-                {["2 TB large space", "Full-length premium videos", "Offline downloads", "Priority support on longer plans"].map((x) => (
-                  <li key={x} className="flex gap-2"><span className="text-primary">✔</span>{x}</li>
-                ))}
-              </ul>
-              <Link href="/d" className="btn mt-8 w-full py-3">Choose Premium</Link>
-            </div>
-            <PlanPicker plans={picker} />
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-3xl px-4 py-20">
-        <h2 className="text-center text-3xl font-semibold text-slate-900">Questions</h2>
-        <div className="mt-8 space-y-3">
-          {FAQ.map(([q, a]) => (
-            <details key={q} className="card group">
-              <summary className="cursor-pointer font-medium text-slate-900">{q}</summary>
-              <p className="mt-2 text-sm text-slate-600">{a}</p>
-            </details>
-          ))}
-        </div>
-      </section>
-    </SiteShell>
-  );
+const faq=[
+ ["Can I try Puffle without an account?","Ads-app guests can watch eligible free videos and Premium trailers. Organic-app users sign in to play content. You can buy an available plan as a guest and add email and password to the same account later."],
+ ["What does Premium include?","An active Premium plan provides the storage and features shown in the app, including up to 2 TB of cloud space and eligible full-length videos. Channel creation requires Premium and a saved account. Channels and uploads are reviewed before publication."],
+ ["Does Premium unlock every channel?","No. Admin-selected channel and video audiences still apply. Organic users need admin approval for ads-only content, even after buying a plan."],
+ ["How do payments work?","In the direct Android app, choose a plan and pay in your preferred UPI app. Keep your order reference for support. Puffle never asks for your UPI PIN. Available payment methods can differ in the Google Play build."],
+ ["Can I control advertising measurement?","Yes. Website privacy choices and the app’s measurement settings let you allow or decline optional sharing with Meta. Declining does not change your plan, storage allowance or content audience."],
+];
+export default async function Home(){
+ const plans=await loadPlans();
+ const picker=plans.map(p=>({id:p.id,name:p.name,price:inr(p.price_inr),label:durationLabel(p.duration_days,p.duration_hours),badge:p.badge}));
+ return <SiteShell>
+  <section className="site-hero border-b border-white/10"><div className="mx-auto grid max-w-6xl items-center gap-14 px-5 py-16 lg:grid-cols-[1.1fr_1fr] lg:py-24">
+   <div><p className="text-xs font-semibold uppercase tracking-[.2em] text-teal-200">YOUR CLOUD. YOUR CHANNELS.</p><h1 className="mt-6 text-5xl font-semibold leading-[1.08] tracking-tight sm:text-6xl">Your space.<br/><span className="text-teal-200">Your next watch.</span></h1><p className="mt-6 max-w-lg text-base leading-relaxed text-slate-300">Keep the things that matter. Discover videos from creators. Puffle brings your personal cloud and favourite channels together in one Android app.</p><div className="mt-8 flex flex-wrap gap-3"><DownloadButton className="btn px-6 py-3.5" label="Download for Android"/><Link href="#features" className="btn-ghost px-6 py-3.5">Explore Puffle ↓</Link></div><p className="mt-5 text-xs text-slate-400">Android 7.0+ · Guest purchase available · Optional ad measurement</p></div>
+   <div className="site-preview rounded-3xl border border-white/10 bg-[#122630] p-5 shadow-2xl sm:p-7" aria-label="Illustration of Puffle cloud and channels">
+    <div className="mb-6 flex items-center justify-between"><span className="font-semibold">Your Puffle</span><span className="rounded-full bg-teal-300/10 px-3 py-1 text-xs text-teal-200">Cloud + channels</span></div>
+    <div className="rounded-2xl bg-gradient-to-br from-teal-800 to-cyan-900 p-6"><svg viewBox="0 0 108 108" className="mb-3 h-14 w-14" aria-hidden="true"><g fill="white"><rect x="26" y="47" width="56" height="26" rx="13"/><circle cx="50" cy="48" r="16"/><circle cx="65" cy="52" r="12"/></g><path fill="#137781" d="M49 46v19l16-9.5z"/></svg><h2 className="text-xl font-semibold">Everything in its place.</h2><p className="mt-2 text-sm text-teal-100/80">A little more room for your everyday.</p></div>
+    <p className="mb-3 mt-6 text-sm font-medium">More to discover</p><div className="grid grid-cols-3 gap-3">{["Ideas","Learn","Explore"].map((name,i)=><div key={name}><div className={`site-poster poster-${i} grid aspect-[2/3] place-items-center rounded-xl`}><svg width="30" height="30" viewBox="0 0 24 24" fill="white" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></div><p className="mt-2 text-xs text-slate-300">{name}</p></div>)}</div>
+   </div>
+  </div></section>
+  <section id="features" className="mx-auto max-w-6xl px-5 py-20"><div className="mb-10 max-w-2xl"><p className="site-eyebrow">ONE APP, MORE POSSIBILITIES</p><h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">Made for what you keep.<br/>Built for what you discover.</h2></div><div className="grid gap-5 md:grid-cols-3">{features.map(([n,title,copy])=><article key={n} className="card p-7"><p className="mb-8 text-xs font-semibold tracking-widest text-teal-200">{n}</p><h3 className="text-xl font-semibold">{title}</h3><p className="mt-4 text-sm leading-relaxed text-slate-400">{copy}</p></article>)}</div></section>
+  <section id="security" className="border-y border-white/10 bg-[#0d202a]"><div className="mx-auto grid max-w-6xl gap-8 px-5 py-16 md:grid-cols-2"><h2 className="text-3xl font-semibold tracking-tight">Your files stay yours.<br/><span className="text-teal-200">Your choices stay in your hands.</span></h2><div><p className="text-sm leading-relaxed text-slate-300">Private cloud files use account access controls and expiring links. Channel content follows the audience chosen by the admin. Optional usage and advertising measurement have separate privacy choices.</p><div className="mt-6 flex flex-wrap gap-3"><Link href="/privacy" className="btn-ghost">Read our Privacy Policy →</Link><Link href="/delete-account" className="btn-ghost">Account & data deletion</Link></div></div></div></section>
+  <section id="pricing" className="mx-auto max-w-6xl px-5 py-20"><div className="mb-10 text-center"><p className="site-eyebrow">MAKE ROOM FOR MORE</p><h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">Find your Puffle plan.</h2><p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-slate-400">Current plans are shown below. Confirm the price, duration and access details in the app before paying. Free storage promotions are available only when enabled.</p></div><div className="grid gap-6 lg:grid-cols-2"><div className="card flex flex-col p-7"><span className="text-sm font-semibold text-teal-200">Premium</span><h3 className="mt-4 text-3xl font-semibold">More space.<br/>More possibilities.</h3><ul className="mt-7 space-y-4 text-sm text-slate-300">{["Up to 2 TB of cloud storage with an active plan","Eligible full-length Premium videos","Premium channel creation, subject to review","Buy as a guest and save your account later"].map(x=><li key={x} className="flex gap-3"><span className="text-teal-200">✓</span>{x}</li>)}</ul><p className="mt-auto pt-8 text-xs leading-relaxed text-slate-400">Premium does not override channel or video audience restrictions. Organic users require admin approval for ads-only content.</p></div>{picker.length?<PlanPicker plans={picker}/>:<div className="card p-7"><h3 className="text-xl font-semibold">Check plans in the app</h3><p className="mt-3 text-sm text-slate-400">The current offers are available in Puffle.</p><DownloadButton className="btn mt-6" label="Get Puffle"/></div>}</div></section>
+  <section className="mx-auto max-w-3xl px-5 pb-20"><h2 className="mb-8 text-center text-3xl font-semibold">Good to know.</h2><div className="space-y-3">{faq.map(([q,a])=><details key={q} className="card p-5"><summary className="cursor-pointer font-medium">{q}</summary><p className="mt-4 text-sm leading-relaxed text-slate-400">{a}</p></details>)}</div></section>
+ </SiteShell>;
 }
 

@@ -8,10 +8,10 @@ export default function Terms() {
     <SiteShell>
       <article className="prose-doc mx-auto max-w-3xl px-4 py-12 text-sm">
         <h1>Terms and Conditions</h1>
-        <p className="text-slate-500">Last updated: November 2026</p>
+        <p className="text-slate-500">Last updated: 15 November 2026</p>
 
         <h2>1. Introduction</h2>
-        <p>Welcome to Puffle. These terms are an agreement between you and Puffle (“we”, “us”). By installing or using the app or this website you agree to these terms, our <a href="/privacy">Privacy Policy</a>, <a href="/refund">Refund Policy</a> and <a href="/community-guidelines">Community Guidelines</a>.</p>
+        <p>Welcome to Puffle. These terms are an agreement between you and Puffle (“we”, “us”). By installing or using the app or this website you agree to these service terms. Please also read our <a href="/privacy">Privacy Policy</a>, <a href="/refund">Refund Policy</a> and <a href="/community-guidelines">Community Guidelines</a>. Optional usage analytics and Meta and Google advertising measurement require separate choices; accepting these terms does not turn them on.</p>
 
         <h2>2. Who can use Puffle</h2>
         <ul>
@@ -23,7 +23,7 @@ export default function Terms() {
 
         <h2>3. Your account</h2>
         <ul>
-          <li>You can browse as a guest. An account is needed to join channels, upload, use cloud storage or buy a plan.</li>
+          <li>You can buy an available plan as a guest and add email and password to the same account later. A saved account is needed for channel creation, joining channels and uploads. Ads-app guests can play eligible free content and Premium previews; organic-app users must sign in for playback.</li>
           <li>You are responsible for your password and for activity on your account. Do not share your login.</li>
           <li>Give us accurate information and tell us if you think someone else is using your account.</li>
         </ul>
@@ -38,7 +38,7 @@ export default function Terms() {
 
         <h2>5. Channels</h2>
         <ul>
-          <li>New channels are reviewed by us before they appear to others.</li>
+          <li>Only Premium members with a saved account can create channels. New channels and videos require admin review. Admin-selected audience rules apply to both channels and their content; an organic Premium plan does not automatically unlock ads-only channels.</li>
           <li>Channel owners are responsible for their channels and their content.</li>
           <li>We may hide, restrict or remove a channel, or suspend its owner, if the rules are broken.</li>
         </ul>
@@ -79,7 +79,8 @@ export default function Terms() {
 
         <h2>14. Contact</h2>
         <p>Questions about these terms: <a href={`mailto:${email}`}>{email}</a>.</p>
-      </article>
+      <h2>Content audiences and channel review</h2><p>Premium is required to create a channel. Channels and user-uploaded videos are reviewed, and the admin selects whether they are available to ads users, organic users or both. A Premium plan does not override audience restrictions. Organic users require the applicable admin approval for ads-only content.</p><p>Nothing in these terms limits rights that cannot be excluded under applicable law.</p></article>
     </SiteShell>
   );
 }
+

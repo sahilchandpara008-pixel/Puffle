@@ -8,7 +8,7 @@ export default function Refund() {
     <SiteShell>
       <article className="prose-doc mx-auto max-w-3xl px-4 py-12 text-sm">
         <h1>Refund Policy</h1>
-        <p className="text-slate-500">Last updated: November 2026</p>
+        <p className="text-slate-500">Last updated: 15 November 2026</p>
         <h2>1. Digital service</h2>
         <p>Puffle plans give you cloud storage and premium access for a fixed period. Because access starts as soon as your payment is confirmed, plans are generally non-refundable once activated.</p>
         <h2>2. When we refund or correct</h2>
@@ -24,7 +24,8 @@ export default function Refund() {
         <p>Plans do not renew automatically, so there is nothing to cancel. Your plan simply ends on its end date. If we end a plan because of a breach of our <a href="/terms">Terms</a> or <a href="/community-guidelines">Community Guidelines</a>, no refund is due.</p>
         <h2>5. Google Play purchases</h2>
         <p>If you buy through Google Play (where available), refunds follow Google Play’s refund policy and are handled by Google.</p>
-      </article>
+      <h2>6. Your legal rights</h2><p>This policy does not limit any refund, remedy or cancellation rights that cannot be excluded under applicable consumer law. Contact us if a payment or plan does not match what you were shown.</p></article>
     </SiteShell>
   );
 }
+

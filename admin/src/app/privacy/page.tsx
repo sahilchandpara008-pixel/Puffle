@@ -1,93 +1,32 @@
 import SiteShell from "@/components/SiteShell";
+import {PrivacyChoicesButton} from "@/components/PrivacyChoices";
+export const metadata={title:"Privacy Policy"};
+const email=process.env.NEXT_PUBLIC_SUPPORT_EMAIL||"help.puffle@gmail.com";
+export default function Privacy(){return <SiteShell><article className="prose-doc mx-auto max-w-3xl px-5 py-14 text-sm">
+ <p className="site-eyebrow">YOUR INFORMATION & YOUR CHOICES</p><h1 className="mt-4">Privacy Policy</h1><p>Updated 15 November 2026</p>
+ <h2>Who we are</h2><p>Puffle, operated as As Enterprice, provides an Android app with private cloud storage and creator channels, and this website. This notice explains our data practices. It is not permission for optional tracking: you make those choices separately.</p>
+ <h2>Information needed to provide Puffle</h2><ul>
+  <li><strong>Account and guest access:</strong> an account/guest identifier, email and account details you provide, authentication records, and a password handled securely by our authentication provider. We do not send passwords to Meta.</li>
+  <li><strong>Install and access:</strong> an installation identifier and the app’s download/source classification, used to maintain the session and apply the correct content audience. A source choice can be stored for the browser session so the right APK is offered.</li>
+  <li><strong>Your content:</strong> files you choose to upload to private cloud storage, and channel/video posts you submit for review. Public channel content is separate from your private cloud files.</li>
+  <li><strong>Purchases:</strong> plan, price, currency, order reference, transaction/UTR details, payment status, verification and subscription dates. Guest purchases remain on the same account when you add email and password. We do not ask for or store a UPI PIN, bank-login password or card-security code.</li>
+  <li><strong>Support, safety and security:</strong> requests, reports, blocked-channel choices and technical/security logs, which may include IP addresses and browser/device information.</li>
+ </ul>
+ <h2>Optional usage analytics in the app</h2><p>If you allow usage analytics, we record selected milestones such as app sessions, screen views, login, searches being used, video starts and progress, channel interactions, uploads, and subscription prompts. We use a random event/session ID and account ID to measure use and returning sessions. We do not include search words, passwords, cloud-file names or contents, video titles, or channel/video identifiers in these measurement events. Operational records needed to process an upload, purchase or support request are separate.</p>
+ <h2>Optional sharing with Meta for advertising</h2><p>If you allow advertising measurement, we may send website and app events to Meta (Facebook and Instagram) using Meta Pixel on the website and the server-side Conversions API. Events can include a page view, APK download-button tap, first app use, registration, login/session activity, video-use milestones, checkout and a verified paid-plan purchase.</p><ul>
+  <li><strong>Matching information:</strong> Meta click/cookie identifiers such as fbclid, _fbc and _fbp when available, IP address, browser/app user agent, an installation ID and a hashed account identifier. Where available, your email is normalised and hashed before sharing.</li>
+  <li><strong>App information:</strong> package name, app/build version, Android version, basic device model, locale/timezone, screen dimensions/density and CPU-core count. Unavailable optional fields are left blank.</li>
+  <li><strong>Conversion information:</strong> event name, event time, a deduplication ID, plan/order identifier, and verified purchase value/currency. We do not send UPI transaction replies, UTRs, payment credentials or private content to Meta.</li>
+ </ul><p><strong>Hashed identifiers are pseudonymised, not anonymous.</strong> Meta may match them with information it holds to attribute advertising, measure results, improve delivery and support advertising audiences, under <a href="https://www.facebook.com/privacy/policy/" target="_blank" rel="noreferrer">Meta’s Privacy Policy</a> and its business-tool terms. It can process data as an independent organisation. Advertising measurement is optional and does not unlock additional app content.</p><p>The Android app does not use an advertising SDK or collect Android Advertising ID, contacts, messages or precise location for this measurement. The website loads Meta’s browser script only after advertising permission. A download-button event means a tap, not proof that installation completed. Purchases are measured after server-side bank/provider verification; unverified replies, free grants and failed payments are not counted as Meta Purchase revenue.</p>
+ <h2>Google advertising and app measurement (optional)</h2>
+        <p>Google measurement has its own optional choice, separate from Meta and Puffle app analytics. On the website, after you opt in and we enable it, the Google tag or our Google Tag Manager container may receive page visits and APK-download button clicks, browser/device information, IP address, Google click identifiers such as gclid/gbraid/wbraid, and measurement cookies such as _gcl and _ga. A download-button click is not proof of installation.</p>
+        <p>In Android, after you opt in and we configure Firebase, Google Analytics for Firebase measures first opens, sessions, sign-up, login, checkout, generic screen and video interaction events, and server-verified plan purchases. It uses a Firebase app-instance identifier, app/device information and event timing. Verified purchase data includes a transaction identifier, plan name, amount and INR currency. These events may be shared with a linked Google Ads account for conversion measurement and campaign optimisation. Puffle does not send email addresses, passwords, private filenames, search text, UPI PINs, payment replies or video/channel identifiers in these Google events. Advertising ID collection and ad personalisation signals are disabled in this release.</p>
+        <p>Google is an independent provider. Its privacy practices are explained at <a href="https://policies.google.com/privacy">Google Privacy Policy</a> and <a href="https://policies.google.com/technologies/partner-sites">How Google uses information from sites and apps that use its services</a>. Google retention and linked-account settings are managed in our Google consoles; app data may be processed outside your country. You can turn Google measurement off in the website Privacy choices or app Account → Measurement preferences without losing your plan or changing content access. Puffle stops optional event calls and cancels unsent server purchases; Google may process consent-state signals when a previously loaded tag is disabled. Withdrawal does not recall already submitted data. Puffle's server delivery records are retained for up to 90 days; Google's own configured retention also applies.</p>
+        <h2>Your tracking choices</h2><p>On this website, choose Essential only or allow Meta and Google advertising measurement. Reopen <PrivacyChoicesButton/> from any page’s footer to change the choice. In supported app versions, open Profile → Measurement preferences for separate usage-analytics and advertising choices. You can decline or withdraw optional measurement and continue using the service under the same plan, storage and content-audience rules. We suppress queued app advertising events when permission is withdrawn. Withdrawal does not recall data already received by Meta; you can also use Meta’s privacy controls or contact us about a request.</p><p>Website preferences are saved for up to 180 days. Essential security, session, download-selection and payment processing continue even when optional measurement is off.</p>
+ <h2>Service providers and other disclosures</h2><ul><li><strong>Supabase:</strong> authentication, database, cloud/media storage and server functions.</li><li><strong>Vercel:</strong> website hosting and delivery.</li><li><strong>Meta:</strong> optional advertising measurement described above.</li><li><strong>Payment providers/UPI apps and Google Play:</strong> payment or store services when you use them, under their own notices.</li></ul><p>We do not sell private cloud files or passwords. We may disclose data to comply with applicable law, handle a valid legal request, prevent fraud, investigate abuse or protect people. Providers may process data in countries other than yours, according to the hosting locations and safeguards applicable to their services.</p>
+ <h2>Retention</h2><ul><li>Account and uploaded content: retained to provide your account, until removed or your account is deleted, subject to necessary backup, safety and legal retention.</li><li>Optional app activity and Meta delivery records in Puffle: up to 90 days. Ad-click matching records: up to 30 days. Local unsent app activity is bounded and expires after 24 hours.</li><li>Payment/accounting, disputes and fraud-prevention records: retained for applicable legal and operational obligations. Account deletion does not necessarily erase records we are required to keep.</li><li>Hosting and security logs follow the providers’ configured retention and our security needs. Meta’s retention and use after receipt follow its own policies.</li></ul>
+ <h2>Security, rights and deletion</h2><p>Connections use encryption in transit. Private files use server-enforced access rules and expiring links. These measures do not make a system risk-free. Keep your account credentials private.</p><p>You can request access, correction or deletion and withdraw optional tracking. Depending on your location, additional privacy or complaint rights may apply. Use Profile → Delete account in the app, visit <a href="/delete-account">Delete Account</a>, or email us. For privacy requests or complaints, write to <a href={`mailto:${email}`}>{email}</a> with the subject “Privacy request”. We may need to verify account ownership before acting.</p>
+ <h2>Adults only and changes</h2><p>Puffle is intended for people aged 18 and over. If you believe a child has supplied information, contact us. We will update this notice when data practices change and ask for renewed permission when a new optional purpose requires it.</p>
+ <h2>Contact</h2><p>Privacy, support and complaints: <a href={`mailto:${email}`}>{email}</a>. See also our <a href="/terms">Terms</a>, <a href="/refund">Refund Policy</a> and <a href="/community-guidelines">Community Guidelines</a>.</p>
+ </article></SiteShell>;}
 
-export const metadata = { title: "Privacy Policy" };
-const email = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "help.puffle@gmail.com";
-
-export default function Privacy() {
-  return (
-    <SiteShell>
-      <article className="prose-doc mx-auto max-w-3xl px-4 py-12 text-sm">
-        <h1>Privacy Policy</h1>
-        <p className="text-slate-500">Last updated: November 2026</p>
-
-        <h2>1. Introduction</h2>
-        <p>Puffle (“we”, “us”) provides private cloud storage and creator channels through our Android app and this website. This policy explains what we collect, why, who handles it, and the choices you have. By using Puffle you agree to this policy and to our <a href="/terms">Terms and Conditions</a>.</p>
-
-        <h2>2. What we collect</h2>
-        <h3>2.1 Account information</h3>
-        <ul>
-          <li>Email address and password (stored only as a secure hash) if you create an account.</li>
-          <li>Display name and profile picture, if you add them.</li>
-          <li>A random user ID. If you use the app without an account, we create an anonymous guest ID.</li>
-        </ul>
-        <h3>2.2 Content you add</h3>
-        <ul>
-          <li>Files you upload to your cloud storage (photos, videos, documents).</li>
-          <li>Channels, posts, comments of yours and the channels you join.</li>
-          <li>Reports you send us and the content you block.</li>
-        </ul>
-        <h3>2.3 Device and install information</h3>
-        <ul>
-          <li>A random install identifier created by the app, the app version and basic device type.</li>
-          <li>How the app was installed (for example from an advertisement link or directly) so that we can tell whether our own advertising works. This is decided once and does not change.</li>
-        </ul>
-        <h3>2.4 Payment records</h3>
-        <ul>
-          <li>Plan, amount, order reference, UPI transaction ID or UTR, status and timestamps.</li>
-          <li>We never see or store your UPI PIN, card details or bank login. UPI payments are made in the UPI app you choose.</li>
-        </ul>
-        <h3>2.5 What we do not collect</h3>
-        <ul>
-          <li>We do not use the Android advertising ID and do not include advertising SDKs in the app.</li>
-          <li>We do not read your contacts, messages or location.</li>
-        </ul>
-
-        <h2>3. How we use information</h2>
-        <ul>
-          <li>To provide the service: sign-in, storage, channels, playing and downloading content.</li>
-          <li>To activate and verify purchases and to prevent fraud and abuse.</li>
-          <li>To enforce our <a href="/community-guidelines">Community Guidelines</a>, review reports and protect other users.</li>
-          <li>To measure our own advertising. Where permitted, an anonymised purchase event may be sent to Meta (Facebook) for users who arrived through our ads.</li>
-          <li>To contact you about your account, payments or support requests.</li>
-        </ul>
-
-        <h2>4. Who handles your data</h2>
-        <p>We do not sell your personal data. We use these service providers, who process data only to run Puffle:</p>
-        <ul>
-          <li><b>Supabase</b>: database, sign-in and file storage.</li>
-          <li><b>Vercel</b>: hosting for this website.</li>
-          <li><b>Meta</b>: only the anonymised purchase events described above, for users who came from our ads.</li>
-          <li><b>Google Play</b>: if you install from Google Play, Google provides installation and, if enabled, billing services under its own policies.</li>
-        </ul>
-        <p>We may disclose information when the law requires it or to protect people from harm.</p>
-
-        <h2>5. Security</h2>
-        <p>Data is encrypted in transit. Your files are private and are opened only through secure links that expire quickly. Access rules are enforced on our servers. No system is perfectly secure, so please keep your password private.</p>
-
-        <h2>6. How long we keep data</h2>
-        <ul>
-          <li>Account and content: until you delete them or delete your account.</li>
-          <li>Payment records: up to 8 years, as required for tax and accounting. After you delete your account these are kept without any link to your profile.</li>
-          <li>Reports and abuse records: as long as needed to protect the service.</li>
-        </ul>
-
-        <h2>7. Your choices and rights</h2>
-        <ul>
-          <li><b>Delete your account</b> in the app (Profile → Delete account) or on the <a href="/delete-account">Delete Account</a> page. You can also ask us to delete only some of your data.</li>
-          <li><b>Access or correct</b> your information by writing to us.</li>
-          <li><b>Notifications</b> can be turned off in your phone settings at any time.</li>
-          <li><b>Report content</b> in the app or on the <a href="/report-content">Report Content</a> page.</li>
-        </ul>
-
-        <h2>8. Children</h2>
-        <p>Puffle is for people aged 18 and over. We do not knowingly collect information from children. If you believe a child has used Puffle, contact us and we will remove the account.</p>
-
-        <h2>9. Changes to this policy</h2>
-        <p>We may update this policy. The date above shows the latest version, and continued use means you accept the update.</p>
-
-        <h2>10. Contact</h2>
-        <p>Questions or requests: <a href={`mailto:${email}`}>{email}</a>.</p>
-      </article>
-    </SiteShell>
-  );
-}

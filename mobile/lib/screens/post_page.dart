@@ -12,6 +12,7 @@ import '../config.dart';
 import '../services/app_scope.dart';
 import '../services/app_state.dart';
 import '../services/playback_access.dart';
+import '../services/measurement.dart';
 import '../theme.dart';
 import '../widgets/ui.dart';
 import 'login_sheet.dart';
@@ -39,6 +40,8 @@ class _PostPageState extends State<PostPage> {
   bool _opening = false, _trailer = false, _uiFs = false;
   final _previewEnd = PreviewEndTracker();
   bool _premiumPromptOpen = false;
+  final Set<int> _progressSent = {};
+  bool _mediaPremium=false;
 
   @override
   void initState() {
@@ -92,6 +95,7 @@ class _PostPageState extends State<PostPage> {
         if (p == null) _error = 'This post is not available.';
       });
       if (p != null) {
+        Measurement.instance.track('ViewContent',{'screen':'Post'});
         try {
           // RLS enforces approval, channel visibility and audience for every suggestion.
           const fields = 'id,title,channel_id,status,hidden,channels(name),post_items(thumbnail_key,is_premium)';
@@ -177,6 +181,9 @@ class _PostPageState extends State<PostPage> {
     old?.removeListener(_onPreviewTick);
     c.addListener(_onPreviewTick);
     _previewEnd.reset();
+    _progressSent.clear();
+    _mediaPremium=premium;
+    Measurement.instance.track("VideoStart",{"media_type":"video","premium":premium,"preview":premium&&!allowed});
     c.play();
     setState(() { _vc = c; _imageUrl = null; _opening = false; _trailer = premium && !allowed; });
     await old?.dispose();
@@ -226,7 +233,10 @@ class _PostPageState extends State<PostPage> {
 
   void _onPreviewTick() {
     final controller = _vc;
-    if (!mounted || !_trailer || controller == null) return;
+    if (!mounted || controller == null) return;
+    final duration=controller.value.duration.inMilliseconds;
+    if(duration>0){final pct=controller.value.position.inMilliseconds*100/duration;for(final point in [25,50,75,100]){if(pct>=point&&_progressSent.add(point)){Measurement.instance.track("VideoProgress",{"progress":point,"premium":_mediaPremium,"preview":_trailer});}}}
+    if(!_trailer)return;
     final value = controller.value;
     if (_previewEnd.update(position: value.position, duration: value.duration, playing: value.isPlaying)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -238,6 +248,7 @@ class _PostPageState extends State<PostPage> {
   Future<void> _showPremiumPrompt({bool previewFinished = false}) async {
     if (!mounted || _premiumPromptOpen) return;
     _premiumPromptOpen = true;
+    Measurement.instance.track(previewFinished?"PreviewComplete":"SubscriptionPrompt",{"preview":previewFinished});
     final app = AppScope.of(context);
     final subscribe = await showModalBottomSheet<bool>(
       context: context,
@@ -761,4 +772,5 @@ class _PlayerState extends State<_Player> {
         );
       });
 }
+
 

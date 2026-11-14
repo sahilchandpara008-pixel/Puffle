@@ -7,6 +7,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import '../config.dart';
+import 'measurement.dart';
+import 'google_measurement.dart';
 import '../models/status.dart';
 import '../payments/pending_queue.dart';
 import '../payments/upi.dart';
@@ -34,13 +36,17 @@ class AppState extends ChangeNotifier {
     }
     await _recordInstallOnce();
     await refresh();
+    unawaited(Measurement.instance.start());
     flushPending();
     _rt = sb
         .channel('mode')
         .onPostgresChanges(event: PostgresChangeEvent.all, schema: 'public', table: 'app_mode', callback: (_) => refresh())
         .subscribe();
-    _poll = Timer.periodic(const Duration(seconds: 60), (_) => refresh());
-    sb.auth.onAuthStateChange.listen((_) => refresh());
+    _poll = Timer.periodic(const Duration(seconds:60),(_){refresh();GoogleMeasurement.instance.sync(Measurement.instance.google,force:true);Measurement.instance.flush();});
+    sb.auth.onAuthStateChange.listen((event) async {
+      await refresh();
+      if(event.event==AuthChangeEvent.signedIn||event.event==AuthChangeEvent.userUpdated){await Measurement.instance.start();}
+    });
   }
 
   Future<void> _recordInstallOnce() async {
@@ -101,7 +107,10 @@ class AppState extends ChangeNotifier {
   // ---- payments -------------------------------------------------------------------------
   Future<Map<String, dynamic>> createOrder(String planId) async {
     final r = await sb.rpc('create_order', params: {'p_plan': planId});
-    return Map<String, dynamic>.from(r as Map);
+    final order=Map<String,dynamic>.from(r as Map);
+    await GoogleMeasurement.instance.sync(Measurement.instance.google,force:true);
+    unawaited(GoogleMeasurement.instance.checkout(order));
+    return order;
   }
 
   Future<Map<String, dynamic>> claimFree(String planId) async {
@@ -146,3 +155,4 @@ class AppState extends ChangeNotifier {
     super.dispose();
   }
 }
+

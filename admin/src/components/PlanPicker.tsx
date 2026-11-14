@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
+import {trackWebEvent} from "./MetaPixel";
 
 type P = { id: string; name: string; price: string; label: string; badge: string | null };
 
@@ -17,7 +18,7 @@ export default function PlanPicker({ plans }: { plans: P[] }) {
             key={p.id}
             role="radio"
             aria-checked={p.id === sel}
-            onClick={() => setSel(p.id)}
+            onClick={() => {setSel(p.id);void trackWebEvent("PlanViewed");}}
             className={`flex w-full items-center gap-3 px-4 py-3 text-left ${p.id === sel ? "bg-violet-50 ring-1 ring-inset ring-primary" : ""}`}
           >
             <span className={`grid h-5 w-5 place-items-center rounded-full border ${p.id === sel ? "border-primary" : "border-slate-300"}`}>
@@ -36,3 +37,4 @@ export default function PlanPicker({ plans }: { plans: P[] }) {
     </div>
   );
 }
+

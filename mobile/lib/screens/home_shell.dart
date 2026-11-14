@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/app_scope.dart';
+import '../services/measurement.dart';
 import 'channels_screen.dart';
 import 'cloud_screen.dart';
 import 'explore_screen.dart';
@@ -16,6 +17,7 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   int _i = 1;
+  void _tab(int index){setState(()=>_i=index);Measurement.instance.track('ScreenView',{'screen':['Cloud','Home','Explore','Channel','Profile'][index]});}
 
   @override
   void initState() {
@@ -34,6 +36,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     // Retry queued payment results on every resume.
     if (s == AppLifecycleState.resumed) {
       final app = AppScope.of(context);
+      Measurement.instance.resumed();
       app.flushPending();
       app.refresh();
     }
@@ -47,7 +50,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     final premiumTab = app.showPremiumEntry && !app.status.isPremium;
     final pages = [
       const CloudScreen(),
-      HomeScreen(onSearch: () => setState(() => _i = 2), onProfile: () => setState(() => _i = 4), onSeeAllChannels: () => setState(() => _i = 3)),
+      HomeScreen(onSearch: () => _tab(2), onProfile: () => _tab(4), onSeeAllChannels: () => _tab(3)),
       const ExploreScreen(),
       const ChannelsScreen(),
       const ProfileScreen(),
@@ -56,7 +59,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       body: SafeArea(bottom: false, child: IndexedStack(index: _i, children: pages)),
       bottomNavigationBar: OrbixNavBar(
         index: _i,
-        onTap: (v) => setState(() => _i = v),
+        onTap: _tab,
         items: [
           const NavItem(Icons.cloud_outlined, 'Cloud', Icons.cloud),
           const NavItem(Icons.grid_view_outlined, 'Home', Icons.grid_view_rounded),
@@ -68,3 +71,4 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     );
   }
 }
+

@@ -1,3 +1,5 @@
+import {Button} from "@/components/admin/ui";
+import type {ReportQuery} from "@/lib/reporting";
 import { requireAdmin } from "@/lib/admin";
 import { PageHeader, Card, Field, Input, Textarea, Select, Hidden, Badge, ErrorNote } from "@/components/admin/ui";
 import { SubmitButton } from "@/components/admin/client";
@@ -45,7 +47,7 @@ function PlanForm({ p, impact }: { p?: Record<string, any>; impact?: { subscribe
   );
 }
 
-export default async function Plans() {
+export default async function Plans({searchParams:q}:{searchParams:ReportQuery}) {
   const { sb } = await requireAdmin(true);
   const [mode, plans, impact, claims] = await Promise.all([
     sb.from("app_mode").select("*").eq("id", 1).single(),
@@ -55,6 +57,7 @@ export default async function Plans() {
   ]);
   const m = (mode.data ?? {}) as Record<string, any>;
   const imp = (impact.data ?? {}) as Record<string, { subscribers: number; orders: number }>;
+  const visible=(plans.data??[]).filter(p=>(!q.q||p.name.toLowerCase().includes(q.q.toLowerCase()))&&(!q.visibility||(q.visibility==="active"?p.active:!p.active))).sort((a,b)=>q.sort==="price_low"?a.price_inr-b.price_inr:q.sort==="price_high"?b.price_inr-a.price_inr:q.sort==="duration"?(a.duration_hours||a.duration_days*24)-(b.duration_hours||b.duration_days*24):q.sort==="name"?a.name.localeCompare(b.name):a.position-b.position);
   const cl = (claims.data ?? {}) as { organic?: number; ads?: number };
   return (
     <>
@@ -80,9 +83,9 @@ export default async function Plans() {
           </form>
         </Card>
       </div>
-      <h2 className="mb-2 mt-6 text-sm font-semibold text-gray-900">Plans</h2>
+      <h2 className="mb-2 mt-6 text-sm font-semibold text-gray-900">Plans</h2><form className="mb-4 grid gap-2 sm:grid-cols-4"><Input name="q" defaultValue={q.q??""} placeholder="Search plan" aria-label="Search plan"/><Select name="visibility" defaultValue={q.visibility??""} aria-label="Visibility"><option value="">All plans</option><option value="active">Shown in app</option><option value="hidden">Hidden</option></Select><Select name="sort" defaultValue={q.sort??""} aria-label="Sort"><option value="">Display order</option><option value="price_low">Price: low to high</option><option value="price_high">Price: high to low</option><option value="duration">Duration: shortest first</option><option value="name">Name</option></Select><Button variant="secondary">Apply</Button></form>
       <div className="grid gap-4 lg:grid-cols-2">
-        {(plans.data ?? []).map((p) => (
+        {visible.map((p) => (
           <Card key={p.id}>
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <span className="font-semibold text-gray-900">{p.name}</span>
@@ -97,3 +100,4 @@ export default async function Plans() {
     </>
   );
 }
+

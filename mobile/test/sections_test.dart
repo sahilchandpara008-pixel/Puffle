@@ -128,7 +128,7 @@ void main() {
     testWidgets('guest: Log in card', (tester) async {
       await tester.pumpWidget(host(appWith(st(guest: true)), const CloudScreen()));
       await tester.pumpAndSettle();
-      expect(find.text('Log in to get 15 GB free cloud storage'), findsOneWidget);
+      expect(find.text('Add an email to save your account'), findsOneWidget);
     });
     for (final k in ['LO', 'LA']) {
       testWidgets('$k: 0 GB -> Get 2 TB with Premium', (tester) async {
@@ -168,3 +168,4 @@ void scopeAboveNavigatorTests() {
     expect(find.text('plan:true'), findsOneWidget);
   });
 }
+

@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 import 'package:video_thumbnail/video_thumbnail.dart' as vt;
 
 import '../services/app_state.dart';
+import '../services/measurement.dart';
 import '../theme.dart';
 import '../widgets/ui.dart';
 import 'explore_screen.dart';
@@ -60,6 +61,7 @@ class _ChannelPageState extends State<ChannelPage> {
         await sb.from('channel_members').delete().eq('channel_id', widget.channelId).eq('user_id', uid);
       } else {
         await sb.from('channel_members').insert({'channel_id': widget.channelId, 'user_id': uid});
+        Measurement.instance.track('ChannelJoined');
       }
       await _load();
     } catch (_) {
@@ -247,6 +249,7 @@ class _NewPostScreenState extends State<NewPostScreen> {
         await sb.from('posts').delete().eq('id', post['id'] as String);
         rethrow;
       }
+      Measurement.instance.track('VideoUploaded',{'media_type':'video'});
       if (mounted) Navigator.pop(context, true);
       return;
     } on StorageException catch (e) {
@@ -354,4 +357,5 @@ class _NewPostScreenState extends State<NewPostScreen> {
     );
   }
 }
+
 

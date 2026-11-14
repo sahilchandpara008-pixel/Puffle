@@ -15,6 +15,8 @@ const groups: { label: string; items: Item[] }[] = [
     { href: "/workspace-7f3c9a2e/requests", label: "Requests", icon: "M4 4h16v13H8l-4 4z M8 8h8 M8 12h5", count: "requests", owner: true },
   ] },
   { label: "Business", items: [
+    { href: "/workspace-7f3c9a2e/google", label: "Google Ads setup", icon: "M4 20V10 M10 20V4 M16 20v-8 M22 20H2", owner: true },
+    { href: "/workspace-7f3c9a2e/analytics", label: "Analytics", icon: "M4 20V10 M10 20V4 M16 20v-8 M22 20H2", owner: true },
     { href: "/workspace-7f3c9a2e/payments", label: "Payments", icon: "M3 5h18v14H3z M3 9h18 M7 15h4", count: "payments", owner: true },
     { href: "/workspace-7f3c9a2e/plans", label: "Premium plans", icon: "M3 6l4 12h10l4-12-6 4-3-7-3 7z M7 21h10", owner: true },
     { href: "/workspace-7f3c9a2e/meta", label: "Meta Pixel", icon: "M4 20V10 M10 20V4 M16 20v-8 M22 20H2", owner: true },
@@ -44,3 +46,4 @@ export default function Nav({ owner, counts }: { owner: boolean; counts: Record<
     })}
   </nav>;
 }
+

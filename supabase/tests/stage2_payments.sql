@@ -48,6 +48,7 @@ begin
   insert into auth.users (id, instance_id, aud, role, is_anonymous) values (ug,'00000000-0000-0000-0000-000000000000','authenticated','authenticated',true);
   select id into p_trial from public.plans where code='trial'; select id into p_silver from public.plans where code='silver';
   select id into p_gold from public.plans where code='gold'; select id into p_plat from public.plans where code='platinum';
+  update public.plans set price_inr=49 where id=p_trial;
   update public.payment_settings set activation_mode='instant';
 
   -- guests (anonymous sessions) may buy; they add an email later. Cleaned up so later counts are unchanged.
@@ -239,7 +240,14 @@ begin
   perform pg_temp.rec('plan_catalog revision bumped', (select revision>=10 from public.plan_catalog));
 
   update public.meta_settings set enabled=true, pixel_id='1234567890', capi_token='tok';
+  perform pg_temp.imp(u8,false);
+  perform public.set_measurement_preferences(true,true,jsonb_build_object('install_id',gen_random_uuid()::text,'extinfo',jsonb_build_array('a2','com.pufflecloud.app','9','1.0.8','14','','en_IN','IST','','1080','1920','3','4','','','')));
+  reset role;
   r := pg_temp.pay(u8, p_trial, 'METATX1234');
+  perform pg_temp.rec('unverified payment never queues a Meta Purchase',(select count(*) from public.meta_events where user_id=u8 and event_name='Purchase')=0);
+  select id into v_o1 from public.payment_orders where user_id=u8 and txn_id='METATX1234';
+  perform pg_temp.imp(owner_id,false);perform public.admin_confirm_bank(v_o1);reset role;
+  perform private.enqueue_meta('Purchase',u8,v_o1,99999);
   perform pg_temp.rec('Purchase + InitiateCheckout events queued for paid order (with value)', (select count(*) from public.meta_events where user_id=u8 and event_name='Purchase' and value_inr>0)=1 and (select count(*) from public.meta_events where user_id=u8 and event_name='InitiateCheckout' and value_inr>0)>=1);
   update public.app_mode set free_plans_for='everyone'; update public.plans set free_eligible=true where id=p_silver;
   perform pg_temp.imp(u10,false); perform public.claim_free_plan(p_silver); reset role;
@@ -248,3 +256,4 @@ begin
   select count(*), count(*) filter (where not x.ok), string_agg(x.n, ' | ') filter (where not x.ok) into total, failed, fail_list from t_res x;
   raise exception 'RESULT total=% failed=% :: %', total, failed, coalesce(fail_list,'none');
 end $outer$;
+

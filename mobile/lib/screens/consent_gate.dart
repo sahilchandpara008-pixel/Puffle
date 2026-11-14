@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../config.dart';
+import '../services/measurement.dart';
+import 'measurement_preferences.dart';
 import '../theme.dart';
 
 const consentPrefKey = 'terms_accepted_v1';
@@ -26,15 +28,19 @@ class ConsentGate extends StatefulWidget {
 }
 
 class _ConsentGateState extends State<ConsentGate> {
+  bool _termsReady=false, _shown=false;
+  void _ready(){if(_termsReady)_measurement();}
   @override
   void initState() {
     super.initState();
+    Measurement.instance.addListener(_ready);
     WidgetsBinding.instance.addPostFrameCallback((_) => _check());
   }
 
   Future<void> _check() async {
     final p = await SharedPreferences.getInstance();
-    if (p.getBool(consentPrefKey) == true || !mounted) return;
+    if (!mounted) return;
+    if(p.getBool(consentPrefKey)==true){_termsReady=true;await _measurement();return;}
     final agreed = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -44,8 +50,19 @@ class _ConsentGateState extends State<ConsentGate> {
     if (agreed == true) {
       await p.setBool(consentPrefKey, true);
       await widget.requestNotifications();
+      _termsReady=true;
+      await _measurement();
     }
   }
+
+  Future<void> _measurement() async {
+    if(!mounted||_shown||!Measurement.instance.ready||Measurement.instance.hasChoice)return;
+    _shown=true;
+    await Navigator.push(context,MaterialPageRoute(builder:(_)=>const MeasurementPreferences()));
+  }
+
+  @override
+  void dispose(){Measurement.instance.removeListener(_ready);super.dispose();}
 
   @override
   Widget build(BuildContext context) => widget.child;
@@ -97,7 +114,7 @@ class _ConsentDialogState extends State<ConsentDialog> {
               TextSpan(text: 'Privacy Policy', style: link, recognizer: _privacy),
               const TextSpan(text: ' and '),
               TextSpan(text: 'Terms & Conditions', style: link, recognizer: _terms),
-              const TextSpan(text: '.'),
+              const TextSpan(text: '. Optional advertising and analytics choices are separate and are off by default.'),
             ]),
             textAlign: TextAlign.center,
           ),
@@ -108,3 +125,4 @@ class _ConsentDialogState extends State<ConsentDialog> {
     );
   }
 }
+

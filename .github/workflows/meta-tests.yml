@@ -1,0 +1,18 @@
+name: meta-events
+on:
+  push:
+    branches: [main]
+    paths: ["supabase/functions/meta-send/**", "supabase/functions/google-send/**", ".github/workflows/meta-tests.yml"]
+  pull_request:
+    paths: ["supabase/functions/meta-send/**"]
+jobs:
+  payloads:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with: {deno-version: v2.x}
+      - run: deno test supabase/functions/meta-send/payload_test.ts supabase/functions/google-send/payload_test.ts
+      - run: deno check supabase/functions/google-send/index.ts
+      - run: deno check supabase/functions/meta-send/index.ts
+

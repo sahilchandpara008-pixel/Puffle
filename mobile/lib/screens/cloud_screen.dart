@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../services/app_scope.dart';
 import '../services/app_state.dart';
+import '../services/measurement.dart';
 import '../theme.dart';
 import 'login_sheet.dart';
 import 'premium_screen.dart';
@@ -78,6 +79,7 @@ class _CloudScreenState extends State<CloudScreen> {
       final file = reg['file'] as Map;
       await sb.storage.from('cloud').uploadToSignedUrl(up['path'] as String, up['token'] as String, File(f.path!));
       await _fn({'action': 'finalize', 'id': file['id']});
+      Measurement.instance.track('CloudUploaded',{'media_type':'file'});
       messenger.showSnackBar(const SnackBar(content: Text('Uploaded')));
     } on FunctionException catch (e) {
       messenger.showSnackBar(SnackBar(content: Text(e.status == 403 || e.status == 413 ? 'Storage full or not allowed' : 'Upload failed')));
@@ -116,6 +118,7 @@ class _CloudScreenState extends State<CloudScreen> {
     if (ok != true) return;
     try {
       await _fn({'action': 'delete', 'id': id});
+      Measurement.instance.track('CloudDeleted',{'media_type':'file'});
     } catch (_) {
       _fail('Could not delete this file. Please try again.');
     }
@@ -164,7 +167,7 @@ class _CloudScreenState extends State<CloudScreen> {
                 if (_progress != null) const Padding(padding: EdgeInsets.only(top: 8), child: LinearProgressIndicator()),
               ]))),
               if (s.isGuest)
-                _Prompt(text: s.isPremium ? 'Add your email to start using your cloud storage' : 'Log in to get 15 GB free cloud storage', button: s.isPremium ? 'Add email' : 'Log in', onTap: () async { await requireAccount(context); await _load(); })
+                _Prompt(text: s.isPremium ? 'Add your email to start using your cloud storage' : 'Add an email to save your account', button: s.isPremium ? 'Add email' : 'Log in', onTap: () async { await requireAccount(context); await _load(); })
               else if (quota == 0 && app.showPrices)
                 _Prompt(text: 'Get 2 TB with Premium', button: 'See plans', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PremiumScreen())))
               else if (quota == 0)
@@ -201,3 +204,4 @@ class _Prompt extends StatelessWidget {
         ]),
       );
 }
+
