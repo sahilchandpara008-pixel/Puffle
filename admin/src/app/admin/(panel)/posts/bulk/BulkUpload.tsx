@@ -63,10 +63,14 @@ export default function BulkUpload({ channels, initialChannelId }: { channels: C
         const filesToClean: string[] = [];
         try {
           if (!postId) {
-            const { data, error } = await sb.from("posts").insert({ channel_id: channel.id, title: row.title.trim(), description: row.description, audience: selectedAudience, status: "draft" }).select("id").single();
-            if (error || !data) throw new Error(error?.message ?? "Could not create this post.");
-            postId = data.id as string;
+            postId = crypto.randomUUID();
             patch(row.id, { postId });
+          }
+          const { data: existingPost, error: postLookupError } = await sb.from("posts").select("id").eq("id", postId).maybeSingle();
+          if (postLookupError) throw new Error(postLookupError.message);
+          if (!existingPost) {
+            const { data, error } = await sb.from("posts").insert({ id: postId, channel_id: channel.id, title: row.title.trim(), description: row.description, audience: selectedAudience, status: "draft" }).select("id").single();
+            if (error || !data) throw new Error(error?.message ?? "Could not create this post.");
           }
           if (row.file && !mediaDone) {
             const { data: existing, error: lookupError } = await sb.from("post_items").select("id").eq("post_id", postId).limit(1);
