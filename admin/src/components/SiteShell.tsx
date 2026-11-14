@@ -1,5 +1,6 @@
 import Link from "next/link";
 import MetaPixel from "./MetaPixel";
+import DownloadButton from "@/app/d/DownloadButton";
 
 const email = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "help.puffle@gmail.com";
 
@@ -24,7 +25,7 @@ export default function SiteShell({ children, bare = false }: { children: React.
             <Link href="/#security" className="hidden sm:inline">Security</Link>
             <Link href="/#pricing">Pricing</Link>
             <Link href="/report-content" className="hidden sm:inline">Help Center</Link>
-            <Link href="/d" className="btn !py-1.5">Download</Link>
+            <DownloadButton className="btn !py-1.5" label="Download" />
           </nav>
         </div>
       </header>
@@ -54,3 +55,4 @@ export default function SiteShell({ children, bare = false }: { children: React.
     </div>
   );
 }
+

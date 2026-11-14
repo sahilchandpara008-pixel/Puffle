@@ -1,5 +1,6 @@
 import Link from "next/link";
 import SiteShell from "@/components/SiteShell";
+import DownloadButton from "./d/DownloadButton";
 import PlanPicker from "@/components/PlanPicker";
 import { loadPlans, durationLabel } from "@/lib/plans";
 import { inr } from "@/lib/format";
@@ -37,7 +38,7 @@ export default async function Home() {
         <div className="mx-auto max-w-4xl px-4 py-20 text-center">
           <h1 className="text-4xl md:text-6xl font-bold text-slate-900 leading-tight">15 GB free cloud storage for everyone</h1>
           <p className="mt-4 text-slate-600">Simple, secure and swift. Your digital life, organised. Up to 2 TB with Premium.</p>
-          <Link href="/d" className="btn mt-8 px-8 py-3">Download for Android</Link>
+          <DownloadButton className="btn mt-8 px-8 py-3" label="Download for Android" />
         </div>
       </section>
 
@@ -103,3 +104,4 @@ export default async function Home() {
     </SiteShell>
   );
 }
+
