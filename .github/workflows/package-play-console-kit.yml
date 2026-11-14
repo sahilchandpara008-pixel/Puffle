@@ -1,0 +1,57 @@
+name: Package Play Console kit
+on:
+  push:
+    branches: [main]
+    paths: [".github/workflows/package-play-console-kit.yml", "tool/build_play_assets.py", "tool/store_capture_test.dart", "tool/PLAY-CONSOLE-README.txt"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: { flutter-version: "3.27.4", cache: true }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: Generate current Puffle graphics
+        run: |
+          python -m pip install Pillow==12.0.0
+          python tool/build_play_assets.py
+          cp mobile/assets/icon.png play-console-assets/app-icon-runtime.png
+          curl --fail --location 'https://raw.githubusercontent.com/google/fonts/main/ofl/inter/Inter%5Bopsz%2Cwght%5D.ttf' --output mobile/store-capture/Inter.ttf
+          cp "$FLUTTER_ROOT/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf" mobile/store-capture/MaterialIcons.otf
+      - name: Render actual app widgets with sample content
+        working-directory: mobile
+        run: |
+          flutter pub get
+          cp ../tool/store_capture_test.dart test/store_capture_test.dart
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('lib/theme.dart')
+          text=p.read_text().replace('GoogleFonts.interTextTheme(base.textTheme)',"base.textTheme.apply(fontFamily: 'Inter')")
+          text=text.replace('GoogleFonts.inter(',"TextStyle(fontFamily: 'Inter', ")
+          p.write_text(text)
+          PY
+          flutter test test/store_capture_test.dart --dart-define=PLAY_STORE=true
+      - name: Package original signed builds with graphics
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          tag=$(gh release view --json tagName --jq .tagName)
+          [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
+          mkdir kit
+          gh release download "$tag" --pattern '*.apk' --pattern '*.aab' --pattern 'checksums.txt' --dir kit
+          (cd kit && sha256sum -c checksums.txt)
+          cp -r play-console-assets kit/
+          cp tool/PLAY-CONSOLE-README.txt kit/README.txt
+          (cd kit && find . -type f ! -name kit-checksums.txt -print0 | sort -z | xargs -0 sha256sum > kit-checksums.txt)
+          (cd kit && zip -r "../Puffle-Play-Console-kit-$tag.zip" .)
+          gh release upload "$tag" "Puffle-Play-Console-kit-$tag.zip" --clobber
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Puffle-Play-Console-assets
+          path: play-console-assets/
