@@ -7,6 +7,7 @@ function LoginForm() {
   const q = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [err, setErr] = useState(q.get("error") ?? "");
   const [busy, setBusy] = useState(false);
 
@@ -36,7 +37,14 @@ function LoginForm() {
         <input className={input} type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
       </label>
       <label className="block text-sm"><span className="mb-1 block font-medium text-gray-700">Password</span>
-        <input className={input} type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
+        <div className="relative">
+          <input aria-label="Password" className={input + " pr-12"} type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
+          <button type="button" aria-label={showPassword ? "Hide password" : "Show password"} aria-pressed={showPassword} onClick={() => setShowPassword(value => !value)} className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-xl text-slate-500 hover:text-teal-700">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              {showPassword ? <><path d="m3 3 18 18 M10.6 10.6a2 2 0 0 0 2.8 2.8 M9.5 5.2A11 11 0 0 1 12 5c7 0 10 7 10 7a18 18 0 0 1-3.2 4.2 M6.3 6.3A18 18 0 0 0 2 12s3 7 10 7a11 11 0 0 0 5-1.2" /></> : <><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></>}
+            </svg>
+          </button>
+        </div>
       </label>
       {err && <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">{err}</p>}
       <button className="w-full rounded-lg bg-teal-700 px-4 py-3 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-50" disabled={busy}>{busy ? "Signing in…" : "Sign in"}</button>
