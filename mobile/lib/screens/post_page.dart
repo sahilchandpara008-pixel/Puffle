@@ -33,7 +33,7 @@ class _PostPageState extends State<PostPage> {
   Map<String, dynamic>? _post;
   List<Map<String, dynamic>> _items = [];
   VideoPlayerController? _vc;
-  String? _error, _poster;
+  String? _error, _poster, _imageUrl;
   bool _opening = false, _trailer = false, _uiFs = false;
 
   @override
@@ -163,7 +163,7 @@ class _PostPageState extends State<PostPage> {
       return;
     }
     c.play();
-    setState(() { _vc = c; _opening = false; _trailer = premium && !allowed; });
+    setState(() { _vc = c; _imageUrl = null; _opening = false; _trailer = premium && !allowed; });
     await old?.dispose();
   }
 
@@ -184,6 +184,7 @@ class _PostPageState extends State<PostPage> {
       _items = [];
       _suggestions = [];
       _poster = null;
+      _imageUrl = null;
       _error = null;
       _trailer = false;
       _opening = true;
@@ -272,7 +273,9 @@ class _PostPageState extends State<PostPage> {
           : p == null
               ? const Center(child: CircularProgressIndicator())
               : ListView(padding: const EdgeInsets.all(16), children: [
-                  if (_vc != null && _vc!.value.isInitialized) ...[
+                  if (_imageUrl != null)
+                    ClipRRect(borderRadius: BorderRadius.circular(16), child: Image.network(_imageUrl!, fit: BoxFit.contain, errorBuilder: (_, __, ___) => const Padding(padding: EdgeInsets.all(24), child: Text('Could not load this image. Please try again.'))))
+                  else if (_vc != null && _vc!.value.isInitialized) ...[
                     _Player(controller: _vc!, title: (p['title'] as String?) ?? '', fullscreen: false, onFullscreen: _toggleFullscreen, onPrevious: _previous, onNext: _next),
                     if (_trailer)
                       Container(
@@ -296,7 +299,7 @@ class _PostPageState extends State<PostPage> {
                           Container(
                             decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
                             padding: const EdgeInsets.all(12),
-                            child: const Icon(Icons.play_arrow_rounded, size: 42, color: Colors.white, semanticLabel: 'Play'),
+                            child: Icon((_items.first['mime'] as String? ?? '').startsWith('image/') ? Icons.image_outlined : Icons.play_arrow_rounded, size: 42, color: Colors.white, semanticLabel: (_items.first['mime'] as String? ?? '').startsWith('image/') ? 'View image' : 'Play'),
                           ),
                       ]),
                     ),
@@ -305,7 +308,7 @@ class _PostPageState extends State<PostPage> {
                   if (((p['description'] as String?) ?? '').isNotEmpty)
                     Padding(padding: const EdgeInsets.only(top: 6), child: Text(p['description'] as String, style: const TextStyle(color: Tokens.muted, fontSize: 13, height: 1.4))),
                   const SizedBox(height: 14),
-                  if (_items.isEmpty) const EmptyState(icon: Icons.hourglass_empty_rounded, title: 'No video yet', message: 'The creator has not added a video to this post.'),
+                  if (_items.isEmpty && ((p['description'] as String?) ?? '').isEmpty) const EmptyState(icon: Icons.hourglass_empty_rounded, title: 'No video yet', message: 'The creator has not added a video to this post.'),
                   if (_suggestions.isNotEmpty) ...[
                     const Text('Up next', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 8),
