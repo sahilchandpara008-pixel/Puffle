@@ -1,0 +1,31 @@
+name: Publish successful Android release
+on:
+  workflow_run:
+    workflows: [mobile]
+    types: [completed]
+    branches: [main]
+permissions:
+  actions: read
+  contents: write
+jobs:
+  publish:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Puffle-apks
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+      - run: sha256sum -c checksums.txt
+      - name: Publish verified APKs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          BUILD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          version=$(gh api "repos/$GH_REPO/contents/mobile/pubspec.yaml?ref=$BUILD_SHA" --jq .content | base64 -d | sed -n 's/^version: *//p' | tr -d '\r')
+          version="${version%%+*}"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
+          gh release view "v$version" >/dev/null 2>&1 || gh release create "v$version" --target "$BUILD_SHA" --title "Puffle v$version" --notes "Verified Android build. Install Puffle.apk; Puffle-ads.apk preserves ad attribution." --latest
+          gh release upload "v$version" Puffle.apk Puffle-ads.apk checksums.txt --clobber
