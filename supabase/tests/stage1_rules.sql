@@ -10,6 +10,7 @@ declare
   plan_gold uuid; n int; ok boolean; raised boolean; r1 text; r2 text; r3 text; r4 text; r5 text; v jsonb; t text;
   fail_list text; total int; failed int;
 begin
+  insert into private.owner_bootstrap(email) values ('owner@example.test') on conflict do nothing;
   create temp table t_res (n text, ok boolean) on commit drop;
   create function pg_temp.rec(nm text, o boolean) returns void language plpgsql security definer as $f$ begin insert into pg_temp.t_res values (nm, coalesce(o,false)); end $f$;
   create function pg_temp.imp(uid uuid, anon boolean) returns void language plpgsql as $f$
@@ -20,7 +21,7 @@ begin
   end $f$;
 
   insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, is_anonymous) values
-   (owner_id,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','liveperfumes7@gmail.com',now(),false),
+   (owner_id,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','owner@example.test',now(),false),
    (a,'00000000-0000-0000-0000-000000000000','authenticated','authenticated',null,null,true),
    (b,'00000000-0000-0000-0000-000000000000','authenticated','authenticated',null,null,true),
    (g,'00000000-0000-0000-0000-000000000000','authenticated','authenticated',null,null,true),
