@@ -8,13 +8,13 @@ class Tokens {
   static const border = Color(0xFF29414C);
   static const text = Color(0xFFFFFFFF);
   static const muted = Color(0xFFADC0C9);
-  static const primary = Color(0xFF168C87);
+  static const primary = Color(0xFF137D79);
   static const accent = Color(0xFF71E3D0);
   static const gold = Color(0xFFFFC94D); // Premium only
   static const success = Color(0xFF35D07F);
   static const warning = Color(0xFFFFB020);
   static const danger = Color(0xFFFF4D5E);
-  static const gradient = LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF168C87), Color(0xFF17697E)]);
+  static const gradient = LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF137D79), Color(0xFF17697E)]);
 }
 
 /// A consistent line height keeps headings and supporting copy readable.
@@ -91,7 +91,7 @@ ThemeData buildTheme() {
       trackColor: WidgetStateProperty.resolveWith((st) => st.contains(WidgetState.selected) ? Tokens.primary : Tokens.border),
       trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
     ),
-    cardTheme: CardTheme(
+    cardTheme: base.cardTheme.copyWith(
       margin: EdgeInsets.zero,
       color: Tokens.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: Tokens.border)),
@@ -141,3 +141,4 @@ class GradientButton extends StatelessWidget {
         ),
       );
 }
+
