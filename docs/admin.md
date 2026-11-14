@@ -1,4 +1,4 @@
-# Orbix admin panel
+# Puffle admin panel
 
 URL: `/admin` on the website (sign in at `/admin/login`). Only users in the `admins` table can enter.
 Every permission is enforced in the database (RLS policies and owner-checked functions); the pages only show what the database allows.
