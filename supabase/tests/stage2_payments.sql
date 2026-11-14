@@ -6,6 +6,7 @@ do $outer$
 declare
   owner_id uuid := gen_random_uuid();
   u1 uuid; u2 uuid; ua uuid; ug uuid; u4 uuid; u5 uuid; u6 uuid; u7 uuid; u8 uuid; u9 uuid; u10 uuid; u11 uuid;
+  saved_guest uuid;
   p_trial uuid; p_silver uuid; p_gold uuid; p_plat uuid;
   c jsonb; c2 jsonb; r jsonb; v_o1 uuid; v_o2 uuid; v_o3 uuid; v_o4 uuid; v_ref text; v_st text; v_n int; v_raised boolean; v_t text;
   v_end timestamptz; i int; plans uuid[]; fail_list text; total int; failed int;
@@ -55,6 +56,23 @@ begin
   perform pg_temp.rec('guest can create order', not v_raised and exists (select 1 from public.payment_orders where user_id = ug and status = 'pending'));
   delete from public.meta_events where user_id = ug;
   delete from public.payment_orders where user_id = ug;
+  -- Exercise the full ads guest purchase -> saved account -> pending channel flow.
+  saved_guest := pg_temp.mk(null,true);
+  perform pg_temp.imp(saved_guest,true);
+  c := public.create_order(p_gold);
+  r := public.report_result((c->>'order_id')::uuid, 'txnId=GUESTSAVE2026&responseCode=00&Status=SUCCESS&txnRef='||(c->>'reference'));
+  reset role;
+  perform pg_temp.rec('ads guest payment activates the same guest account', r->>'status'='paid' and private.has_plan(saved_guest));
+  update auth.users set is_anonymous=false,email='saved-guest@example.test',email_confirmed_at=now() where id=saved_guest;
+  perform pg_temp.imp(saved_guest,true); c2 := public.my_status(); reset role;
+  perform pg_temp.rec('saved guest keeps Premium, ads source and user id with old token',
+    c2->>'user_id'=saved_guest::text and not (c2->>'is_guest')::boolean and (c2->>'is_premium')::boolean and c2->>'source'='ads');
+  perform pg_temp.imp(saved_guest,true); v_raised := false;
+  begin insert into public.channels(name) values('Saved Premium guest channel'); exception when others then v_raised := true; end; reset role;
+  perform pg_temp.rec('saved Premium guest can create channel without logging in again',not v_raised);
+  perform pg_temp.rec('saved guest channel still needs admin approval',
+    exists(select 1 from public.channels where created_by=saved_guest and name='Saved Premium guest channel' and review_status='pending' and status='draft'));
+
   perform pg_temp.imp(u1,false); c := public.create_order(p_gold); c2 := public.create_order(p_gold); reset role;
   v_o1 := (c->>'order_id')::uuid;
   perform pg_temp.rec('order snapshot: amount, OB reference, UPI id, payee', (c->>'amount_paise')::bigint=25900 and c->>'reference' ~ '^OB[0-9]{6}[A-F0-9]{8}$' and c->>'upi_id'='2728412a@bandhan' and c->>'payee_name'='As Enterprice');
