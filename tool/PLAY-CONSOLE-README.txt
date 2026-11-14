@@ -1,4 +1,4 @@
-Puffle v1.0.7 — Android and Play Console kit
+Puffle v1.0.8 — Android and Play Console kit
 
 BUILDS (unchanged signed release files)
 Puffle.apk: organic / website Android install.
@@ -18,11 +18,15 @@ kit-checksums.txt verifies the complete package.
 
 PLAY CONSOLE
 Package: com.pufflecloud.app
-Version: 1.0.7 (version code 8)
+Version: 1.0.8 (version code 9)
 Upload Puffle-play.aab, then add the 512 icon, feature graphic and phone screenshots to the store listing.
 The ZIP and APK files are not uploaded as the Play release bundle.
 Complete your own Data safety, content rating, app access/reviewer instructions and publishing requirements in Play Console.
 Google makes the final review decision. This kit is not a guarantee of approval.
+
+MEASUREMENT AND PRIVACY
+This release adds separate optional choices for Puffle analytics, Meta sharing and Google/Firebase measurement. All start off. Configure Meta Pixel and Google Ads setup in the private admin when ready. Google native app conversions require Firebase/Analytics and linked Ads/Play accounts; website Conversion ID/Label or GTM alone cannot measure Android events. Server purchases wait for bank/provider verification.
+Android Advertising ID collection and Google ad personalisation are disabled. Review docs/play-listing.md and docs/advertising-setup.md (included in the kit) before completing Data safety. Do not reuse an earlier no-analytics/no-sharing disclosure. The current privacy-policy link is https://puffle-iota.vercel.app/privacy .
 
 Official references:
 https://support.google.com/googleplay/android-developer/answer/9866151

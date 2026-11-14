@@ -41,3 +41,7 @@ Use your own screenshots, icon (`mobile/store/play_icon_512.png`) and text. Do n
 1. Package `com.orbixcloud.app` (reserved in Play Console) is a different app from the direct APK (`com.orbix.app`).
 2. Sign the AAB with the key from the GitHub secrets (CI does this).
 3. Complete the Play Integrity setup described in play-billing.md if you want the free-cloud verification.
+
+
+## Measurement update for v1.0.8
+This release includes optional Google Analytics for Firebase and server-side Meta/Google advertising measurement, disabled until configured and explicitly allowed by the user. Review the Data Safety form using the published privacy policy. Relevant optional data can include app interactions, purchase history, user/account identifiers and device or other identifiers (including the Firebase app-instance ID). Meta can receive hashed email/account IDs and eligible IP/browser/click information; Google receives native app-instance, session, event and verified order information. Hashing does not make an identifier anonymous. Android Advertising ID collection is excluded by the merged-manifest check. Personalised Google ad signals are denied. Account, content, storage and payment data needed to provide the service remain separate essential processing. A store disclosure must reflect actual sharing with linked providers, even when optional; do not reuse an earlier �no analytics/no sharing� declaration. Consult each SDK's current Play disclosure guide and the configuration actually enabled in production.

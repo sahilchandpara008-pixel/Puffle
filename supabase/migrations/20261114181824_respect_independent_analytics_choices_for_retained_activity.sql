@@ -3,7 +3,7 @@ CREATE OR REPLACE FUNCTION public.admin_users_filtered(p_search text DEFAULT NUL
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
  SET search_path TO ''
-AS $function$;
+AS $function$
 declare result_ jsonb;
 begin
  if not public.is_owner() then raise exception 'forbidden' using errcode='42501'; end if;
@@ -46,7 +46,7 @@ CREATE OR REPLACE FUNCTION public.record_activity(p_event_id uuid, p_name text, 
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO ''
-AS $function$;
+AS $function$
 declare uid uuid:=auth.uid(); pref public.measurement_preferences%rowtype; ctx private.app_measurement_context%rowtype; props jsonb; at_ timestamptz;
 begin
  if uid is null then raise exception 'session required' using errcode='42501'; end if;

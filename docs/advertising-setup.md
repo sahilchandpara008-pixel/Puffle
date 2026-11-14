@@ -32,3 +32,5 @@ No passwords, UPI PINs/replies/UTRs, private filenames/content, search words or 
 - https://firebase.google.com/docs/projects/multiprojects#ensure_reliable_reporting_for_analytics
 - https://developers.google.com/analytics/devguides/collection/protocol/ga4/validating-events
 - https://developers.facebook.com/documentation/ads-commerce/conversions-api/app-events
+
+Repeat buyer means an owner-only report by account/email. The admin history shows same-plan, higher-price, lower-price and equal-price changes. No repeat-buyer event, property or audience is sent to Meta or Google. Ordinary consented, verified purchases remain conversion events.

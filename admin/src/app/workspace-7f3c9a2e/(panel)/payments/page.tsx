@@ -91,7 +91,7 @@ export default async function Payments({ searchParams: q }: { searchParams: Q })
               return (
                 <tr key={id}>
                   <Td className="whitespace-nowrap text-xs text-gray-600">{ist(o.created_at as string)}</Td>
-                  <Td><div className="font-medium text-gray-900">{o.email ? String(o.email) : o.guest ? "Guest (no email yet)" : "Deleted account"}</div><div className="text-xs text-gray-500">{String(o.plan_name ?? "")}</div></Td>
+                  <Td><div className="font-medium text-gray-900">{o.user_id ? <Link className="underline" href={"/workspace-7f3c9a2e/users/"+String(o.user_id)}>{o.email ? String(o.email) : "Guest (no email yet)"}</Link> : "Deleted account"}</div><div className="text-xs text-gray-500">{String(o.plan_name ?? "")}</div></Td>
                   <Td className="whitespace-nowrap font-medium">{inr(Number(o.amount_inr))}</Td>
                   <Td className="text-xs"><div className="font-mono">{String(o.reference ?? "—")}</div>{o.utr ? <div className="font-mono text-gray-500">UTR {String(o.utr)}</div> : null}</Td>
                   <Td><StatusBadge value={o.status as string} />{needsBank ? <div className="mt-1"><Badge tone="amber">Verify against bank</Badge></div> : null}{paid && o.bank_verified ? <div className="mt-1"><Badge tone="green">Bank verified</Badge></div> : null}</Td>
@@ -167,4 +167,3 @@ export default async function Payments({ searchParams: q }: { searchParams: Q })
     </>
   );
 }
-

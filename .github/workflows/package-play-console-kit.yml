@@ -67,6 +67,8 @@ jobs:
           (cd kit && sha256sum -c checksums.txt)
           cp -r play-console-assets kit/
           cp tool/PLAY-CONSOLE-README.txt kit/README.txt
+          mkdir -p kit/docs
+          cp docs/play-listing.md docs/advertising-setup.md kit/docs/
           (cd kit && find . -type f ! -name kit-checksums.txt -print0 | sort -z | xargs -0 sha256sum > kit-checksums.txt)
           (cd kit && zip -r "../Puffle-Play-Console-kit-$tag.zip" .)
           gh release upload "$tag" "Puffle-Play-Console-kit-$tag.zip" --clobber

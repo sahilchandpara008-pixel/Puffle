@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {range,pageNumber,type ReportQuery} from "@/lib/reporting";
 import {DateFields,Pagination} from "@/components/admin/ReportFilters";
 import { requireAdmin } from "@/lib/admin";
@@ -42,7 +43,7 @@ export default async function Users({ searchParams }: { searchParams: Q }) {
               const id = r.id as string;
               return (
                 <tr key={id}>
-                  <Td>{r.email ? <span className="font-medium text-gray-900">{String(r.email)}</span> : <Badge>Guest</Badge>}{r.display_name ? <div className="text-xs text-gray-500">{String(r.display_name)}</div> : null}</Td>
+                  <Td>{r.email ? <Link className="font-medium text-teal-700 underline" href={"/workspace-7f3c9a2e/users/"+id}>{String(r.email)}</Link> : <Link href={"/workspace-7f3c9a2e/users/"+id}><Badge>Guest history</Badge></Link>}{r.display_name ? <div className="text-xs text-gray-500">{String(r.display_name)}</div> : null}</Td>
                   <Td><SourceBadge value={r.source as string} />{r.campaign ? <div className="mt-1 text-xs text-gray-500">{String(r.campaign)}</div> : null}</Td>
                   <Td>{r.plan_name ? <><Badge tone="amber">{String(r.plan_name)}</Badge><div className="mt-1 text-xs text-gray-500">until {ist(r.plan_ends_at as string)}</div></> : <span className="text-gray-400">None</span>}</Td>
                   <Td>{r.source === "ads" ? <Badge tone="green">full (ads)</Badge> : <StatusBadge value={r.ads_access_status as string} />}</Td>
@@ -75,4 +76,3 @@ export default async function Users({ searchParams }: { searchParams: Q }) {
     </>
   );
 }
-
