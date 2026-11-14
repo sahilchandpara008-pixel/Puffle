@@ -25,6 +25,10 @@ class PostPage extends StatefulWidget {
 }
 
 class _PostPageState extends State<PostPage> {
+  late String _postId = widget.postId;
+  late final List<String> _history = [_postId];
+  int _historyIndex = 0;
+  List<Map<String, dynamic>> _suggestions = [];
   Map<String, dynamic>? _post;
   List<Map<String, dynamic>> _items = [];
   VideoPlayerController? _vc;
@@ -70,8 +74,8 @@ class _PostPageState extends State<PostPage> {
 
   Future<void> _load() async {
     try {
-      final p = await sb.from('posts').select('id,title,description,channel_id').eq('id', widget.postId).maybeSingle();
-      final items = await sb.from('post_items').select('id,media_key,trailer_key,thumbnail_key,mime,is_premium,duration_s').eq('post_id', widget.postId).order('position');
+      final p = await sb.from('posts').select('id,title,description,channel_id').eq('id', _postId).maybeSingle();
+      final items = await sb.from('post_items').select('id,media_key,trailer_key,thumbnail_key,mime,is_premium,duration_s').eq('post_id', _postId).order('position');
       final tk = items.isEmpty ? null : items.first['thumbnail_key'] as String?;
       final poster = tk == null ? null : await _signed(tk);
       if (!mounted) return;
@@ -81,6 +85,15 @@ class _PostPageState extends State<PostPage> {
         _items = List<Map<String, dynamic>>.from(items);
         if (p == null) _error = 'This post is not available.';
       });
+      if (p != null) {
+        try {
+          // RLS enforces approval, channel visibility and audience for every suggestion.
+          const fields = 'id,title,channel_id,status,hidden,channels(name)';
+          final same = await sb.from('posts').select(fields).eq('channel_id', p['channel_id']).neq('id', _postId).eq('status', 'published').eq('hidden', false).order('created_at', ascending: false).limit(6);
+          final other = await sb.from('posts').select(fields).neq('channel_id', p['channel_id']).eq('status', 'published').eq('hidden', false).order('created_at', ascending: false).limit(6);
+          if (mounted) setState(() => _suggestions = List<Map<String, dynamic>>.from([...same, ...other]));
+        } catch (_) { /* Recommendations never block playback. */ }
+      }
     } catch (_) {
       if (mounted) setState(() => _error = 'Could not load this post.');
     }
@@ -139,6 +152,46 @@ class _PostPageState extends State<PostPage> {
     await old?.dispose();
   }
 
+  Future<void> _switchVideo(String id, {int? historyIndex}) async {
+    if (_opening || id == _postId) return;
+    final old = _vc;
+    setState(() {
+      if (historyIndex != null) {
+        _historyIndex = historyIndex;
+      } else {
+        _history.removeRange(_historyIndex + 1, _history.length);
+        _history.add(id);
+        _historyIndex = _history.length - 1;
+      }
+      _postId = id;
+      _vc = null;
+      _post = null;
+      _items = [];
+      _suggestions = [];
+      _poster = null;
+      _error = null;
+      _trailer = false;
+      _opening = true;
+    });
+    await old?.dispose();
+    await _load();
+    if (!mounted) return;
+    setState(() => _opening = false);
+    if (_items.isNotEmpty) await _play(_items.first);
+  }
+
+  VoidCallback? get _previous => _historyIndex > 0 && !_opening
+      ? () => _switchVideo(_history[_historyIndex - 1], historyIndex: _historyIndex - 1) : null;
+
+  VoidCallback? get _next {
+    if (_opening) return null;
+    if (_historyIndex + 1 < _history.length) {
+      return () => _switchVideo(_history[_historyIndex + 1], historyIndex: _historyIndex + 1);
+    }
+    final fresh = _suggestions.where((p) => !_history.contains(p['id'])).toList();
+    return fresh.isEmpty ? null : () => _switchVideo(fresh.first['id'] as String);
+  }
+
   void _lockedMessage(AppState app) {
     if (!mounted) return;
     final msg = app.showPrices ? 'Premium video — go Premium to watch the full version' : 'For Premium members';
@@ -155,7 +208,7 @@ class _PostPageState extends State<PostPage> {
     );
     if (reason == null) return;
     try {
-      await sb.rpc('report_content', params: {'p_target_type': 'post', 'p_target_id': widget.postId, 'p_reason': reason, 'p_details': ''});
+      await sb.rpc('report_content', params: {'p_target_type': 'post', 'p_target_id': _postId, 'p_reason': reason, 'p_details': ''});
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Thanks, we will review it.')));
     } on PostgrestException catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
@@ -187,13 +240,13 @@ class _PostPageState extends State<PostPage> {
         onPopInvokedWithResult: (didPop, _) { if (!didPop) _toggleFullscreen(); },
         child: Scaffold(
           backgroundColor: Colors.black,
-          body: SizedBox.expand(child: _Player(controller: vc, title: (p?['title'] as String?) ?? '', fullscreen: true, onFullscreen: _toggleFullscreen)),
+          body: SizedBox.expand(child: _Player(controller: vc, title: (p?['title'] as String?) ?? '', fullscreen: true, onFullscreen: _toggleFullscreen, onPrevious: _previous, onNext: _next)),
         ),
       );
     }
     return Scaffold(
       appBar: AppBar(title: Text(p?['title'] ?? '', maxLines: 1, overflow: TextOverflow.ellipsis), actions: [
-        IconButton(tooltip: 'Share', icon: const Icon(Icons.share), onPressed: () => Share.share('${Config.websiteUrl}/p/${widget.postId}')),
+        IconButton(tooltip: 'Share', icon: const Icon(Icons.share), onPressed: () => Share.share('${Config.websiteUrl}/p/${_postId}')),
         PopupMenuButton<String>(
           onSelected: (v) => v == 'report' ? _report() : _block(),
           itemBuilder: (_) => const [PopupMenuItem(value: 'report', child: Text('Report')), PopupMenuItem(value: 'block', child: Text('Block channel'))],
@@ -205,7 +258,7 @@ class _PostPageState extends State<PostPage> {
               ? const Center(child: CircularProgressIndicator())
               : ListView(padding: const EdgeInsets.all(16), children: [
                   if (_vc != null && _vc!.value.isInitialized) ...[
-                    _Player(controller: _vc!, title: (p['title'] as String?) ?? '', fullscreen: false, onFullscreen: _toggleFullscreen),
+                    _Player(controller: _vc!, title: (p['title'] as String?) ?? '', fullscreen: false, onFullscreen: _toggleFullscreen, onPrevious: _previous, onNext: _next),
                     if (_trailer)
                       Container(
                         margin: const EdgeInsets.only(top: 10),
@@ -238,6 +291,20 @@ class _PostPageState extends State<PostPage> {
                     Padding(padding: const EdgeInsets.only(top: 6), child: Text(p['description'] as String, style: const TextStyle(color: Tokens.muted, fontSize: 13, height: 1.4))),
                   const SizedBox(height: 14),
                   if (_items.isEmpty) const EmptyState(icon: Icons.hourglass_empty_rounded, title: 'No video yet', message: 'The creator has not added a video to this post.'),
+                  if (_suggestions.isNotEmpty) ...[
+                    const Text('Up next', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 8),
+                    for (final video in _suggestions)
+                      Card(margin: const EdgeInsets.only(bottom: 8), child: ListTile(
+                        leading: const Icon(Icons.play_circle_outline_rounded, color: Tokens.accent, size: 32),
+                        title: Text(video['title'] as String? ?? 'Video', maxLines: 2, overflow: TextOverflow.ellipsis),
+                        subtitle: Text(video['channel_id'] == p['channel_id'] ? 'From this channel' : ((video['channels'] as Map?)?['name'] as String? ?? 'Another channel')),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        enabled: !_opening,
+                        onTap: () => _switchVideo(video['id'] as String),
+                      )),
+                    const SizedBox(height: 12),
+                  ],
                   if (_items.length > 1) ...[
                     const Text('In this post', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 8),
@@ -260,11 +327,12 @@ class _PostPageState extends State<PostPage> {
 /// Swipe sideways to seek, swipe up/down on the left for brightness and on the right for volume,
 /// double-tap the sides to skip 10 s, double-tap the middle to pause, hold to play at 2x, lock the controls.
 class _Player extends StatefulWidget {
-  const _Player({required this.controller, required this.title, required this.fullscreen, required this.onFullscreen});
+  const _Player({required this.controller, required this.title, required this.fullscreen, required this.onFullscreen, this.onPrevious, this.onNext});
   final VideoPlayerController controller;
   final String title;
   final bool fullscreen;
   final VoidCallback onFullscreen;
+  final VoidCallback? onPrevious, onNext;
   @override
   State<_Player> createState() => _PlayerState();
 }
@@ -473,7 +541,7 @@ class _PlayerState extends State<_Player> {
     }
   }
 
-  Widget _btn(IconData icon, VoidCallback onTap, {double size = 26, String? label}) => IconButton(
+  Widget _btn(IconData icon, VoidCallback? onTap, {double size = 26, String? label}) => IconButton(
         onPressed: onTap,
         tooltip: label,
         iconSize: size,
@@ -501,6 +569,7 @@ class _PlayerState extends State<_Player> {
         ),
       Center(
         child: Row(mainAxisSize: MainAxisSize.min, children: [
+          _btn(Icons.skip_previous_rounded, widget.onPrevious, label: 'Previous video'),
           _btn(Icons.replay_10_rounded, () => _skip(-10), size: 34, label: 'Back 10 seconds'),
           const SizedBox(width: 12),
           Container(
@@ -509,6 +578,7 @@ class _PlayerState extends State<_Player> {
           ),
           const SizedBox(width: 12),
           _btn(Icons.forward_10_rounded, () => _skip(10), size: 34, label: 'Forward 10 seconds'),
+          _btn(Icons.skip_next_rounded, widget.onNext, label: 'Next video'),
         ]),
       ),
       Positioned(
@@ -608,3 +678,4 @@ class _PlayerState extends State<_Player> {
         );
       });
 }
+
