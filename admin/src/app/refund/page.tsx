@@ -1,7 +1,7 @@
 import SiteShell from "@/components/SiteShell";
 
 export const metadata = { title: "Refund Policy" };
-const email = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@puffle.example";
+const email = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "help.puffle@gmail.com";
 
 export default function Refund() {
   return (

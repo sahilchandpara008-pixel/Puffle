@@ -8,13 +8,13 @@ Puffle is an independent Android cloud-storage and creator-channels app, adapted
 - `supabase/`: database migrations, RLS policies, tests and edge-function source
 
 ## Backend
-Puffle Supabase project: `dqufassvbkattmmsuwmf` (Mumbai). The 19 database migrations have been applied to this project. **Never reuse the Orbix database or original owner account.** Configure an owner email through a verified admin bootstrap procedure before allowing admin sign-in. The original project referenced additional edge functions that are not present in its GitHub source; these must be implemented and deployed before considering every feature operational.
+Puffle Supabase project: `dqufassvbkattmmsuwmf` (Mumbai). The 19 database migrations have been applied to this project. **Never reuse the Orbix database or original owner account.** The designated owner email is perfumwala@gmail.com. Register and verify this email through Supabase Auth; no password is stored in Git. The original project referenced additional edge functions that are not present in its GitHub source; these must be implemented and deployed before considering every feature operational.
 
 ## Android
 `mobile/lib/config.dart` points to the Puffle backend. Android app IDs: `com.puffle.app` (direct), `com.pufflecloud.app` (Play). GitHub Actions → `mobile` runs tests and builds artifacts. Test on a real device before release. Signing keys belong only in GitHub secrets.
 
 ## Website
-Deploy `admin/` as the Vercel Root Directory. Set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_SITE_URL`, and `NEXT_PUBLIC_SUPPORT_EMAIL` in Vercel. **Do not publish a website with `support@puffle.example` as a real contact address.** Verify privacy, terms, refund, community guidelines, report content and delete-account pages against actual business practices. Some account-deletion flows require missing edge functions and are not yet operational.
+Deploy `admin/` as the Vercel Root Directory. Set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_SITE_URL`, and `NEXT_PUBLIC_SUPPORT_EMAIL` in Vercel. **Do not publish a website with `help.puffle@gmail.com` as a real contact address.** Verify privacy, terms, refund, community guidelines, report content and delete-account pages against actual business practices. Some account-deletion flows require missing edge functions and are not yet operational.
 
 ## Safety and launch checklist
 1. Configure and verify the Puffle admin owner account (original Orbix bootstrap email was removed).
