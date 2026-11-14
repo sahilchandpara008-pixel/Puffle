@@ -16,6 +16,24 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  String? _accessKey;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final app = AppScope.of(context);
+    final status = app.status;
+    final key = '${app.loaded}|${status.raw['user_id']}|${status.source}|${status.isGuest}|${status.hasAdsAccess}|${status.isPremium}|${status.accessStatus}';
+    final previous = _accessKey;
+    _accessKey = key;
+    if (previous != null && previous != key) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _accessKey != key) return;
+        setState(() { _channels = []; _posts = []; _thumbs.clear(); _loading = true; });
+        _load();
+      });
+    }
+  }
+
   List<Map<String, dynamic>> _channels = [];
   List<Map<String, dynamic>> _posts = [];
   final Map<String, String> _thumbs = {};
@@ -27,11 +45,15 @@ class _HomeScreenState extends State<HomeScreen> {
     _load();
   }
 
+  int _loadGeneration = 0;
   Future<void> _load() async {
+    final generation = ++_loadGeneration;
     try {
       final c = await sb.from('channels').select('id,name').order('created_at', ascending: false).limit(10);
+      if (!mounted || generation != _loadGeneration) return;
       _channels = List<Map<String, dynamic>>.from(c);
       final p = await sb.from('posts').select('id,title,channels(name),post_items(thumbnail_key,position,is_premium,duration_s)').order('created_at', ascending: false).limit(12);
+      if (!mounted || generation != _loadGeneration) return;
       _posts = List<Map<String, dynamic>>.from(p);
       final keys = <String>[
         for (final r in _posts)
@@ -48,7 +70,7 @@ class _HomeScreenState extends State<HomeScreen> {
         } catch (_) {/* thumbnails are optional */}
       }
     } catch (_) {}
-    if (mounted) setState(() => _loading = false);
+    if (mounted && generation == _loadGeneration) setState(() => _loading = false);
   }
 
   String? _thumbFor(Map<String, dynamic> post) {

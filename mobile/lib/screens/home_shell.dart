@@ -42,6 +42,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final app = AppScope.of(context);
+    if (!app.loaded) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     // Plans-first users see a crown "Premium" tab; plan holders / hidden-plans users see "Profile".
     final premiumTab = app.showPremiumEntry && !app.status.isPremium;
     final pages = [

@@ -11,9 +11,11 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import '../config.dart';
 import '../services/app_scope.dart';
 import '../services/app_state.dart';
+import '../services/playback_access.dart';
 import '../theme.dart';
 import '../widgets/ui.dart';
 import 'login_sheet.dart';
+import 'premium_screen.dart';
 
 const reportReasons = ['Sexual/nude', 'Violence', 'Hate/harassment', 'Copyright', 'Spam/scam', 'Other'];
 
@@ -35,6 +37,8 @@ class _PostPageState extends State<PostPage> {
   VideoPlayerController? _vc;
   String? _error, _poster, _imageUrl;
   bool _opening = false, _trailer = false, _uiFs = false;
+  final _previewEnd = PreviewEndTracker();
+  bool _premiumPromptOpen = false;
 
   @override
   void initState() {
@@ -44,6 +48,7 @@ class _PostPageState extends State<PostPage> {
 
   @override
   void dispose() {
+    _vc?.removeListener(_onPreviewTick);
     _vc?.dispose();
     try { WakelockPlus.disable(); } catch (_) {}
     try { ScreenBrightness().resetScreenBrightness(); } catch (_) {}
@@ -125,12 +130,14 @@ class _PostPageState extends State<PostPage> {
 
   Future<void> _play(Map<String, dynamic> it) async {
     final app = AppScope.of(context);
-    // Organic visitors must log in before playing anything; ads visitors can watch free content and trailers as guests.
-    if (app.status.isGuest && app.status.source == 'organic' && !app.status.isPremium) {
-      if (!await requireAccount(context) || !mounted) return;
-    }
     final premium = it['is_premium'] == true;
-    final allowed = !premium || app.status.canPlayPremium;
+    var access = playbackAccess(app.status, premium: premium, hasTrailer: it['trailer_key'] != null);
+    if (access == PlaybackAccess.login) {
+      if (!await requireAccount(context) || !mounted) return;
+      access = playbackAccess(app.status, premium: premium, hasTrailer: it['trailer_key'] != null);
+      if (access == PlaybackAccess.login) return;
+    }
+    final allowed = access == PlaybackAccess.full;
     // Ads users who are not premium get the trailer; everyone else without access sees the lock.
     final key = (allowed ? it['media_key'] : it['trailer_key']) as String?;
     if (key == null) {
@@ -167,6 +174,9 @@ class _PostPageState extends State<PostPage> {
       await c.dispose();
       return;
     }
+    old?.removeListener(_onPreviewTick);
+    c.addListener(_onPreviewTick);
+    _previewEnd.reset();
     c.play();
     setState(() { _vc = c; _imageUrl = null; _opening = false; _trailer = premium && !allowed; });
     await old?.dispose();
@@ -194,6 +204,7 @@ class _PostPageState extends State<PostPage> {
       _trailer = false;
       _opening = true;
     });
+    old?.removeListener(_onPreviewTick);
     await old?.dispose();
     await _load();
     if (!mounted) return;
@@ -213,10 +224,48 @@ class _PostPageState extends State<PostPage> {
     return fresh.isEmpty ? null : () => _switchVideo(fresh.first['id'] as String);
   }
 
+  void _onPreviewTick() {
+    final controller = _vc;
+    if (!mounted || !_trailer || controller == null) return;
+    final value = controller.value;
+    if (_previewEnd.update(position: value.position, duration: value.duration, playing: value.isPlaying)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _vc == controller && _trailer) unawaited(_showPremiumPrompt(previewFinished: true));
+      });
+    }
+  }
+
+  Future<void> _showPremiumPrompt({bool previewFinished = false}) async {
+    if (!mounted || _premiumPromptOpen) return;
+    _premiumPromptOpen = true;
+    final app = AppScope.of(context);
+    final subscribe = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => SafeArea(child: SingleChildScrollView(child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          const Icon(Icons.workspace_premium_rounded, color: Tokens.gold, size: 36),
+          const SizedBox(height: 14),
+          Text(previewFinished ? 'Preview finished' : 'Premium video', textAlign: TextAlign.center, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 10),
+          const Text('Subscribe to Premium to watch the full video and enjoy uninterrupted viewing.', textAlign: TextAlign.center),
+          const SizedBox(height: 20),
+          GradientButton(label: app.showPrices ? 'Subscribe to Premium' : 'View Premium', onPressed: () => Navigator.pop(context, true)),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Not now')),
+        ]),
+      ))),
+    );
+    _premiumPromptOpen = false;
+    if (subscribe == true && mounted) {
+      await Navigator.push(context, MaterialPageRoute(builder: (_) => const PremiumScreen()));
+      if (mounted) await app.refresh();
+    }
+  }
+
   void _lockedMessage(AppState app) {
     if (!mounted) return;
-    final msg = app.showPrices ? 'Premium video — go Premium to watch the full version' : 'For Premium members';
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    unawaited(_showPremiumPrompt());
   }
 
   Future<void> _report() async {

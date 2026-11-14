@@ -5,7 +5,7 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 import { upload, probe } from "../[id]/MediaEditor";
 
 type Channel = { id: string; name: string; audience: string; review_status: string; status: string; hidden: boolean };
-type Entry = { id: string; file?: File; title: string; description: string; state: "ready" | "uploading" | "done" | "error"; progress: number; error?: string; postId?: string; mediaDone?: boolean };
+type Entry = { id: string; file?: File; thumbnail?: File; trailer?: File; title: string; description: string; state: "ready" | "uploading" | "done" | "error"; progress: number; error?: string; postId?: string; mediaDone?: boolean };
 const audienceName = (value: string) => value === "ads" ? "Ads users" : value === "organic" ? "Organic users" : "Both ads and organic";
 const mediaType = (file: File) => file.type || (/\.(mp4|m4v|mov|webm|mkv)$/i.test(file.name) ? "video/mp4" : /\.(png|jpg|jpeg|webp|gif)$/i.test(file.name) ? "image/" + (file.name.split(".").pop() === "jpg" ? "jpeg" : file.name.split(".").pop()) : "");
 
@@ -86,10 +86,11 @@ export default function BulkUpload({ channels, initialChannelId }: { channels: C
             await upload(key, file, mime, percent => patch(row.id, { progress: percent }));
             let thumbnail: string | null = null;
             let duration: number | null = null;
-            let thumb: Blob | null = null;
+            let thumb: Blob | null = row.thumbnail ?? null;
+            const thumbnailMime = row.thumbnail?.type || 'image/jpeg';
             if (mime.startsWith("video/")) {
-              const info = await probe(file); thumb = info.thumb; duration = info.duration;
-            } else {
+              const info = await probe(file); thumb ??= info.thumb; duration = info.duration;
+            } else if (!thumb) {
               try {
                 const image = await createImageBitmap(file);
                 const canvas = document.createElement("canvas");
@@ -100,12 +101,20 @@ export default function BulkUpload({ channels, initialChannelId }: { channels: C
               } catch { /* A missing preview must not fail the original image. */ }
             }
             if (thumb) {
-              thumbnail = `${channel.id}/${crypto.randomUUID()}.jpg`;
+              const thumbExt = thumbnailMime === "image/png" ? "png" : thumbnailMime === "image/webp" ? "webp" : "jpg";
+              thumbnail = `${channel.id}/${crypto.randomUUID()}.${thumbExt}`;
               filesToClean.push(thumbnail);
-              await upload(thumbnail, thumb, "image/jpeg", () => {});
+              await upload(thumbnail, thumb, thumbnailMime, () => {});
+            }
+            let trailerKey: string | null = null;
+            if (row.trailer) {
+              const trailerExt = row.trailer.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "mp4";
+              trailerKey = `${channel.id}/${crypto.randomUUID()}.${trailerExt}`;
+              filesToClean.push(trailerKey);
+              await upload(trailerKey, row.trailer, mediaType(row.trailer), percent => patch(row.id, { progress: percent }));
             }
             metadataAttempted = true;
-            const { error } = await sb.from("post_items").insert({ post_id: postId, media_key: key, thumbnail_key: thumbnail, mime, duration_s: duration, size_bytes: file.size, position: 0, is_premium: premium });
+            const { error } = await sb.from("post_items").insert({ post_id: postId, media_key: key, thumbnail_key: thumbnail, trailer_key: trailerKey, mime, duration_s: duration, size_bytes: file.size, position: 0, is_premium: premium });
             if (error) throw new Error(error.message);
             mediaDone = true; patch(row.id, { mediaDone: true });
           }
@@ -151,6 +160,16 @@ export default function BulkUpload({ channels, initialChannelId }: { channels: C
       <div className="flex flex-wrap justify-between gap-2"><span className="text-sm text-gray-600 break-all">{row.file ? `${row.file.name} · ${(row.file.size / 1048576).toFixed(1)} MB` : "Text post"}</span><span className="text-sm font-medium" role="status">{row.state === "uploading" ? `Uploading ${row.progress}%` : row.state === "done" ? publish ? "Published" : "Draft saved" : row.state === "error" ? "Needs retry" : "Ready"}</span></div>
       <label className="block text-sm">Title<input className={cls} maxLength={160} value={row.title} disabled={busy || row.state === "done"} onChange={e => patch(row.id, { title: e.target.value })} /></label>
       <label className="block text-sm">{row.file ? "Description / content" : "Content"}<textarea className={cls} rows={3} value={row.description} disabled={busy || row.state === "done"} onChange={e => patch(row.id, { description: e.target.value })} /></label>
+      {row.file && <div className="grid gap-3 sm:grid-cols-2">
+        <label className="block text-sm">Thumbnail (optional)
+          <input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy || row.state === "done" || row.mediaDone} onChange={e => { patch(row.id, { thumbnail: e.target.files?.[0] }); e.target.value = ""; }} />
+          <span className="block text-xs text-gray-500">{row.thumbnail?.name ?? "An automatic thumbnail is generated when no image is selected."}</span>
+        </label>
+        {mediaType(row.file).startsWith("video/") && <label className="block text-sm">Trailer / preview (optional)
+          <input type="file" accept="video/*" disabled={busy || row.state === "done" || row.mediaDone} onChange={e => { patch(row.id, { trailer: e.target.files?.[0] }); e.target.value = ""; }} />
+          <span className="block text-xs text-gray-500">{row.trailer?.name ?? "Add a trailer so ads guests can preview a Premium video."}</span>
+        </label>}
+      </div>}
       {row.state === "uploading" && <progress className="w-full" value={row.progress} max={100} aria-label={`Upload progress for ${row.title}`} />}
       {row.error && <p className="text-sm text-red-700" role="alert">{row.error}</p>}
       {row.postId && <Link className="text-sm text-violet-700 underline" href={`/admin/posts/${row.postId}`}>View saved post</Link>}

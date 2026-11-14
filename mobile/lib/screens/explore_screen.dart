@@ -19,6 +19,24 @@ class PostList extends StatefulWidget {
 }
 
 class _PostListState extends State<PostList> {
+  String? _accessKey;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final app = AppScope.of(context);
+    final status = app.status;
+    final key = '${app.loaded}|${status.raw['user_id']}|${status.source}|${status.isGuest}|${status.hasAdsAccess}|${status.isPremium}|${status.accessStatus}';
+    final previous = _accessKey;
+    _accessKey = key;
+    if (previous != null && previous != key) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _accessKey != key) return;
+        _thumbs.clear();
+        _load(reset: true);
+      });
+    }
+  }
+
   final _rows = <Map<String, dynamic>>[];
   final _thumbs = <String, String>{};
   bool _loading = true, _more = true, _fetching = false;

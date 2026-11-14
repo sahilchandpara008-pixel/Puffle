@@ -18,6 +18,24 @@ class ChannelsScreen extends StatefulWidget {
 }
 
 class _ChannelsScreenState extends State<ChannelsScreen> {
+  String? _accessKey;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final app = AppScope.of(context);
+    final status = app.status;
+    final key = '${app.loaded}|${status.raw['user_id']}|${status.source}|${status.isGuest}|${status.hasAdsAccess}|${status.isPremium}|${status.accessStatus}';
+    final previous = _accessKey;
+    _accessKey = key;
+    if (previous != null && previous != key) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _accessKey != key) return;
+        setState(() { _rows = []; _joined = {}; _loading = true; });
+        _load();
+      });
+    }
+  }
+
   List<Map<String, dynamic>> _rows = [];
   Set<String> _joined = {};
   bool _loading = true;
@@ -28,10 +46,13 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
     _load();
   }
 
+  int _loadGeneration = 0;
   Future<void> _load() async {
+    final generation = ++_loadGeneration;
     try {
       // RLS returns only approved, visible, audience-matching channels (plus the user's own pending ones).
       final data = await sb.from('channels').select('id,name,description,category,members_count,review_status,created_by').order('members_count', ascending: false);
+      if (!mounted || generation != _loadGeneration) return;
       _rows = List<Map<String, dynamic>>.from(data);
       final uid = sb.auth.currentUser?.id;
       if (uid != null) {
@@ -41,7 +62,7 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
       // "My channels": only the ones I created or joined.
       if (widget.standalone) _rows = [for (final r in _rows) if ((uid != null && r['created_by'] == uid) || _joined.contains(r['id'])) r];
     } catch (_) {}
-    if (mounted) setState(() => _loading = false);
+    if (mounted && generation == _loadGeneration) setState(() => _loading = false);
   }
 
   Future<void> _toggle(String id) async {
