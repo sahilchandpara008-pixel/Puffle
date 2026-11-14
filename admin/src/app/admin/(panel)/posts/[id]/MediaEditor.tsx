@@ -13,7 +13,7 @@ const extOf = (f: File) => (f.name.includes(".") ? f.name.split(".").pop()! : "b
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
 
 /** Upload with real progress (the JS client has no progress callback). */
-async function upload(path: string, file: Blob, type: string, onProgress: (pct: number) => void) {
+export async function upload(path: string, file: Blob, type: string, onProgress: (pct: number) => void) {
   const sb = supabaseBrowser();
   const { data } = await sb.auth.getSession();
   const token = data.session?.access_token;
@@ -38,7 +38,7 @@ async function upload(path: string, file: Blob, type: string, onProgress: (pct: 
 }
 
 /** Duration and a JPEG frame from a local video file (both optional). */
-function probe(file: File): Promise<{ duration: number | null; thumb: Blob | null }> {
+export function probe(file: File): Promise<{ duration: number | null; thumb: Blob | null }> {
   return new Promise((resolve) => {
     const v = document.createElement("video");
     const url = URL.createObjectURL(file);

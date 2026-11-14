@@ -30,7 +30,7 @@ export default async function Posts({ searchParams }: { searchParams: Q }) {
   }
   return (
     <>
-      <PageHeader title="Posts" sub="Review uploaded videos, choose their audience, then approve them. Draft videos stay hidden from viewers."><LinkButton href="/admin/posts/new" variant="primary">New post</LinkButton></PageHeader>
+      <PageHeader title="Posts" sub="Review uploaded videos, choose their audience, then approve them. Draft videos stay hidden from viewers."><div className="flex gap-2"><LinkButton href="/admin/posts/bulk" variant="primary">Bulk upload</LinkButton><LinkButton href="/admin/posts/new">New post</LinkButton></div></PageHeader>
       <ErrorNote error={error} />
       <form className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-5">
         <Select name="channel" defaultValue={searchParams.channel ?? ""} aria-label="Channel"><option value="">All channels</option>{(channels ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</Select>
