@@ -7,10 +7,10 @@ export type Role = "owner" | "content";
 export async function requireAdmin(ownerOnly = false) {
   const sb = supabaseServer();
   const { data } = await sb.auth.getUser();
-  if (!data.user) redirect("/admin/login");
+  if (!data.user) redirect("/workspace-7f3c9a2e/login");
   const { data: role } = await sb.rpc("admin_role");
-  if (role !== "owner" && role !== "content") redirect("/admin/login?error=" + encodeURIComponent("This account is not an admin."));
-  if (ownerOnly && role !== "owner") redirect("/admin?error=" + encodeURIComponent("That page is only available to the owner."));
+  if (role !== "owner" && role !== "content") redirect("/workspace-7f3c9a2e/login?error=" + encodeURIComponent("This account is not an admin."));
+  if (ownerOnly && role !== "owner") redirect("/workspace-7f3c9a2e?error=" + encodeURIComponent("That page is only available to the owner."));
   return { sb, user: data.user, role: role as Role };
 }
 

@@ -178,7 +178,7 @@ export default function BulkUpload({ channels, initialChannelId }: { channels: C
       </div>}
       {row.state === "uploading" && <progress className="w-full" value={row.progress} max={100} aria-label={`Upload progress for ${row.title}`} />}
       {row.error && <p className="text-sm text-red-700" role="alert">{row.error}</p>}
-      {row.postId && <Link className="text-sm text-violet-700 underline" href={`/admin/posts/${row.postId}`}>View saved post</Link>}
+      {row.postId && <Link className="text-sm text-violet-700 underline" href={`/workspace-7f3c9a2e/posts/${row.postId}`}>View saved post</Link>}
       {!row.postId && <button type="button" className="ml-3 text-sm text-gray-600 underline" disabled={busy} onClick={() => setEntries(rows => rows.filter(item => item.id !== row.id))}>Remove from batch</button>}
     </article>)}</div>
     <div className="md:sticky bottom-4 z-10 flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur">

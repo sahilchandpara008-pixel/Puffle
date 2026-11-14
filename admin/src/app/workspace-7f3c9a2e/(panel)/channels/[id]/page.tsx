@@ -27,7 +27,7 @@ export default async function ChannelEdit({ params }: { params: { id: string } }
     <>
       <PageHeader title={isNew ? "New channel" : `Edit ${c?.name}`} sub={isNew ? "Channels created here are approved immediately." : undefined}>
         {c && <StatusBadge value={c.review_status} />}
-        {c && <LinkButton href={`/admin/posts/bulk?channel=${c.id}`} variant="primary">Bulk upload to channel</LinkButton>}<LinkButton href="/admin/channels">Back to channels</LinkButton>
+        {c && <LinkButton href={`/workspace-7f3c9a2e/posts/bulk?channel=${c.id}`} variant="primary">Bulk upload to channel</LinkButton>}<LinkButton href="/workspace-7f3c9a2e/channels">Back to channels</LinkButton>
       </PageHeader>
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">

@@ -14,7 +14,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
   return <div className="admin-workspace">
     <a href="#admin-content" className="admin-skip">Skip to content</a>
     <aside className="admin-sidebar">
-      <Link href="/admin" className="admin-brand">
+      <Link href="/workspace-7f3c9a2e" className="admin-brand">
         <span className="admin-brand-mark"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 18h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6 9a4.5 4.5 0 0 0 1 9Z" /><path d="m10 10 5 3-5 3z" /></svg></span>
         <span>Puffle<span className="admin-brand-caption">ADMIN WORKSPACE</span></span>
       </Link>

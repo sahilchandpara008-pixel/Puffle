@@ -24,7 +24,7 @@ export default async function PostEdit({ params }: { params: { id: string } }) {
     <>
       <PageHeader title={p.title} sub={`In ${ch?.name ?? "channel"}`}>
         <StatusBadge value={p.status} />{p.hidden && <Badge tone="red">Hidden</Badge>}
-        <LinkButton href="/admin/posts">Back to posts</LinkButton>
+        <LinkButton href="/workspace-7f3c9a2e/posts">Back to posts</LinkButton>
       </PageHeader>
       <div className="grid gap-4 lg:grid-cols-2">
         <Card title="Details">
@@ -42,7 +42,7 @@ export default async function PostEdit({ params }: { params: { id: string } }) {
         <div className="flex flex-wrap gap-2">
           {role === "owner" && (
             <form action={setHidden}>
-              <Hidden name="type" value="post" /><Hidden name="id" value={p.id} /><Hidden name="hidden" value={p.hidden ? "0" : "1"} /><Hidden name="back" value={`/admin/posts/${p.id}`} />
+              <Hidden name="type" value="post" /><Hidden name="id" value={p.id} /><Hidden name="hidden" value={p.hidden ? "0" : "1"} /><Hidden name="back" value={`/workspace-7f3c9a2e/posts/${p.id}`} />
               <SubmitButton variant="secondary" confirm={p.hidden ? undefined : "Hide this post from the app?"}>{p.hidden ? "Unhide post" : "Hide post"}</SubmitButton>
             </form>
           )}

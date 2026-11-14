@@ -30,7 +30,7 @@ export default async function Posts({ searchParams }: { searchParams: Q }) {
   }
   return (
     <>
-      <PageHeader title="Posts" sub="Review uploaded videos, choose their audience, then approve them. Draft videos stay hidden from viewers."><div className="flex gap-2"><LinkButton href="/admin/posts/bulk" variant="primary">Bulk upload</LinkButton><LinkButton href="/admin/posts/new">New post</LinkButton></div></PageHeader>
+      <PageHeader title="Posts" sub="Review uploaded videos, choose their audience, then approve them. Draft videos stay hidden from viewers."><div className="flex gap-2"><LinkButton href="/workspace-7f3c9a2e/posts/bulk" variant="primary">Bulk upload</LinkButton><LinkButton href="/workspace-7f3c9a2e/posts/new">New post</LinkButton></div></PageHeader>
       <ErrorNote error={error} />
       <form className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-5">
         <Select name="channel" defaultValue={searchParams.channel ?? ""} aria-label="Channel"><option value="">All channels</option>{(channels ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</Select>
@@ -55,7 +55,7 @@ export default async function Posts({ searchParams }: { searchParams: Q }) {
                       {t && thumbs[t] ? <img src={thumbs[t]} alt="" className="h-full w-full object-cover" /> : "No image"}
                     </div>
                   </Td>
-                  <Td><Link href={`/admin/posts/${p.id}`} className="font-medium text-gray-900 hover:text-violet-700">{p.title}</Link>{p.hidden && <div className="mt-1"><Badge tone="red">Hidden</Badge></div>}{items.length === 0 && <div className="mt-1"><Badge tone="amber">No media yet</Badge></div>}</Td>
+                  <Td><Link href={`/workspace-7f3c9a2e/posts/${p.id}`} className="font-medium text-gray-900 hover:text-violet-700">{p.title}</Link>{p.hidden && <div className="mt-1"><Badge tone="red">Hidden</Badge></div>}{items.length === 0 && <div className="mt-1"><Badge tone="amber">No media yet</Badge></div>}</Td>
                   <Td>{(Array.isArray(ch) ? ch[0]?.name : ch?.name) ?? "—"}</Td>
                   <Td><AudienceBadge value={p.audience} /></Td>
                   <Td><StatusBadge value={p.status} />{p.status === "scheduled" && p.publish_at && <div className="mt-1 text-xs text-gray-500">{ist(p.publish_at)}</div>}</Td>

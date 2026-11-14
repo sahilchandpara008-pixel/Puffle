@@ -18,7 +18,7 @@ export default async function Users({ searchParams }: { searchParams: Q }) {
   ]);
   const rows = rowsOf(data);
   const total = (data as { total?: number } | null)?.total ?? rows.length;
-  const back = "/admin/users?" + new URLSearchParams(Object.entries(searchParams).filter(([, v]) => v) as [string, string][]).toString();
+  const back = "/workspace-7f3c9a2e/users?" + new URLSearchParams(Object.entries(searchParams).filter(([, v]) => v) as [string, string][]).toString();
   return (
     <>
       <PageHeader title={`Users (${total})`} sub="Latest 500 users, dates in IST." />

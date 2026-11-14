@@ -25,7 +25,7 @@ export default async function Payments({ searchParams: q }: { searchParams: Q })
   const st = (stats.data ?? {}) as Record<string, unknown>;
   const rows = rowsOf(orders.data);
   const live = !!s?.enabled && !!s?.upi_id;
-  const back = "/admin/payments?" + new URLSearchParams(Object.entries(q).filter(([, v]) => v) as [string, string][]).toString();
+  const back = "/workspace-7f3c9a2e/payments?" + new URLSearchParams(Object.entries(q).filter(([, v]) => v) as [string, string][]).toString();
   const filtered = Object.values(q).some(Boolean);
 
   return (
@@ -63,9 +63,9 @@ export default async function Payments({ searchParams: q }: { searchParams: Q })
       </div>
 
       <div className="mb-3 flex flex-wrap gap-2">
-        <LinkButton href="/admin/payments?verify=today" variant={q.verify === "today" ? "primary" : "secondary"} small>Activated today — check against bank</LinkButton>
-        <LinkButton href="/admin/payments?verify=all" variant={q.verify === "all" ? "primary" : "secondary"} small>All bank checks outstanding</LinkButton>
-        <LinkButton href="/admin/payments" variant={!filtered ? "primary" : "secondary"} small>All payments</LinkButton>
+        <LinkButton href="/workspace-7f3c9a2e/payments?verify=today" variant={q.verify === "today" ? "primary" : "secondary"} small>Activated today — check against bank</LinkButton>
+        <LinkButton href="/workspace-7f3c9a2e/payments?verify=all" variant={q.verify === "all" ? "primary" : "secondary"} small>All bank checks outstanding</LinkButton>
+        <LinkButton href="/workspace-7f3c9a2e/payments" variant={!filtered ? "primary" : "secondary"} small>All payments</LinkButton>
       </div>
       <form className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-7">
         <Select name="status" defaultValue={q.status ?? ""} aria-label="Status"><option value="">Any status</option>{STATUSES.map((x) => <option key={x}>{x}</option>)}</Select>
@@ -142,7 +142,7 @@ export default async function Payments({ searchParams: q }: { searchParams: Q })
         <Card title="Repeat buyers">
           {rowsOf(st.repeat_buyers).length === 0 ? <p className="text-sm text-gray-500">No repeat buyers yet.</p> : (
             <table className="w-full text-sm"><tbody>
-              {rowsOf(st.repeat_buyers).map((r, i) => <tr key={i} className="border-b border-gray-100 last:border-0"><td className="py-1.5">{r.email ? <Link className="text-violet-700 underline" href={`/admin/payments?q=${encodeURIComponent(String(r.email))}`}>{String(r.email)}</Link> : "Guest"}</td><td className="py-1.5 text-gray-500">{n(r.paid_orders)} orders</td><td className="py-1.5 text-right font-medium">{inr(Number(r.spent))}</td></tr>)}
+              {rowsOf(st.repeat_buyers).map((r, i) => <tr key={i} className="border-b border-gray-100 last:border-0"><td className="py-1.5">{r.email ? <Link className="text-violet-700 underline" href={`/workspace-7f3c9a2e/payments?q=${encodeURIComponent(String(r.email))}`}>{String(r.email)}</Link> : "Guest"}</td><td className="py-1.5 text-gray-500">{n(r.paid_orders)} orders</td><td className="py-1.5 text-right font-medium">{inr(Number(r.spent))}</td></tr>)}
             </tbody></table>
           )}
         </Card>

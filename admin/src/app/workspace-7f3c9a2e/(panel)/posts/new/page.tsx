@@ -12,7 +12,7 @@ export default async function NewPost() {
   const { data: channels } = await q;
   return (
     <>
-      <PageHeader title="New post" sub="Save the details first, then add the video on the next screen."><LinkButton href="/admin/posts">Back to posts</LinkButton></PageHeader>
+      <PageHeader title="New post" sub="Save the details first, then add the video on the next screen."><LinkButton href="/workspace-7f3c9a2e/posts">Back to posts</LinkButton></PageHeader>
       {(channels ?? []).length === 0 ? <Empty>Create and approve a channel first. Posts live inside channels.</Empty> : (
         <Card className="max-w-2xl">
           <form action={createPost} className="space-y-3">

@@ -19,7 +19,7 @@ export default async function Dashboard() {
   const date = new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Kolkata" }).format(new Date());
   return <>
     <PageHeader title="Workspace overview" sub="A clear view of your content, community and business.">
-      <LinkButton href="/admin/posts/bulk" variant="primary">+ Upload content</LinkButton>
+      <LinkButton href="/workspace-7f3c9a2e/posts/bulk" variant="primary">+ Upload content</LinkButton>
     </PageHeader>
     <section className="admin-welcome mb-7 flex flex-wrap items-center justify-between gap-5 rounded-2xl p-6 sm:p-8">
       <div><p className="text-[10px] font-semibold uppercase tracking-[.2em] text-teal-200">YOUR PUFFLE WORKSPACE</p><h2 className="mt-3 text-2xl font-semibold tracking-tight text-white sm:text-3xl">Good content starts here.</h2><p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-300">Publish new videos, review channels and keep your community moving.</p></div>
@@ -27,10 +27,10 @@ export default async function Dashboard() {
     </section>
     {error && <p role="alert" className="mb-5 rounded-xl bg-red-50 p-4 text-sm text-red-700">Could not load overview: {error.message}</p>}
     {owner && <div className="mb-6 grid gap-2 sm:grid-cols-2">
-      <Alert count={a.channel_requests ?? 0} text="channel requests to review" href="/admin/channels" />
-      <Alert count={a.organic_buyers_waiting ?? 0} text="organic users waiting for approval" href="/admin/approvals" />
-      <Alert count={a.payments_to_verify ?? 0} text="payments to verify today" href="/admin/payments?verify=today" />
-      <Alert count={a.open_requests ?? 0} text="open requests and reports" href="/admin/requests" />
+      <Alert count={a.channel_requests ?? 0} text="channel requests to review" href="/workspace-7f3c9a2e/channels" />
+      <Alert count={a.organic_buyers_waiting ?? 0} text="organic users waiting for approval" href="/workspace-7f3c9a2e/approvals" />
+      <Alert count={a.payments_to_verify ?? 0} text="payments to verify today" href="/workspace-7f3c9a2e/payments?verify=today" />
+      <Alert count={a.open_requests ?? 0} text="open requests and reports" href="/workspace-7f3c9a2e/requests" />
     </div>}
     {owner && <div className="mb-5 grid grid-cols-2 gap-4 xl:grid-cols-4">
       <Stat label="Total app users" value={n(s.users)} />
@@ -43,12 +43,12 @@ export default async function Dashboard() {
       {owner && <><Stat label="Installs from ads" value={n(s.ads_installs)} /><Stat label="Organic installs" value={n(s.organic_installs)} /><Stat label="Logged-in users" value={n(s.logged_in)} /><Stat label="Free plans claimed" value={n(s.free_claims)} /></>}
     </div>
     <div className="mb-8 grid gap-4 lg:grid-cols-3">
-      <Card title="Content library" sub="Manage videos, images, previews and thumbnails."><Link href="/admin/posts" className="inline-block text-sm font-semibold text-teal-700 hover:underline">Open library →</Link></Card>
-      <Card title="Channels" sub="Review channel requests and manage their audience."><Link href="/admin/channels" className="inline-block text-sm font-semibold text-teal-700 hover:underline">Manage channels →</Link></Card>
-      <Card title="Bulk upload" sub="Preview your files and publish a batch to any channel you manage."><Link href="/admin/posts/bulk" className="inline-block text-sm font-semibold text-teal-700 hover:underline">Upload a batch →</Link></Card>
+      <Card title="Content library" sub="Manage videos, images, previews and thumbnails."><Link href="/workspace-7f3c9a2e/posts" className="inline-block text-sm font-semibold text-teal-700 hover:underline">Open library →</Link></Card>
+      <Card title="Channels" sub="Review channel requests and manage their audience."><Link href="/workspace-7f3c9a2e/channels" className="inline-block text-sm font-semibold text-teal-700 hover:underline">Manage channels →</Link></Card>
+      <Card title="Bulk upload" sub="Preview your files and publish a batch to any channel you manage."><Link href="/workspace-7f3c9a2e/posts/bulk" className="inline-block text-sm font-semibold text-teal-700 hover:underline">Upload a batch →</Link></Card>
     </div>
     {owner && <section>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><div><h2 className="text-base font-semibold text-slate-900">Audience acquisition</h2><p className="mt-1 text-xs text-slate-500">Installs, registrations and buyers by source and campaign.</p></div><Link href="/admin/meta" className="text-xs font-medium text-teal-700 hover:underline">View Meta Pixel →</Link></div>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><div><h2 className="text-base font-semibold text-slate-900">Audience acquisition</h2><p className="mt-1 text-xs text-slate-500">Installs, registrations and buyers by source and campaign.</p></div><Link href="/workspace-7f3c9a2e/meta" className="text-xs font-medium text-teal-700 hover:underline">View Meta Pixel →</Link></div>
       {rows.length === 0 ? <Empty>No installs recorded yet. Campaign activity will appear here.</Empty> : <Table>
         <thead><tr><Th>Source</Th><Th>Campaign</Th><Th>Installs</Th><Th>Registrations</Th><Th>Buyers</Th></tr></thead>
         <tbody>{rows.map((r,i) => <tr key={i}><Td><SourceBadge value={r.source as string} /></Td><Td>{String(r.campaign)}</Td><Td>{n(r.installs)}</Td><Td>{n(r.registrations)}</Td><Td>{n(r.buyers)}</Td></tr>)}</tbody>

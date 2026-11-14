@@ -10,7 +10,7 @@ export default async function BulkUploadPage({ searchParams }: { searchParams: {
   const { data, error } = await query;
   return <>
     <PageHeader title="Bulk upload" sub="Upload from this browser directly to a channel. Each file becomes a separate post.">
-      <LinkButton href="/admin/posts">Back to posts</LinkButton>
+      <LinkButton href="/workspace-7f3c9a2e/posts">Back to posts</LinkButton>
     </PageHeader>
     <ErrorNote error={error} />
     <BulkUpload channels={data ?? []} initialChannelId={searchParams.channel} />

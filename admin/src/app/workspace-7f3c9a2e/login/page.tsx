@@ -20,7 +20,7 @@ function LoginForm() {
     if (error) { setBusy(false); return setErr(error.message === "Invalid login credentials" ? "Wrong email or password." : error.message); }
     const { data: isAdmin } = await sb.rpc("is_admin");
     if (!isAdmin) { await sb.auth.signOut(); setBusy(false); return setErr("This account is not an admin."); }
-    window.location.href = "/admin";
+    window.location.href = "/workspace-7f3c9a2e";
   }
 
   const input = "w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-sm text-gray-900 focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600";

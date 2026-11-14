@@ -21,12 +21,12 @@ export async function middleware(req: NextRequest) {
   );
   const { data } = await supabase.auth.getUser();
   const path = req.nextUrl.pathname;
-  if (path.startsWith("/admin") && path !== "/admin/login" && !data.user) {
+  if (path.startsWith("/workspace-7f3c9a2e") && path !== "/workspace-7f3c9a2e/login" && !data.user) {
     const url = req.nextUrl.clone();
-    url.pathname = "/admin/login";
+    url.pathname = "/workspace-7f3c9a2e/login";
     return NextResponse.redirect(url);
   }
   return res;
 }
 
-export const config = { matcher: ["/admin/:path*"] };
+export const config = { matcher: ["/workspace-7f3c9a2e/:path*"] };

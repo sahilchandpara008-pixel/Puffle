@@ -17,11 +17,11 @@ export default async function Requests({ searchParams }: { searchParams: { tab?:
   const { data, error } = await sb.rpc("admin_requests", { p_status: "open" });
   const all = rowsOf(data);
   const rows = all.filter((r) => r.kind === tab);
-  const back = `/admin/requests?tab=${tab}`;
+  const back = `/workspace-7f3c9a2e/requests?tab=${tab}`;
   return (
     <>
       <PageHeader title="Requests" sub="Open requests from the app and the website." />
-      <Tabs current={tab} items={TABS.map((t) => ({ ...t, href: `/admin/requests?tab=${t.key}`, count: all.filter((r) => r.kind === t.key).length }))} />
+      <Tabs current={tab} items={TABS.map((t) => ({ ...t, href: `/workspace-7f3c9a2e/requests?tab=${t.key}`, count: all.filter((r) => r.kind === t.key).length }))} />
       <ErrorNote error={error} />
       {rows.length === 0 ? <Empty>No open requests here.</Empty> : (
         <div className="space-y-3">
@@ -39,7 +39,7 @@ export default async function Requests({ searchParams }: { searchParams: { tab?:
                       <p className="mt-1 text-xs text-gray-600">
                         About {String(r.target_type)}:{" "}
                         {r.target_title
-                          ? <Link className="font-medium text-violet-700 underline" href={r.target_type === "post" ? `/admin/posts/${r.target_id}` : `/admin/channels/${r.target_id}`}>{String(r.target_title)}</Link>
+                          ? <Link className="font-medium text-violet-700 underline" href={r.target_type === "post" ? `/workspace-7f3c9a2e/posts/${r.target_id}` : `/workspace-7f3c9a2e/channels/${r.target_id}`}>{String(r.target_title)}</Link>
                           : "already deleted"}
                       </p>
                     ) : null}

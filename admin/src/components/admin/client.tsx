@@ -42,7 +42,7 @@ export function SignOut() {
   return (
     <button
       className="admin-signout mt-3 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50"
-      onClick={async () => { await supabaseBrowser().auth.signOut(); window.location.href = "/admin/login"; }}
+      onClick={async () => { await supabaseBrowser().auth.signOut(); window.location.href = "/workspace-7f3c9a2e/login"; }}
     >
       Sign out
     </button>

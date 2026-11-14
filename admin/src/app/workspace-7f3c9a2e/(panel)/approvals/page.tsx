@@ -11,7 +11,7 @@ export default async function Approvals({ searchParams }: { searchParams: { tab?
   const tab = TABS.includes(searchParams.tab as (typeof TABS)[number]) ? searchParams.tab! : "pending";
   const { data, error } = await sb.rpc("admin_approvals", { p_status: tab });
   const rows = rowsOf(data);
-  const back = `/admin/approvals?tab=${tab}`;
+  const back = `/workspace-7f3c9a2e/approvals?tab=${tab}`;
   const act = (user: string, status: string, label: string, variant: "success" | "danger" | "secondary", confirm?: string) => (
     <form action={setAccess}>
       <Hidden name="user" value={user} /><Hidden name="status" value={status} /><Hidden name="back" value={back} />
@@ -21,7 +21,7 @@ export default async function Approvals({ searchParams }: { searchParams: { tab?
   return (
     <>
       <PageHeader title="Approvals" sub="Organic users asking for full access. Approved users see the same content as ads users." />
-      <Tabs current={tab} items={TABS.map((t) => ({ key: t, label: t[0].toUpperCase() + t.slice(1), href: `/admin/approvals?tab=${t}` }))} />
+      <Tabs current={tab} items={TABS.map((t) => ({ key: t, label: t[0].toUpperCase() + t.slice(1), href: `/workspace-7f3c9a2e/approvals?tab=${t}` }))} />
       <ErrorNote error={error} />
       {rows.length === 0 ? <Empty>Nothing {tab} right now.</Empty> : (
         <Table>

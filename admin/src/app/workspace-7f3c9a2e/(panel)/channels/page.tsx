@@ -17,7 +17,7 @@ export default async function Channels() {
   return (
     <>
       <PageHeader title="Channels" sub="Approve new channels and choose whether ads users, organic users, or both can see them.">
-        {owner && <LinkButton href="/admin/channels/new" variant="primary">New channel</LinkButton>}
+        {owner && <LinkButton href="/workspace-7f3c9a2e/channels/new" variant="primary">New channel</LinkButton>}
       </PageHeader>
       <ErrorNote error={req.error ?? list.error} />
 
@@ -69,7 +69,7 @@ export default async function Channels() {
             {channels.map((c) => (
               <tr key={c.id}>
                 <Td>
-                  <Link href={`/admin/channels/${c.id}`} className="flex items-center gap-2 font-medium text-gray-900 hover:text-violet-700">
+                  <Link href={`/workspace-7f3c9a2e/channels/${c.id}`} className="flex items-center gap-2 font-medium text-gray-900 hover:text-violet-700">
                     <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-violet-100 text-sm font-bold text-violet-700">{c.name.charAt(0).toUpperCase()}</span>{c.name}
                   </Link>
                   {c.hidden && <div className="mt-1"><Badge tone="red">Hidden</Badge></div>}
@@ -82,7 +82,7 @@ export default async function Channels() {
                 <Td className="whitespace-nowrap text-xs text-gray-500">{ist(c.created_at)}</Td>
                 <Td>
                   <div className="flex flex-wrap gap-1.5">
-                    <LinkButton href={`/admin/channels/${c.id}`} small>Edit</LinkButton>
+                    <LinkButton href={`/workspace-7f3c9a2e/channels/${c.id}`} small>Edit</LinkButton>
                     {owner && (
                       <form action={setHidden}>
                         <Hidden name="type" value="channel" /><Hidden name="id" value={c.id} /><Hidden name="hidden" value={c.hidden ? "0" : "1"} />
