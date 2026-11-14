@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:orbix/config.dart';
+import 'package:puffle/config.dart';
 
 void main() {
   test('Settings version label equals pubspec version', () {

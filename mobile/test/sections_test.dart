@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:orbix/screens/cloud_screen.dart';
-import 'package:orbix/screens/profile_screen.dart';
-import 'package:orbix/services/app_scope.dart';
-import 'package:orbix/services/app_state.dart';
-import 'package:orbix/models/status.dart';
+import 'package:puffle/screens/cloud_screen.dart';
+import 'package:puffle/screens/profile_screen.dart';
+import 'package:puffle/services/app_scope.dart';
+import 'package:puffle/services/app_state.dart';
+import 'package:puffle/models/status.dart';
 
 /// Six user types from the spec: GO/GA guests, LO/LA logged in without a plan, PO/PA with a plan.
 Map<String, dynamic> st({bool guest = false, bool ads = false, bool plan = false, bool free = false, bool visible = true, int quota = 0}) => {

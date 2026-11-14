@@ -1,6 +1,6 @@
 import 'package:flutter/painting.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:orbix/theme.dart';
+import 'package:puffle/theme.dart';
 
 void main() {
   test('colour tokens match the spec', () {

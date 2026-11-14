@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:orbix/widgets/ui.dart';
+import 'package:puffle/widgets/ui.dart';
 
 void main() {
   testWidgets('EmptyState shows title, message and action', (t) async {

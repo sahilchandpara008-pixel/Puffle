@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:orbix/models/status.dart';
+import 'package:puffle/models/status.dart';
 
 void main() {
   test('guest default has no quota', () {

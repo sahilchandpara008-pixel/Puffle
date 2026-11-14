@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:orbix/screens/consent_gate.dart';
-import 'package:orbix/screens/plans_page.dart';
-import 'package:orbix/widgets/orbix_nav_bar.dart';
+import 'package:puffle/screens/consent_gate.dart';
+import 'package:puffle/screens/plans_page.dart';
+import 'package:puffle/widgets/orbix_nav_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Future<List<Map<String, dynamic>>> plans() async => [

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:orbix/payments/upi.dart';
+import 'package:puffle/payments/upi.dart';
 
 void main() {
   group('buildUpiUri', () {

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:orbix/payments/pending_queue.dart';
+import 'package:puffle/payments/pending_queue.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
