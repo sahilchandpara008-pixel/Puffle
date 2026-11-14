@@ -12,7 +12,7 @@ void main() {
       expect(q['tr'], 'OB261109AB12CD34');
       expect(q['am'], '49.00');
       expect(q['cu'], 'INR');
-      expect(q['tn'], 'Orbix OB261109AB12CD34');
+      expect(q['tn'], 'Puffle OB261109AB12CD34');
       expect(u.contains('As%20Enterprice'), isTrue);
     });
   });
