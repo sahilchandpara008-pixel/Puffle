@@ -1,0 +1,27 @@
+name: Publish APK download
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [".github/workflows/publish-apk-download.yml"]
+permissions:
+  actions: read
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Puffle-apks
+          run-id: 43588213435
+          github-token: ${{ github.token }}
+      - name: Verify build checksums
+        run: sha256sum -c checksums.txt
+      - name: Publish direct APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release view v1.0.3 >/dev/null 2>&1 || gh release create v1.0.3 --target 72ab0d4d74e92cda09a2dec6b33f9ba0885b056a --title "Puffle v1.0.3" --notes "Updated browsing grids, video suggestions and next/previous controls, and admin approval for channel videos. Install Puffle.apk." --latest
+          gh release upload v1.0.3 Puffle.apk checksums.txt --clobber
