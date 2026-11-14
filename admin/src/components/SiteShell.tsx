@@ -6,7 +6,7 @@ const email = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "help.puffle@gmail.com";
 export function Logo() {
   return (
     <Link href="/" className="flex items-center gap-2 font-bold text-lg text-slate-900">
-      <span className="h-8 w-8 rounded-lg bg-brand grid place-items-center text-sm font-bold text-white">OB</span> Puffle
+      <span className="h-8 w-8 rounded-lg bg-brand grid place-items-center text-sm font-bold text-white">PF</span> Puffle
     </Link>
   );
 }
