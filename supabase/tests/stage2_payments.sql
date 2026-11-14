@@ -37,7 +37,7 @@ begin
   end $f$;
 
   insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, is_anonymous)
-  values (owner_id,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','liveperfumes7@gmail.com',now(),false);
+  values (owner_id,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','owner@example.test',now(),false);
   u1 := pg_temp.mk('u1@t.test', false); u2 := pg_temp.mk('u2@t.test', false); ua := pg_temp.mk('ua@t.test', true);
   u4 := pg_temp.mk('u4@t.test', false); u5 := pg_temp.mk('u5@t.test', false); u6 := pg_temp.mk('u6@t.test', false);
   u7 := pg_temp.mk('u7@t.test', false); u8 := pg_temp.mk('u8@t.test', false); u9 := pg_temp.mk('u9@t.test', false);
