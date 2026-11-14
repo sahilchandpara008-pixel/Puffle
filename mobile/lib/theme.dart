@@ -3,21 +3,21 @@ import 'package:google_fonts/google_fonts.dart';
 
 /// All colours live here as tokens.
 class Tokens {
-  static const background = Color(0xFF080B14);
-  static const surface = Color(0xFF111827);
-  static const border = Color(0xFF27324A);
+  static const background = Color(0xFF08151D);
+  static const surface = Color(0xFF122630);
+  static const border = Color(0xFF29414C);
   static const text = Color(0xFFFFFFFF);
-  static const muted = Color(0xFF9AA8BF);
-  static const primary = Color(0xFF6C63FF);
-  static const accent = Color(0xFF38BDF8);
+  static const muted = Color(0xFFADC0C9);
+  static const primary = Color(0xFF137D79);
+  static const accent = Color(0xFF71E3D0);
   static const gold = Color(0xFFFFC94D); // Premium only
   static const success = Color(0xFF35D07F);
   static const warning = Color(0xFFFFB020);
   static const danger = Color(0xFFFF4D5E);
-  static const gradient = LinearGradient(colors: [Color(0xFF6C63FF), Color(0xFF8B5CF6), Color(0xFF38BDF8)]);
+  static const gradient = LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF137D79), Color(0xFF17697E)]);
 }
 
-/// Poppins has tall line metrics; a fixed, tighter line height removes the loose gaps.
+/// A consistent line height keeps headings and supporting copy readable.
 TextTheme _tight(TextTheme t) {
   TextStyle? h(TextStyle? s) => s?.copyWith(height: 1.3);
   return t.copyWith(
@@ -39,13 +39,13 @@ ThemeData buildTheme() {
       surfaceContainerHigh: Tokens.surface,
       error: Tokens.danger,
     ),
-    textTheme: _tight(GoogleFonts.poppinsTextTheme(base.textTheme).apply(bodyColor: Tokens.text, displayColor: Tokens.text)),
-    listTileTheme: const ListTileThemeData(dense: true, contentPadding: EdgeInsets.symmetric(horizontal: 12), minVerticalPadding: 4, horizontalTitleGap: 12),
+    textTheme: _tight(GoogleFonts.interTextTheme(base.textTheme).apply(bodyColor: Tokens.text, displayColor: Tokens.text)),
+    listTileTheme: const ListTileThemeData(dense: false, contentPadding: EdgeInsets.symmetric(horizontal: 12), minVerticalPadding: 8, horizontalTitleGap: 12),
     dividerTheme: const DividerThemeData(color: Tokens.border, space: 1, thickness: 1),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
-      backgroundColor: const Color(0xFF1E1E30),
-      contentTextStyle: GoogleFonts.poppins(color: Tokens.text, fontSize: 13),
+      backgroundColor: const Color(0xFF1A3440),
+      contentTextStyle: GoogleFonts.inter(color: Tokens.text, fontSize: 13),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: Tokens.border)),
     ),
     bottomSheetTheme: const BottomSheetThemeData(
@@ -59,15 +59,15 @@ ThemeData buildTheme() {
       elevation: 2,
       highlightElevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      extendedTextStyle: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600),
+      extendedTextStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         backgroundColor: Tokens.primary,
         foregroundColor: Colors.white,
-        minimumSize: const Size(64, 46),
+        minimumSize: const Size(64, 50),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        textStyle: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600),
+        textStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
@@ -75,14 +75,14 @@ ThemeData buildTheme() {
         foregroundColor: Tokens.text,
         side: const BorderSide(color: Tokens.border),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        textStyle: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500),
+        textStyle: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
         foregroundColor: Tokens.primary,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        textStyle: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600),
+        textStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
       ),
     ),
     progressIndicatorTheme: const ProgressIndicatorThemeData(color: Tokens.primary, linearTrackColor: Tokens.border, linearMinHeight: 4),
@@ -91,16 +91,16 @@ ThemeData buildTheme() {
       trackColor: WidgetStateProperty.resolveWith((st) => st.contains(WidgetState.selected) ? Tokens.primary : Tokens.border),
       trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
     ),
-    cardTheme: CardTheme(
+    cardTheme: base.cardTheme.copyWith(
       margin: EdgeInsets.zero,
       color: Tokens.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: Tokens.border)),
     ),
-    appBarTheme: const AppBarTheme(backgroundColor: Tokens.background, elevation: 0, scrolledUnderElevation: 0, centerTitle: false, titleSpacing: 0, toolbarHeight: 52, titleTextStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Tokens.text)),
+    appBarTheme: const AppBarTheme(backgroundColor: Tokens.background, elevation: 0, scrolledUnderElevation: 0, centerTitle: false, titleSpacing: 16, toolbarHeight: 60, titleTextStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Tokens.text)),
     navigationBarTheme: const NavigationBarThemeData(backgroundColor: Tokens.surface, indicatorColor: Tokens.primary),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: const Color(0xFF0B1220),
+      fillColor: const Color(0xFF0D1E28),
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       labelStyle: const TextStyle(color: Tokens.muted, fontSize: 14),
       floatingLabelStyle: const TextStyle(color: Tokens.primary, fontSize: 14),
@@ -141,3 +141,4 @@ class GradientButton extends StatelessWidget {
         ),
       );
 }
+
