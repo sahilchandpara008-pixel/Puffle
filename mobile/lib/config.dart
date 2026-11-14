@@ -1,4 +1,4 @@
-/// Build-time configuration. Nothing secret lives here: the Supabase URL and
+/// Puffle build-time configuration. Nothing secret lives here: the Supabase URL and
 /// publishable key are public by design (access is enforced by RLS on the server).
 class Config {
   static const appName = 'Puffle';
