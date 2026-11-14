@@ -7,6 +7,7 @@ import '../theme.dart';
 import '../widgets/ui.dart';
 import 'channel_page.dart';
 import 'login_sheet.dart';
+import 'premium_screen.dart';
 
 class ChannelsScreen extends StatefulWidget {
   const ChannelsScreen({super.key, this.standalone = false});
