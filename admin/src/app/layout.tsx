@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
-const site = process.env.NEXT_PUBLIC_SITE_URL ?? "https://puffle.vercel.app";
+const site = process.env.NEXT_PUBLIC_SITE_URL ?? "https://puffle-iota.vercel.app";
 
 export const metadata: Metadata = {
   metadataBase: new URL(site),
