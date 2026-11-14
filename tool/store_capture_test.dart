@@ -73,7 +73,7 @@ void main() {
     final check = await tester.runAsync(() => Supabase.instance.client.from('channels').select('id,name'));
     expect(check,hasLength(3));
     final app=AppState()..status=AppStatus(raw)..loaded=true;
-    tester.view.physicalSize=const Size(1170,2532); tester.view.devicePixelRatio=3;
+    tester.view.physicalSize=const Size(1080,1920); tester.view.devicePixelRatio=3;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(RepaintBoundary(key:const Key('capture'),child:AppScope(state:app,child:MaterialApp(debugShowCheckedModeBanner:false,theme:buildTheme(),home:const HomeShell()))));
     await tester.pumpAndSettle();

@@ -38,6 +38,23 @@ jobs:
           p.write_text(text)
           PY
           flutter test test/store_capture_test.dart --dart-define=PLAY_STORE=true
+      - name: Validate Play image sizes and export opaque PNGs
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+          root=Path('play-console-assets')
+          shots=list((root/'phone-screenshots').glob('*.png'))
+          assert len(shots)==4
+          for p in shots:
+              with Image.open(p) as image:
+                  assert image.size==(1080,1920), (p,image.size)
+                  rgb=image.convert('RGB')
+              rgb.save(p)
+          for name,size in [('app_icon_512.png',(512,512)),('feature_graphic_1024x500.png',(1024,500))]:
+              with Image.open(root/name) as image:
+                  assert image.size==size and image.mode=='RGB'
+          PY
       - name: Package original signed builds with graphics
         env:
           GH_TOKEN: ${{ github.token }}
