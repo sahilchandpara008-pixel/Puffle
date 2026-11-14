@@ -14,7 +14,7 @@ Puffle Supabase project: `dqufassvbkattmmsuwmf` (Mumbai). The 19 database migrat
 `mobile/lib/config.dart` points to the Puffle backend. Android app IDs: `com.puffle.app` (direct), `com.pufflecloud.app` (Play). GitHub Actions → `mobile` runs tests and builds artifacts. Test on a real device before release. Signing keys belong only in GitHub secrets.
 
 ## Website
-Deploy `admin/` as the Vercel Root Directory. Set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_SITE_URL`, and `NEXT_PUBLIC_SUPPORT_EMAIL` in Vercel. **Do not publish a website with `help.puffle@gmail.com` as a real contact address.** Verify privacy, terms, refund, community guidelines, report content and delete-account pages against actual business practices. Some account-deletion flows require missing edge functions and are not yet operational.
+Deploy `admin/` as the Vercel Root Directory. Set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_SITE_URL`, and `NEXT_PUBLIC_SUPPORT_EMAIL` in Vercel. **The configured public support contact is `help.puffle@gmail.com`.** Verify privacy, terms, refund, community guidelines, report content and delete-account pages against actual business practices. Some account-deletion flows require missing edge functions and are not yet operational.
 
 ## Safety and launch checklist
 1. Configure and verify the Puffle admin owner account (original Orbix bootstrap email was removed).
