@@ -12,12 +12,12 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Supabase.initialize(url: Config.supabaseUrl, publishableKey: Config.supabaseKey);
   final state = AppState();
-  runApp(OrbixApp(state: state));
+  runApp(PuffleApp(state: state));
   state.start();
 }
 
-class OrbixApp extends StatelessWidget {
-  const OrbixApp({super.key, required this.state});
+class PuffleApp extends StatelessWidget {
+  const PuffleApp({super.key, required this.state});
   final AppState state;
 
   // AppScope must sit ABOVE MaterialApp so every pushed route (payment status, history, upgrade...) can find it.
