@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import SavedMediaPreview from "./SavedMediaPreview";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
@@ -42,7 +43,14 @@ export function probe(file: File): Promise<{ duration: number | null; thumb: Blo
   return new Promise((resolve) => {
     const v = document.createElement("video");
     const url = URL.createObjectURL(file);
-    const done = (r: { duration: number | null; thumb: Blob | null }) => { URL.revokeObjectURL(url); resolve(r); };
+    let settled = false;
+    const done = (r: { duration: number | null; thumb: Blob | null }) => {
+      if (settled) return;
+      settled = true; clearTimeout(timer);
+      v.onloadedmetadata = null; v.onseeked = null; v.onerror = null;
+      v.removeAttribute("src"); v.load();
+      URL.revokeObjectURL(url); resolve(r);
+    };
     const timer = setTimeout(() => done({ duration: null, thumb: null }), 8000);
     v.preload = "metadata"; v.muted = true; v.playsInline = true; v.src = url;
     v.onerror = () => { clearTimeout(timer); done({ duration: null, thumb: null }); };
@@ -144,6 +152,8 @@ export default function MediaEditor({ postId, channelId, items, thumbs }: { post
               </label>
             </div>
           </div>
+          <SavedMediaPreview key={it.media_key} storageKey={it.media_key} label={it.mime.startsWith("video") ? "Preview full video" : "Preview image"} mime={it.mime} poster={it.thumbnail_key ? thumbs[it.thumbnail_key] : undefined} />
+          {it.trailer_key && <SavedMediaPreview key={it.trailer_key} storageKey={it.trailer_key} label="Preview trailer" mime="video/mp4" />}
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <label className={fileBtn} aria-disabled={busy}>{it.trailer_key ? "Replace trailer" : "Add trailer"}{pick("video/*", (f) => attach(it, "trailer_key", f))}</label>
             <label className={fileBtn} aria-disabled={busy}>{it.thumbnail_key ? "Replace thumbnail" : "Add thumbnail"}{pick("image/*", (f) => attach(it, "thumbnail_key", f))}</label>

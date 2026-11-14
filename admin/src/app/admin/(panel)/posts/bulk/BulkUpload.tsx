@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import BulkMediaPreview from "./BulkMediaPreview";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { upload, probe } from "../[id]/MediaEditor";
 
@@ -158,16 +159,19 @@ export default function BulkUpload({ channels, initialChannelId }: { channels: C
     </div>
     <div className="space-y-3">{entries.map(row => <article key={row.id} className="rounded-xl border bg-white p-4 space-y-2">
       <div className="flex flex-wrap justify-between gap-2"><span className="text-sm text-gray-600 break-all">{row.file ? `${row.file.name} · ${(row.file.size / 1048576).toFixed(1)} MB` : "Text post"}</span><span className="text-sm font-medium" role="status">{row.state === "uploading" ? `Uploading ${row.progress}%` : row.state === "done" ? publish ? "Published" : "Draft saved" : row.state === "error" ? "Needs retry" : "Ready"}</span></div>
+      {row.file && <BulkMediaPreview file={row.file} thumbnail={row.thumbnail} trailer={row.trailer} video={mediaType(row.file).startsWith("video/")} />}
       <label className="block text-sm">Title<input className={cls} maxLength={160} value={row.title} disabled={busy || row.state === "done"} onChange={e => patch(row.id, { title: e.target.value })} /></label>
       <label className="block text-sm">{row.file ? "Description / content" : "Content"}<textarea className={cls} rows={3} value={row.description} disabled={busy || row.state === "done"} onChange={e => patch(row.id, { description: e.target.value })} /></label>
       {row.file && <div className="grid gap-3 sm:grid-cols-2">
         <label className="block text-sm">Thumbnail (optional)
           <input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy || row.state === "done" || row.mediaDone} onChange={e => { patch(row.id, { thumbnail: e.target.files?.[0] }); e.target.value = ""; }} />
           <span className="block text-xs text-gray-500">{row.thumbnail?.name ?? "An automatic thumbnail is generated when no image is selected."}</span>
+          {row.thumbnail && <button type="button" disabled={busy || row.state === "done" || row.mediaDone} onClick={() => patch(row.id, { thumbnail: undefined })} className="text-xs text-violet-700 underline">Use automatic thumbnail</button>}
         </label>
         {mediaType(row.file).startsWith("video/") && <label className="block text-sm">Trailer / preview (optional)
           <input type="file" accept="video/*" disabled={busy || row.state === "done" || row.mediaDone} onChange={e => { patch(row.id, { trailer: e.target.files?.[0] }); e.target.value = ""; }} />
           <span className="block text-xs text-gray-500">{row.trailer?.name ?? "Add a trailer so ads guests can preview a Premium video."}</span>
+          {row.trailer && <button type="button" disabled={busy || row.state === "done" || row.mediaDone} onClick={() => patch(row.id, { trailer: undefined })} className="text-xs text-violet-700 underline">Remove selected trailer</button>}
         </label>}
       </div>}
       {row.state === "uploading" && <progress className="w-full" value={row.progress} max={100} aria-label={`Upload progress for ${row.title}`} />}
