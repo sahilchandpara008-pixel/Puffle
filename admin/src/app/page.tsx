@@ -22,8 +22,8 @@ const ShieldIcon = () => (
 );
 
 const FAQ = [
-  ["Is Orbix free?", "Creating an account gives you 15 GB of cloud storage. Premium plans give you 2 TB, full-length premium videos and downloads."],
-  ["How do I pay?", "Inside the Orbix Android app, with the UPI app you already use. We never see your UPI PIN."],
+  ["Is Puffle free?", "Creating an account gives you 15 GB of cloud storage. Premium plans give you 2 TB, full-length premium videos and downloads."],
+  ["How do I pay?", "Inside the Puffle Android app, with the UPI app you already use. We never see your UPI PIN."],
   ["Is my data private?", "Yes. Your files are private to your account and are opened only through short-lived secure links."],
   ["How do I delete my account?", "In the app: Profile → Delete account. Or on this website at Delete Account."],
 ];
@@ -52,7 +52,7 @@ export default async function Home() {
       <section id="security" className="bg-slate-50">
         <div className="mx-auto max-w-5xl px-4 py-20 grid gap-10 md:grid-cols-2 items-center">
           <div>
-            <h2 className="text-3xl font-semibold text-slate-900">Orbix protects your data</h2>
+            <h2 className="text-3xl font-semibold text-slate-900">Puffle protects your data</h2>
             <p className="mt-3 text-slate-600">Your files are private to your account. They are opened only through short-lived secure links, and our access rules are enforced on the server, not just in the app.</p>
             <div className="mt-5 flex items-start gap-3">
               <span className="mt-1 text-primary">✔</span>
@@ -71,7 +71,7 @@ export default async function Home() {
 
       <section id="pricing" className="bg-slate-50">
         <div className="mx-auto max-w-5xl px-4 py-20">
-          <h2 className="text-center text-3xl font-semibold text-slate-900">Choose your best Orbix plan</h2>
+          <h2 className="text-center text-3xl font-semibold text-slate-900">Choose your best Puffle plan</h2>
           <p className="mt-2 text-center text-sm text-slate-500">Unlock premium privileges and supercharge your cloud storage.</p>
           <div className="mt-10 grid gap-6 md:grid-cols-2">
             <div className="card p-6">

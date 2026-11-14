@@ -54,7 +54,7 @@ export default function DeleteAccount() {
     <SiteShell>
       <main className="mx-auto max-w-2xl px-4 py-12 space-y-8 text-sm">
         <section className="space-y-3">
-          <h1 className="text-3xl font-bold text-slate-900">Delete your Orbix account</h1>
+          <h1 className="text-3xl font-bold text-slate-900">Delete your Puffle account</h1>
           <p className="text-slate-600">
             Deleting removes your profile, cloud files, channels and posts. Payment records are kept without any link to you for up to 8 years, as tax and
             accounting rules require. In the app you can also go to Profile → Delete account.

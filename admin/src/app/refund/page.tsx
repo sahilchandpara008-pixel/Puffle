@@ -1,7 +1,7 @@
 import SiteShell from "@/components/SiteShell";
 
 export const metadata = { title: "Refund Policy" };
-const email = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "help.orbix2026@gmail.com";
+const email = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@puffle.example";
 
 export default function Refund() {
   return (
@@ -10,7 +10,7 @@ export default function Refund() {
         <h1>Refund Policy</h1>
         <p className="text-slate-500">Last updated: November 2026</p>
         <h2>1. Digital service</h2>
-        <p>Orbix plans give you cloud storage and premium access for a fixed period. Because access starts as soon as your payment is confirmed, plans are generally non-refundable once activated.</p>
+        <p>Puffle plans give you cloud storage and premium access for a fixed period. Because access starts as soon as your payment is confirmed, plans are generally non-refundable once activated.</p>
         <h2>2. When we refund or correct</h2>
         <p>After checking our records and your payment reference, we will refund or correct:</p>
         <ul>

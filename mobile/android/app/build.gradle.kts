@@ -13,7 +13,7 @@ val keyProps = Properties().apply {
 }
 
 android {
-    namespace = "com.orbix.app"
+    namespace = "com.puffle.app"
     compileSdk = 35
     ndkVersion = flutter.ndkVersion
 
@@ -45,13 +45,13 @@ android {
     productFlavors {
         create("direct") {
             dimension = "dist"
-            applicationId = "com.orbix.app"
-            manifestPlaceholders["authScheme"] = "com.orbix.app"
+            applicationId = "com.puffle.app"
+            manifestPlaceholders["authScheme"] = "com.puffle.app"
         }
         create("play") {
             dimension = "dist"
-            applicationId = "com.orbixcloud.app"
-            manifestPlaceholders["authScheme"] = "com.orbixcloud.app"
+            applicationId = "com.pufflecloud.app"
+            manifestPlaceholders["authScheme"] = "com.pufflecloud.app"
         }
     }
 

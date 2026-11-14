@@ -1,12 +1,12 @@
 import Link from "next/link";
 import MetaPixel from "./MetaPixel";
 
-const email = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "help.orbix2026@gmail.com";
+const email = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@puffle.example";
 
 export function Logo() {
   return (
     <Link href="/" className="flex items-center gap-2 font-bold text-lg text-slate-900">
-      <span className="h-8 w-8 rounded-lg bg-brand grid place-items-center text-sm font-bold text-white">OB</span> Orbix
+      <span className="h-8 w-8 rounded-lg bg-brand grid place-items-center text-sm font-bold text-white">OB</span> Puffle
     </Link>
   );
 }
@@ -33,7 +33,7 @@ export default function SiteShell({ children, bare = false }: { children: React.
         <div className="mx-auto max-w-6xl px-4 py-12 grid gap-10 sm:grid-cols-2">
           <div>
             <h3 className="font-semibold text-white">About</h3>
-            <p className="mt-2 text-lg italic text-white">Orbix by As Enterprice</p>
+            <p className="mt-2 text-lg italic text-white">Puffle by As Enterprice</p>
             <p className="mt-1">Private cloud storage and creator channels, made for India.</p>
             <p className="mt-1">Email: <a className="underline" href={`mailto:${email}`}>{email}</a></p>
           </div>
@@ -49,7 +49,7 @@ export default function SiteShell({ children, bare = false }: { children: React.
             </ul>
           </div>
         </div>
-        <p className="border-t border-slate-700 py-5 text-center text-xs text-slate-400">Copyright © 2026 Orbix. All rights reserved.</p>
+        <p className="border-t border-slate-700 py-5 text-center text-xs text-slate-400">Copyright © 2026 Puffle. All rights reserved.</p>
       </footer>
     </div>
   );

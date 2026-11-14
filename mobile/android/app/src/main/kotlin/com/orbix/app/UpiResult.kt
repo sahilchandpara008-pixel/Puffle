@@ -1,4 +1,4 @@
-package com.orbix.app
+package com.puffle.app
 
 /** Turns whatever a UPI app returned into one raw string for the server. Pure Kotlin: unit-tested, never throws. */
 object UpiResult {

@@ -1,4 +1,4 @@
-package com.orbix.app
+package com.puffle.app
 
 import android.app.Activity
 import android.content.ActivityNotFoundException

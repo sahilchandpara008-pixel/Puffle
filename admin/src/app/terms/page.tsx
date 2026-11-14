@@ -1,7 +1,7 @@
 import SiteShell from "@/components/SiteShell";
 
 export const metadata = { title: "Terms and Conditions" };
-const email = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "help.orbix2026@gmail.com";
+const email = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@puffle.example";
 
 export default function Terms() {
   return (
@@ -11,9 +11,9 @@ export default function Terms() {
         <p className="text-slate-500">Last updated: November 2026</p>
 
         <h2>1. Introduction</h2>
-        <p>Welcome to Orbix. These terms are an agreement between you and Orbix (“we”, “us”). By installing or using the app or this website you agree to these terms, our <a href="/privacy">Privacy Policy</a>, <a href="/refund">Refund Policy</a> and <a href="/community-guidelines">Community Guidelines</a>.</p>
+        <p>Welcome to Puffle. These terms are an agreement between you and Puffle (“we”, “us”). By installing or using the app or this website you agree to these terms, our <a href="/privacy">Privacy Policy</a>, <a href="/refund">Refund Policy</a> and <a href="/community-guidelines">Community Guidelines</a>.</p>
 
-        <h2>2. Who can use Orbix</h2>
+        <h2>2. Who can use Puffle</h2>
         <ul>
           <li>You must be at least 18 years old.</li>
           <li>You must follow all applicable local and national laws.</li>
@@ -30,7 +30,7 @@ export default function Terms() {
 
         <h2>4. Your content</h2>
         <h3>4.1 Ownership</h3>
-        <p>You keep ownership of what you upload. You give us a limited, non-exclusive licence to store, process and display it as needed to run Orbix (for example to show your channel to other users).</p>
+        <p>You keep ownership of what you upload. You give us a limited, non-exclusive licence to store, process and display it as needed to run Puffle (for example to show your channel to other users).</p>
         <h3>4.2 Your responsibility</h3>
         <p>You are responsible for everything you upload, post or share. You confirm that you have the right to share it and that it follows our <a href="/community-guidelines">Community Guidelines</a>. We do not review everything users upload and do not take responsibility for user content, but we act on reports.</p>
         <h3>4.3 Prohibited content</h3>
@@ -66,16 +66,16 @@ export default function Terms() {
         </ul>
 
         <h2>10. Third-party services and links</h2>
-        <p>Orbix relies on third-party services (see the Privacy Policy) and may contain links to other websites. We do not control them and are not responsible for their content or policies.</p>
+        <p>Puffle relies on third-party services (see the Privacy Policy) and may contain links to other websites. We do not control them and are not responsible for their content or policies.</p>
 
         <h2>11. Ending your use</h2>
         <p>You can delete your account at any time (see <a href="/delete-account">Delete Account</a>). We may remove content or suspend accounts that break these terms. Some records are kept as explained in the Privacy Policy.</p>
 
         <h2>12. Disclaimer and limit of liability</h2>
-        <p>Orbix is provided “as is” and “as available”. We work to keep it running, but we do not promise it will be uninterrupted or error-free. To the extent the law allows, we are not liable for loss or damage from your use of the service, from user content, or from interruptions or loss of data.</p>
+        <p>Puffle is provided “as is” and “as available”. We work to keep it running, but we do not promise it will be uninterrupted or error-free. To the extent the law allows, we are not liable for loss or damage from your use of the service, from user content, or from interruptions or loss of data.</p>
 
         <h2>13. Changes</h2>
-        <p>We may update these terms. The date above shows the latest version. Continued use of Orbix after a change means you accept it.</p>
+        <p>We may update these terms. The date above shows the latest version. Continued use of Puffle after a change means you accept it.</p>
 
         <h2>14. Contact</h2>
         <p>Questions about these terms: <a href={`mailto:${email}`}>{email}</a>.</p>

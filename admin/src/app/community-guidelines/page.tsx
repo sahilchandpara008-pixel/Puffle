@@ -7,7 +7,7 @@ export default function Guidelines() {
     <SiteShell>
       <article className="prose-doc mx-auto max-w-3xl px-4 py-12 text-sm">
         <h1>Community Guidelines</h1>
-        <p>Orbix should be a safe, respectful and creative place. These guidelines apply to everyone who uploads content or creates a channel. By using Orbix you agree to follow them. If you create a channel, you are a creator, and creators are responsible for what they share.</p>
+        <p>Puffle should be a safe, respectful and creative place. These guidelines apply to everyone who uploads content or creates a channel. By using Puffle you agree to follow them. If you create a channel, you are a creator, and creators are responsible for what they share.</p>
 
         <h2>1. Not allowed</h2>
         <h3>1.1 Sexual content</h3>
@@ -58,7 +58,7 @@ export default function Guidelines() {
           <li>Repeated or serious violations lead to account suspension or termination.</li>
           <li>Where the law requires, we report serious cases to the authorities.</li>
         </ul>
-        <p>We may take other reasonable action not listed here to keep Orbix safe. Being a creator means being responsible: respect the rules, make great content and grow your community the right way.</p>
+        <p>We may take other reasonable action not listed here to keep Puffle safe. Being a creator means being responsible: respect the rules, make great content and grow your community the right way.</p>
       </article>
     </SiteShell>
   );

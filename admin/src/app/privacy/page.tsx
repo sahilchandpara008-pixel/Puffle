@@ -1,7 +1,7 @@
 import SiteShell from "@/components/SiteShell";
 
 export const metadata = { title: "Privacy Policy" };
-const email = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "help.orbix2026@gmail.com";
+const email = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@puffle.example";
 
 export default function Privacy() {
   return (
@@ -11,7 +11,7 @@ export default function Privacy() {
         <p className="text-slate-500">Last updated: November 2026</p>
 
         <h2>1. Introduction</h2>
-        <p>Orbix (“we”, “us”) provides private cloud storage and creator channels through our Android app and this website. This policy explains what we collect, why, who handles it, and the choices you have. By using Orbix you agree to this policy and to our <a href="/terms">Terms and Conditions</a>.</p>
+        <p>Puffle (“we”, “us”) provides private cloud storage and creator channels through our Android app and this website. This policy explains what we collect, why, who handles it, and the choices you have. By using Puffle you agree to this policy and to our <a href="/terms">Terms and Conditions</a>.</p>
 
         <h2>2. What we collect</h2>
         <h3>2.1 Account information</h3>
@@ -52,7 +52,7 @@ export default function Privacy() {
         </ul>
 
         <h2>4. Who handles your data</h2>
-        <p>We do not sell your personal data. We use these service providers, who process data only to run Orbix:</p>
+        <p>We do not sell your personal data. We use these service providers, who process data only to run Puffle:</p>
         <ul>
           <li><b>Supabase</b>: database, sign-in and file storage.</li>
           <li><b>Vercel</b>: hosting for this website.</li>
@@ -80,7 +80,7 @@ export default function Privacy() {
         </ul>
 
         <h2>8. Children</h2>
-        <p>Orbix is for people aged 18 and over. We do not knowingly collect information from children. If you believe a child has used Orbix, contact us and we will remove the account.</p>
+        <p>Puffle is for people aged 18 and over. We do not knowingly collect information from children. If you believe a child has used Puffle, contact us and we will remove the account.</p>
 
         <h2>9. Changes to this policy</h2>
         <p>We may update this policy. The date above shows the latest version, and continued use means you accept the update.</p>

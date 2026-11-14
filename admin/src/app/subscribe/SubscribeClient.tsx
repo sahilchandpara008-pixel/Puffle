@@ -4,12 +4,12 @@ import { durationLabel } from "@/lib/plans";
 import { inr } from "@/lib/format";
 
 declare global {
-  interface Window { OrbixApp?: { postMessage: (m: string) => void } }
+  interface Window { PuffleApp?: { postMessage: (m: string) => void } }
 }
 
 export default function SubscribeClient({ plans, freeIds, paused, inApp }: { plans: Plan[]; freeIds: string[]; paused: boolean; inApp: boolean }) {
   const buy = (id: string) => {
-    if (window.OrbixApp) window.OrbixApp.postMessage(JSON.stringify({ type: "buy", plan_id: id }));
+    if (window.PuffleApp) window.PuffleApp.postMessage(JSON.stringify({ type: "buy", plan_id: id }));
     else window.location.href = "/d";
   };
   return (
@@ -35,7 +35,7 @@ export default function SubscribeClient({ plans, freeIds, paused, inApp }: { pla
           );
         })}
       </ul>
-      {!inApp && <p className="mt-6 text-center text-xs text-muted">Purchases are made inside the Orbix app.</p>}
+      {!inApp && <p className="mt-6 text-center text-xs text-muted">Purchases are made inside the Puffle app.</p>}
     </main>
   );
 }

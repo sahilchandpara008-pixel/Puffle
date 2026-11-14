@@ -28,7 +28,7 @@ function LoginForm() {
       <div className="flex items-center gap-3">
         <div className="grid h-10 w-10 place-items-center rounded-lg bg-violet-600 font-bold text-white">OB</div>
         <div>
-          <div className="font-semibold text-gray-900">Orbix Admin</div>
+          <div className="font-semibold text-gray-900">Puffle Admin</div>
           <div className="text-xs text-gray-500">Sign in with your admin account</div>
         </div>
       </div>

@@ -20,7 +20,7 @@ export default function ApkUpload() {
     const token = data.session?.access_token;
     if (!token) { setPct(null); return setErr("Your session expired. Sign in again."); }
     const x = new XMLHttpRequest();
-    x.open("POST", `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/downloads/Orbix-ads.apk`);
+    x.open("POST", `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/downloads/Puffle-ads.apk`);
     x.setRequestHeader("Authorization", `Bearer ${token}`);
     x.setRequestHeader("apikey", process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!);
     x.setRequestHeader("x-upsert", "true");
