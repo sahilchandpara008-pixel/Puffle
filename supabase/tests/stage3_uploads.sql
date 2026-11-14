@@ -45,6 +45,15 @@ begin
     perform pg_temp.rec(aud||': draft not visible to ads viewer',n=0);
     perform pg_temp.imp(org_viewer); select count(*) into n from public.posts where id=pid; reset role;
     perform pg_temp.rec(aud||': draft not visible to organic viewer',n=0);
+    perform pg_temp.imp(creator);
+    rejected := false; begin update public.post_items set media_key=gen_random_uuid()||'/other.mp4' where post_id=pid; exception when insufficient_privilege then rejected:=true; end;
+    reset role; perform pg_temp.rec(aud||': cannot attach another channel full video',rejected);
+    perform pg_temp.imp(creator);
+    rejected := false; begin update public.post_items set thumbnail_key=gen_random_uuid()||'/other.jpg' where post_id=pid; exception when insufficient_privilege then rejected:=true; end;
+    reset role; perform pg_temp.rec(aud||': cannot attach another channel thumbnail',rejected);
+    perform pg_temp.imp(creator);
+    rejected := false; begin update public.post_items set trailer_key=gen_random_uuid()||'/other.mp4' where post_id=pid; exception when insufficient_privilege then rejected:=true; end;
+    reset role; perform pg_temp.rec(aud||': cannot attach another channel trailer',rejected);
     -- Admin can upload directly into every approved channel, including another user's channel.
     perform pg_temp.imp(owner_id);
     insert into public.posts(channel_id,title,audience,status) values(cid,'Admin bulk image',aud,'draft') returning id into admin_pid;
