@@ -3,18 +3,18 @@ import 'package:google_fonts/google_fonts.dart';
 
 /// All colours live here as tokens.
 class Tokens {
-  static const background = Color(0xFF0A0A14);
-  static const surface = Color(0xFF13131F);
-  static const border = Color(0xFF24243A);
+  static const background = Color(0xFF080B14);
+  static const surface = Color(0xFF111827);
+  static const border = Color(0xFF27324A);
   static const text = Color(0xFFFFFFFF);
-  static const muted = Color(0xFF9A9AB5);
-  static const primary = Color(0xFF7C5CFF);
-  static const accent = Color(0xFFFF5CA8);
+  static const muted = Color(0xFF9AA8BF);
+  static const primary = Color(0xFF6C63FF);
+  static const accent = Color(0xFF38BDF8);
   static const gold = Color(0xFFFFC94D); // Premium only
   static const success = Color(0xFF35D07F);
   static const warning = Color(0xFFFFB020);
   static const danger = Color(0xFFFF4D5E);
-  static const gradient = LinearGradient(colors: [Color(0xFF6A5CFF), Color(0xFF9B5CFF), Color(0xFFFF5CA8)]);
+  static const gradient = LinearGradient(colors: [Color(0xFF6C63FF), Color(0xFF8B5CF6), Color(0xFF38BDF8)]);
 }
 
 /// Poppins has tall line metrics; a fixed, tighter line height removes the loose gaps.
@@ -58,7 +58,7 @@ ThemeData buildTheme() {
       foregroundColor: Colors.white,
       elevation: 2,
       highlightElevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       extendedTextStyle: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600),
     ),
     filledButtonTheme: FilledButtonThemeData(
@@ -94,13 +94,13 @@ ThemeData buildTheme() {
     cardTheme: CardTheme(
       margin: EdgeInsets.zero,
       color: Tokens.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Tokens.border)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: Tokens.border)),
     ),
     appBarTheme: const AppBarTheme(backgroundColor: Tokens.background, elevation: 0, scrolledUnderElevation: 0, centerTitle: false, titleSpacing: 0, toolbarHeight: 52, titleTextStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Tokens.text)),
     navigationBarTheme: const NavigationBarThemeData(backgroundColor: Tokens.surface, indicatorColor: Tokens.primary),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: const Color(0xFF0F0F1A),
+      fillColor: const Color(0xFF0B1220),
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       labelStyle: const TextStyle(color: Tokens.muted, fontSize: 14),
       floatingLabelStyle: const TextStyle(color: Tokens.primary, fontSize: 14),
