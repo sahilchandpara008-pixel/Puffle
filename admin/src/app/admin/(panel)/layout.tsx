@@ -14,7 +14,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
     <div className="min-h-screen bg-gray-50 text-gray-900 md:flex">
       <aside className="border-b border-gray-200 bg-white p-3 md:fixed md:inset-y-0 md:left-0 md:flex md:w-60 md:flex-col md:border-b-0 md:border-r md:p-4">
         <div className="mb-3 flex items-center gap-3 md:mb-5">
-          <div className="grid h-9 w-9 place-items-center rounded-lg bg-violet-600 text-sm font-bold text-white">OB</div>
+          <div className="grid h-9 w-9 place-items-center rounded-lg bg-violet-600 text-sm font-bold text-white">PF</div>
           <span className="font-semibold">Puffle</span>
           <div className="ml-auto text-right text-xs text-gray-500 md:hidden">{role}</div>
         </div>
