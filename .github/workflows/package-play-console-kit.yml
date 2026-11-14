@@ -4,6 +4,9 @@ on:
     branches: [main]
     paths: [".github/workflows/package-play-console-kit.yml", "tool/build_play_assets.py", "tool/store_capture_test.dart", "tool/PLAY-CONSOLE-README.txt"]
   workflow_dispatch:
+concurrency:
+  group: play-console-kit
+  cancel-in-progress: true
 permissions:
   contents: write
 jobs:

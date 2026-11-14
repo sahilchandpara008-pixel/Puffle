@@ -75,6 +75,13 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(RepaintBoundary(key:const Key('capture'),child:AppScope(state:app,child:MaterialApp(debugShowCheckedModeBanner:false,theme:buildTheme(),home:const HomeShell()))));
     await tester.pumpAndSettle();
+    for (var attempt=0; attempt<30 && find.text(titles[0]).evaluate().isEmpty; attempt++) {
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds:100)));
+      await tester.pumpAndSettle();
+    }
+    expect(find.text(titles[0]),findsWidgets,reason:'Sample posts must load before capturing listing screenshots.');
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds:200)));
+    await tester.pumpAndSettle();
     final out=Directory('../play-console-assets/phone-screenshots')..createSync(recursive:true);
     Future<void> capture(String name) async {
       await tester.pumpAndSettle();
