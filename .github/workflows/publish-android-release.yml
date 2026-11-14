@@ -40,4 +40,5 @@ jobs:
           version="${version%%+*}"
           [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
           gh release view "v$version" >/dev/null 2>&1 || gh release create "v$version" --target main --title "Puffle v$version" --notes "Verified Android build ($BUILD_SHA). Install Puffle.apk; Puffle-ads.apk preserves ad attribution." --latest
-          gh release upload "v$version" Puffle.apk Puffle-ads.apk checksums.txt --clobber
+          zip -j "Puffle-apks-v$version.zip" Puffle.apk Puffle-ads.apk Puffle-play.aab Puffle-play-with-plans.aab checksums.txt
+          gh release upload "v$version" Puffle.apk Puffle-ads.apk Puffle-play.aab Puffle-play-with-plans.aab "Puffle-apks-v$version.zip" checksums.txt --clobber
