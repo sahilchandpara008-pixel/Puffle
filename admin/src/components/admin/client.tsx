@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
 const BTN: Record<string, string> = {
-  primary: "bg-violet-600 text-white hover:bg-violet-700",
+  primary: "bg-teal-700 text-white hover:bg-teal-800",
   secondary: "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50",
   danger: "bg-red-600 text-white hover:bg-red-700",
   success: "bg-green-600 text-white hover:bg-green-700",
@@ -19,7 +19,7 @@ export function SubmitButton({ children, confirm, variant = "primary", small }: 
       type="submit"
       disabled={pending}
       onClick={(e) => { if (confirm && !window.confirm(confirm)) e.preventDefault(); }}
-      className={"inline-flex items-center justify-center rounded-lg font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 disabled:opacity-50 " + (small ? "px-2.5 py-1 text-xs " : "px-3.5 py-2 text-sm ") + BTN[variant]}
+      className={"inline-flex items-center justify-center rounded-xl font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 disabled:opacity-50 " + (small ? "px-2.5 py-1 text-xs " : "px-3.5 py-2 text-sm ") + BTN[variant]}
     >
       {pending ? "Working…" : children}
     </button>
@@ -41,7 +41,7 @@ export function Flash() {
 export function SignOut() {
   return (
     <button
-      className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+      className="admin-signout mt-3 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50"
       onClick={async () => { await supabaseBrowser().auth.signOut(); window.location.href = "/admin/login"; }}
     >
       Sign out

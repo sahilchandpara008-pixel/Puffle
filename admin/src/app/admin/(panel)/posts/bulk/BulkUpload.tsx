@@ -137,9 +137,10 @@ export default function BulkUpload({ channels, initialChannelId }: { channels: C
   };
 
   const locked = busy || entries.some(row => row.postId);
-  const cls = "w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm disabled:opacity-60";
+  const cls = "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-600/10 disabled:opacity-60";
   return <div className="space-y-5">
-    <section className="rounded-xl border border-gray-200 bg-white p-4 space-y-3">
+    <section className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4 sm:p-6">
+      <div><h2 className="text-base font-semibold text-slate-900">Choose your destination</h2><p className="mt-1 text-xs text-slate-500">Set the channel and audience once for this batch.</p></div>
       <label className="block text-sm font-medium">Channel<select className={cls} value={channelId} disabled={locked} onChange={e => setChannelId(e.target.value)}>
         <option value="">Choose a channel</option>{channels.map(c => <option key={c.id} value={c.id}>{c.name} · {audienceName(c.audience)}{c.review_status !== "approved" ? " · awaiting approval" : ""}</option>)}
       </select></label>
@@ -152,12 +153,13 @@ export default function BulkUpload({ channels, initialChannelId }: { channels: C
       <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={publish} disabled={locked} onChange={e => setPublish(e.target.checked)} />Publish posts after upload (uncheck to save drafts)</label>
       <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={premium} disabled={locked} onChange={e => setPremium(e.target.checked)} />Premium media (full files require the existing Premium access)</label>
     </section>
-    <div className="flex flex-wrap gap-3 items-center">
+    <div className="flex flex-wrap gap-3 items-center rounded-2xl border border-dashed border-teal-300 bg-teal-50/50 p-5">
       <label className="btn cursor-pointer">Select videos and images<input type="file" accept="video/*,image/*" multiple disabled={busy} className="sr-only" onChange={e => { choose(e.target.files); e.target.value = ""; }} /></label>
       <button type="button" className="rounded-lg border px-4 py-2" disabled={busy} onClick={() => setEntries(rows => [...rows, { id: crypto.randomUUID(), title: "", description: "", state: "ready", progress: 0 }])}>Add text post</button>
       <p className="text-sm text-gray-600">One post per file. Keep this page open until the batch finishes.</p>
     </div>
-    <div className="space-y-3">{entries.map(row => <article key={row.id} className="rounded-xl border bg-white p-4 space-y-2">
+    {entries.length > 0 && <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="text-base font-semibold text-slate-900">Upload queue <span className="ml-1 text-sm font-normal text-slate-400">{entries.length} items</span></h2><p className="text-xs text-slate-500">{entries.filter(row => row.state === "done").length} saved · {entries.filter(row => row.state === "error").length} need retry</p></div>}
+    <div className="space-y-4">{entries.map(row => <article key={row.id} className="rounded-xl border bg-white p-4 space-y-2">
       <div className="flex flex-wrap justify-between gap-2"><span className="text-sm text-gray-600 break-all">{row.file ? `${row.file.name} · ${(row.file.size / 1048576).toFixed(1)} MB` : "Text post"}</span><span className="text-sm font-medium" role="status">{row.state === "uploading" ? `Uploading ${row.progress}%` : row.state === "done" ? publish ? "Published" : "Draft saved" : row.state === "error" ? "Needs retry" : "Ready"}</span></div>
       {row.file && <BulkMediaPreview file={row.file} thumbnail={row.thumbnail} trailer={row.trailer} video={mediaType(row.file).startsWith("video/")} />}
       <label className="block text-sm">Title<input className={cls} maxLength={160} value={row.title} disabled={busy || row.state === "done"} onChange={e => patch(row.id, { title: e.target.value })} /></label>
@@ -179,7 +181,7 @@ export default function BulkUpload({ channels, initialChannelId }: { channels: C
       {row.postId && <Link className="text-sm text-violet-700 underline" href={`/admin/posts/${row.postId}`}>View saved post</Link>}
       {!row.postId && <button type="button" className="ml-3 text-sm text-gray-600 underline" disabled={busy} onClick={() => setEntries(rows => rows.filter(item => item.id !== row.id))}>Remove from batch</button>}
     </article>)}</div>
-    <div className="flex flex-wrap gap-3">
+    <div className="sticky bottom-4 z-10 flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur">
       <button type="button" className="btn disabled:opacity-50" disabled={busy || !channel || !entries.some(row => row.state !== "done")} onClick={start}>Upload / retry remaining posts</button>
       {busy && <button type="button" className="rounded-lg border px-4 py-2" onClick={() => { stop.current = true; setMessage("Will pause after the current file finishes."); }}>Pause after current file</button>}
       {!busy && entries.length > 0 && <button type="button" className="rounded-lg border px-4 py-2" onClick={() => { setEntries([]); setMessage("Batch cleared. Already saved posts are kept in Posts."); }}>Start a new batch</button>}
