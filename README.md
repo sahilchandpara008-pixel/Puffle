@@ -8,18 +8,18 @@ Puffle is an independent Android cloud-storage and creator-channels app, adapted
 - `supabase/`: database migrations, RLS policies, tests and edge-function source
 
 ## Backend
-Puffle Supabase project: `dqufassvbkattmmsuwmf` (Mumbai). The 19 database migrations have been applied to this project. **Never reuse the Orbix database or original owner account.** The designated owner email is perfumwala@gmail.com. Register and verify this email through Supabase Auth; no password is stored in Git. The original project referenced additional edge functions that are not present in its GitHub source; these must be implemented and deployed before considering every feature operational.
+Puffle Supabase project: `dqufassvbkattmmsuwmf` (Mumbai). The 19 database migrations have been applied to this project. **Never reuse the Orbix database or original owner account.** The designated owner email is perfumwala@gmail.com. Register and verify this email through Supabase Auth; no password is stored in Git. The missing backend Edge Functions have now been implemented and deployed for cloud files, self-service deletion, deletion requests, post deletion, admin account deletion, admin invitations, and Meta event delivery.
 
 ## Android
 `mobile/lib/config.dart` points to the Puffle backend. Android app IDs: `com.puffle.app` (direct), `com.pufflecloud.app` (Play). GitHub Actions → `mobile` runs tests and builds artifacts. Test on a real device before release. Signing keys belong only in GitHub secrets.
 
 ## Website
-Deploy `admin/` as the Vercel Root Directory. Set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_SITE_URL`, and `NEXT_PUBLIC_SUPPORT_EMAIL` in Vercel. **The configured public support contact is `help.puffle@gmail.com`.** Verify privacy, terms, refund, community guidelines, report content and delete-account pages against actual business practices. Some account-deletion flows require missing edge functions and are not yet operational.
+The `admin/` directory is deployed on Vercel at `https://puffle-iota.vercel.app`. Public Supabase settings, the live site URL, and the support contact `help.puffle@gmail.com` are configured in Vercel. Privacy, terms, refund, community guidelines, report-content, and delete-account pages are included.
 
 ## Safety and launch checklist
-1. Configure and verify the Puffle admin owner account (original Orbix bootstrap email was removed).
-2. Implement and deploy missing backend edge functions, including account deletion and deletion requests.
-3. Verify UPI payment settlement independently: a client-side UPI callback is not proof of payment.
-4. Set a real support email, confirm business/legal policy details, and configure public website URL.
-5. Run mobile tests, web build, RLS security audit and end-to-end checks before release.
-6. Confirm Play billing policy compliance for digital subscriptions in any Play-distributed build.
+1. Register and verify the designated Puffle owner email through Supabase Auth; the password must never be committed to Git.
+2. Preserve the existing Orbix-derived navigation, subscription, UPI intent, plan and activation flow unless a future product decision explicitly changes it.
+3. Keep payment settings managed only from the owner admin panel; no payment secrets are committed to source.
+4. Test the generated APK on a real Android device before public release.
+5. Re-run mobile, web, SQL/RLS and Edge Function checks after backend or release changes.
+6. Confirm current Google Play policy requirements before uploading any Play-distributed build.
