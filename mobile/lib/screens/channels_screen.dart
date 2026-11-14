@@ -61,6 +61,11 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
   }
 
   Future<void> _create() async {
+    final app = AppScope.of(context);
+    if (!app.status.isPremium) {
+      await Navigator.push(context, MaterialPageRoute(builder: (_) => const PremiumScreen()));
+      return;
+    }
     if (!await requireAccount(context) || !mounted) return;
     final ok = await showModalBottomSheet<bool>(
       context: context,
