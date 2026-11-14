@@ -1,0 +1,27 @@
+name: public-website-checks
+on:
+  push:
+    branches: [main]
+    paths: ['admin/**', '.github/workflows/public-smoke.yml']
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults: {run: {working-directory: admin}}
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://dqufassvbkattmmsuwmf.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_V1Mz2QEjH6Xh2ydtPFEChw_9akgiOZE
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22}
+      - run: npm install --no-audit --no-fund && npm install --no-save playwright
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Check phone and desktop pages, download variants and privacy
+        run: |
+          npm start > /tmp/puffle-site.log 2>&1 &
+          for i in $(seq 1 30); do curl -fsS http://localhost:3000/ >/dev/null && break || sleep 2; done
+          node tool/public-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: public-website-review, path: admin/shots}

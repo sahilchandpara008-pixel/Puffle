@@ -3,7 +3,7 @@ CREATE OR REPLACE FUNCTION public.admin_users_filtered(p_search text DEFAULT NUL
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
  SET search_path TO ''
-AS $function$
+AS $function$;
 declare result_ jsonb;
 begin
  if not public.is_owner() then raise exception 'forbidden' using errcode='42501'; end if;
@@ -39,14 +39,14 @@ begin
   limit least(greatest(p_limit,1),200) offset greatest(p_offset,0))
  select jsonb_build_object('total',(select count(*) from filtered),'rows',coalesce((select jsonb_agg(to_jsonb(s)) from sorted s),'[]'::jsonb)) into result_;
  return result_;
-end $function$
+end $function$;
 
 CREATE OR REPLACE FUNCTION public.record_activity(p_event_id uuid, p_name text, p_session_id uuid, p_properties jsonb DEFAULT '{}'::jsonb, p_occurred_at timestamp with time zone DEFAULT now())
  RETURNS boolean
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO ''
-AS $function$
+AS $function$;
 declare uid uuid:=auth.uid(); pref public.measurement_preferences%rowtype; ctx private.app_measurement_context%rowtype; props jsonb; at_ timestamptz;
 begin
  if uid is null then raise exception 'session required' using errcode='42501'; end if;
@@ -76,5 +76,4 @@ begin
   end if;
  end if;
  return true;
-end $function$
-
+end $function$;
