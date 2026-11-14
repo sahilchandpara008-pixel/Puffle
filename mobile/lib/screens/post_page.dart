@@ -101,7 +101,8 @@ class _PostPageState extends State<PostPage> {
             try {
               final urls = await sb.storage.from('media').createSignedUrls(keys.toList(), 3600);
               for (final url in urls) {
-                if (url.path != null) _suggestionThumbs[url.path!] = url.signedUrl;
+                final String? path = url.path;
+                if (path != null) _suggestionThumbs[path] = url.signedUrl;
               }
             } catch (_) { /* Poster placeholders remain usable. */ }
           }
