@@ -87,6 +87,19 @@ begin
   perform pg_temp.imp(am,false); raised := false;
   begin insert into public.channels(name) values ('Paid ads can create'); exception when others then raised := true; end; reset role;
   perform pg_temp.rec('ads premium user can create a pending channel', not raised and exists(select 1 from public.channels where created_by=am and review_status='pending'));
+  -- A guest upgrade changes auth.users immediately; the old access token may still say guest.
+  perform pg_temp.imp(am,true); raised := false;
+  begin insert into public.channels(name) values ('Upgraded paid ads old token'); exception when others then raised := true; end; reset role;
+  perform pg_temp.rec('upgraded Premium member can create with stale guest JWT', not raised and exists(select 1 from public.channels where name='Upgraded paid ads old token' and created_by=am and review_status='pending' and status='draft'));
+  perform pg_temp.imp(am,true); select public.is_member() into ok; reset role;
+  perform pg_temp.rec('saved member status overrides stale guest JWT', ok);
+  perform pg_temp.imp(a,false); select public.is_member() into ok; reset role;
+  perform pg_temp.rec('actual guest cannot become a member through a member JWT flag', not ok);
+  insert into public.subscriptions (user_id, plan_id, plan_code, plan_name, kind, ends_at) values (a, plan_gold,'gold','Gold','admin_grant',now()+interval '1 day');
+  perform pg_temp.imp(a,true); raised := false;
+  begin insert into public.channels(name) values ('Paid guest must save account'); exception when insufficient_privilege then raised := true; end; reset role;
+  perform pg_temp.rec('Premium guest must still save account before channel creation', raised);
+  delete from public.subscriptions where user_id=a;
   update public.subscriptions set revoked=true where user_id=am;
   perform pg_temp.imp(am,false); raised := false;
   begin insert into public.channels(name) values ('Revoked premium cannot create'); exception when insufficient_privilege then raised := true; end; reset role;
