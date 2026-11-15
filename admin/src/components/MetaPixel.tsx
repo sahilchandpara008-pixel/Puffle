@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import {hasAdvertisingConsent} from "./PrivacyChoices";
 type Fbq=((...args:unknown[])=>void)&{queue?:unknown[];loaded?:boolean;version?:string;push?:unknown;callMethod?:(...args:unknown[])=>void};
-declare global {interface Window {fbq?:Fbq;_fbq?:Fbq;__pufflePixel?:{at:number;id:string|null;pending?:Promise<string|null>};}}
+declare global {interface Window {fbq?:Fbq;_fbq?:Fbq;__pufflePixelIds?:Set<string>;__pufflePixel?:{at:number;id:string|null;pending?:Promise<string|null>};}}
 const cookie=(name:string)=>{try{return decodeURIComponent(document.cookie.match(new RegExp("(?:^|; )"+name+"=([^;]*)"))?.[1]??"");}catch{return "";}};
 export function fromAd(){const q=new URLSearchParams(location.search);if(q.get("fbclid")||q.get("gclid")||q.get("gbraid")||q.get("wbraid")||(/^(meta|facebook|instagram|ig|fb)$/i.test(q.get("utm_source")??"")||(/^(google|google_ads)$/i.test(q.get("utm_source")??"")&&/^(cpc|ppc|paid|paid_search|display|video)$/i.test(q.get("utm_medium")??"")))){try{sessionStorage.setItem("puffle_download_variant","ads");}catch{}return true;}try{return sessionStorage.getItem("puffle_download_variant")==="ads";}catch{return false;}}
 export async function loadPixel():Promise<string|null>{
@@ -22,7 +22,7 @@ export async function loadPixel():Promise<string|null>{
     const script=document.createElement("script");script.async=true;script.src="https://connect.facebook.net/en_US/fbevents.js";document.head.appendChild(script);
    }
    window.fbq!("consent","grant");
-   window.fbq!("set","autoConfig",false,id);if(cache?.id!==id)window.fbq!("init",id);
+   window.fbq!("set","autoConfig",false,id);window.__pufflePixelIds??=new Set<string>();if(!window.__pufflePixelIds.has(id)){window.fbq!("init",id);window.__pufflePixelIds.add(id);}
    window.__pufflePixel={id,at:Date.now()};return id;
   }catch{window.__pufflePixel={id:null,at:Date.now()};return null;}
  })();
@@ -41,9 +41,9 @@ export default function MetaPixel(){
  const path=usePathname();
  useEffect(()=>{
   let live=true;const send=()=>{if(live)void trackWebEvent("PageView");};
-  send();const changed=()=>{window.__pufflePixel=undefined;send();};
+  send();const changed=()=>{if(window.__pufflePixel)window.__pufflePixel.at=0;send();};
   window.addEventListener("puffle-privacy-change",changed);
-  const refresh=()=>{window.__pufflePixel=undefined;void loadPixel();};
+  const refresh=()=>{if(window.__pufflePixel)window.__pufflePixel.at=0;void loadPixel();};
   const timer=setInterval(refresh,60000);
   return()=>{live=false;clearInterval(timer);window.removeEventListener("puffle-privacy-change",changed);};
  },[path]);
