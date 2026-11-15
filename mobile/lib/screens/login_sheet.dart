@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -5,6 +6,7 @@ import '../config.dart';
 import '../services/app_scope.dart';
 import '../services/app_state.dart';
 import '../services/measurement.dart';
+import '../services/google_auth_policy.dart';
 import '../theme.dart';
 
 /// Returns true when the user ended up with a real account.
@@ -43,9 +45,12 @@ class _LoginSheetState extends State<LoginSheet> {
   late bool _signup = widget.startSignup;
   bool _busy = false, _hide = true;
   String? _err, _info;
+  StreamSubscription<AuthState>? _googleAuth;
+  bool _finishingGoogle = false;
 
   @override
   void dispose() {
+    _googleAuth?.cancel();
     _email.dispose();
     _pass.dispose();
     super.dispose();
@@ -60,6 +65,8 @@ class _LoginSheetState extends State<LoginSheet> {
   }
 
   Future<void> _submit() async {
+    await _googleAuth?.cancel();
+    if (!mounted) return;
     final email = _email.text.trim();
     final bad = _validate(email);
     if (bad != null) return setState(() { _err = bad; _info = null; });
@@ -107,6 +114,52 @@ class _LoginSheetState extends State<LoginSheet> {
       });
     } catch (_) {
       setState(() => _err = 'Something went wrong. Check your connection and try again.');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _google() async {
+    if (_busy || _finishingGoogle) return;
+    final user = sb.auth.currentUser;
+    final link = shouldLinkGoogleIdentity(anonymous: user?.isAnonymous == true, signup: _signup, saveMode: widget.saveMode, premium: AppScope.of(context).status.isPremium);
+    final originalId = user?.id;
+    await _googleAuth?.cancel();
+    if (!mounted) return;
+    setState(() { _busy = true; _err = null; _info = null; });
+    // Listen before opening the browser: a fast callback must not be missed.
+    _googleAuth = sb.auth.onAuthStateChange.listen((state) async {
+      final current = state.session?.user;
+      if (state.event != AuthChangeEvent.signedIn && state.event != AuthChangeEvent.userUpdated) return;
+      if (!mounted || _finishingGoogle || current == null || current.isAnonymous ||
+          !(current.identities?.any((i) => i.provider == 'google') ?? false)) return;
+      if (link && current.id != originalId) {
+        setState(() => _err = 'Your account changed. Your guest plan has not been transferred. Contact support before making another purchase.');
+        return;
+      }
+      _finishingGoogle = true;
+      await _googleAuth?.cancel();
+      await AppScope.of(context).refresh();
+      // Optional event delivery must never prevent a successful login.
+      try { await Measurement.instance.start(); await Measurement.instance.track('Login'); } catch (_) {}
+      if (mounted) Navigator.pop(context, true);
+    }, onError: (Object _) {
+      if (mounted) setState(() { _busy = false; _info = null; _err = 'Google sign-in could not finish. Try again or use email and password. Your existing plan stays on its account.'; });
+    });
+    try {
+      final launched = link
+          ? await sb.auth.linkIdentity(OAuthProvider.google, redirectTo: '${Config.authScheme}://login-callback', queryParams: {'prompt': 'select_account'})
+          : await sb.auth.signInWithOAuth(OAuthProvider.google, redirectTo: '${Config.authScheme}://login-callback', queryParams: {'prompt': 'select_account'});
+      if (!launched) throw StateError('Browser unavailable');
+      if (mounted) setState(() => _info = 'Finish Google sign-in in your browser, then return to Puffle. If you cancelled, you can try again or use email.');
+    } on AuthException catch (e) {
+      await _googleAuth?.cancel();
+      if (mounted) setState(() => _err = e.message.toLowerCase().contains('already')
+          ? 'This Google account is already linked elsewhere. Your guest plan is safe; use a different Google account or contact support to recover access.'
+          : 'Google sign-in is not available yet or could not start. Use email and password for now.');
+    } catch (_) {
+      await _googleAuth?.cancel();
+      if (mounted) setState(() => _err = 'Could not open Google sign-in. Please try again or use email and password.');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -169,7 +222,7 @@ class _LoginSheetState extends State<LoginSheet> {
           if (_info != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(_info!, style: const TextStyle(color: Tokens.success, fontSize: 13))),
           const SizedBox(height: 12),
           GradientButton(label: _busy ? 'Please wait…' : (widget.saveMode ? 'Save account' : (_signup ? 'Create account' : 'Log in')), onPressed: _busy ? null : _submit),
-          if (!widget.saveMode) ...[
+          ...[
             const SizedBox(height: 14),
             const Row(children: [
               Expanded(child: Divider(color: Tokens.border)),
@@ -179,9 +232,9 @@ class _LoginSheetState extends State<LoginSheet> {
             const SizedBox(height: 10),
             OutlinedButton.icon(
               key: const Key('google_login'),
-              onPressed: () => setState(() { _err = null; _info = 'Google sign-in is coming soon. Please use email for now.'; }),
+              onPressed: _busy ? null : _google,
               icon: const Icon(Icons.g_mobiledata, size: 26),
-              label: const Text('Continue with Google (coming soon)', maxLines: 1, overflow: TextOverflow.ellipsis),
+              label: const Text('Continue with Google', maxLines: 1, overflow: TextOverflow.ellipsis),
             ),
           ],
           TextButton(onPressed: () => Navigator.pop(context, false), child: Text(widget.saveMode ? 'Not now' : 'Maybe later')),
