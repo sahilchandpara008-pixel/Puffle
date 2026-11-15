@@ -10,6 +10,7 @@ for(const width of [390,1280]){
  const tracking=[];page.on('request',r=>{if(/connect\.facebook|facebook\.com\/tr|googletagmanager\.com|google-analytics\.com/.test(r.url()))tracking.push(r.url());});
  for(const path of ['/','/d','/privacy','/terms','/refund','/delete-account','/community-guidelines','/report-content','/workspace-7f3c9a2e/login']){
   const response=await page.goto(root+path,{waitUntil:'networkidle'});assert.equal(response.status(),200,path);
+  assert.match(await page.locator('link[rel="icon"]').first().getAttribute('href'),/icon\.svg/);
   assert.equal(await page.locator('body').evaluate(el=>el.scrollWidth>innerWidth+1),false,'horizontal overflow '+path+' '+width);
   await page.screenshot({path:`shots/${width}_${path.replaceAll('/','_')||'home'}.png`,fullPage:true});
  }
@@ -30,4 +31,19 @@ for(const width of [390,1280]){
  for(const path of ['/admin','/admin/login'])assert.equal((await page.goto(root+path)).status(),404,'old admin route stays closed');
  report.push({width,passed:true,providerRequestsBeforeConsent:tracking.length});await context.close();
 }
+for(const [query,expected] of [
+ ['', 'Puffle.apk'],['?fbclid=test','Puffle-ads.apk'],['?gclid=test','Puffle-ads.apk'],['?gbraid=test','Puffle-ads.apk'],['?wbraid=test','Puffle-ads.apk'],
+ ['?utm_source=meta&utm_medium=paid_social','Puffle-ads.apk'],['?utm_source=google&utm_medium=cpc','Puffle-ads.apk'],
+ ['?utm_source=facebook&utm_medium=social','Puffle.apk'],['?utm_source=google&utm_medium=organic','Puffle.apk']]){
+ const context=await browser.newContext();const page=await context.newPage();
+ await page.goto(root+'/d'+query,{waitUntil:'networkidle'});
+ const href=await page.getByRole('link',{name:'Download APK',exact:true}).getAttribute('href');
+ assert.equal(href,'https://github.com/smitkhachariya2002-collab/Puffle/releases/download/v1.0.9/'+expected);
+ if(expected==='Puffle-ads.apk'){
+  await page.goto(root+'/d',{waitUntil:'networkidle'});
+  assert.match(await page.getByRole('link',{name:'Download APK',exact:true}).getAttribute('href'),/Puffle-ads\.apk$/);
+ }
+ await context.close();
+}
+assert.equal((await (await browser.newContext()).request.get(root+'/icon.svg')).status(),200);
 await browser.close();console.log(JSON.stringify(report));

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import {usePathname} from "next/navigation";
 import { APK_URL, ADS_APK_URL } from "@/lib/downloads";
 import {trackGoogleDownload} from "@/components/GoogleTags";
 import { fromAd, trackWebEvent } from "@/components/MetaPixel";
@@ -7,8 +8,9 @@ import { fromAd, trackWebEvent } from "@/components/MetaPixel";
 /** Download button. People who came from an ad get the ads build; the tap is sent to Meta as a Lead. */
 export default function DownloadButton({ apk = APK_URL, adsApk = ADS_APK_URL, label = "Download APK", className = "btn px-8 py-3" }: { apk?: string; adsApk?: string; label?: string; className?: string }) {
   const [href, setHref] = useState(apk);
-  useEffect(() => { if (fromAd()) setHref(adsApk); }, [adsApk]);
-  const onClick = () => { void trackWebEvent("Lead");void trackGoogleDownload(); };
+  const path=usePathname();
+  useEffect(() => { setHref(fromAd()?adsApk:apk); }, [adsApk,apk,path]);
+  const onClick = (event:React.MouseEvent<HTMLAnchorElement>) => { event.currentTarget.href=fromAd()?adsApk:apk; void trackWebEvent("Lead");void trackGoogleDownload(); };
   return <a href={href} onClick={onClick} className={className} download>{label}</a>;
 }
 
