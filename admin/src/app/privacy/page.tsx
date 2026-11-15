@@ -1,7 +1,7 @@
 import SiteShell from "@/components/SiteShell";
 import {PrivacyChoicesButton} from "@/components/PrivacyChoices";
 export const metadata={title:"Privacy Policy"};
-const email=process.env.NEXT_PUBLIC_SUPPORT_EMAIL||"help.puffle@gmail.com";
+const email=process.env.NEXT_PUBLIC_SUPPORT_EMAIL||"help.puffle2026@gmail.com";
 export default function Privacy(){return <SiteShell><article className="prose-doc mx-auto max-w-3xl px-5 py-14 text-sm">
  <p className="site-eyebrow">YOUR INFORMATION & YOUR CHOICES</p><h1 className="mt-4">Privacy Policy</h1><p>Updated 15 November 2026</p>
  <h2>Who we are</h2><p>Puffle, operated as As Enterprice, provides an Android app with private cloud storage and creator channels, and this website. This notice explains our data practices. It is not permission for optional tracking: you make those choices separately.</p>

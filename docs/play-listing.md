@@ -3,7 +3,7 @@
 - App name: Puffle: Cloud & Channels
 - Short description: Private cloud storage and creator channels, made for India.
 - Package: `com.pufflecloud.app` (all distribution variants)
-- Contact: help.puffle@gmail.com
+- Contact: help.puffle2026@gmail.com
 - Website: https://puffle-iota.vercel.app
 - Privacy: https://puffle-iota.vercel.app/privacy
 - Account deletion: https://puffle-iota.vercel.app/delete-account

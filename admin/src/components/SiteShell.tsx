@@ -3,7 +3,7 @@ import MetaPixel from "./MetaPixel";
 import GoogleTags from "./GoogleTags";
 import PrivacyChoices,{PrivacyChoicesButton} from "./PrivacyChoices";
 import DownloadButton from "@/app/d/DownloadButton";
-const email=process.env.NEXT_PUBLIC_SUPPORT_EMAIL||"help.puffle@gmail.com";
+const email=process.env.NEXT_PUBLIC_SUPPORT_EMAIL||"help.puffle2026@gmail.com";
 export function Logo(){return <Link href="/" className="flex items-center gap-3 text-xl font-semibold tracking-tight"><span className="grid h-10 w-10 place-items-center rounded-xl bg-teal-700"><svg width="28" height="28" viewBox="0 0 108 108" aria-hidden="true"><g fill="white"><rect x="26" y="47" width="56" height="26" rx="13"/><circle cx="50" cy="48" r="16"/><circle cx="65" cy="52" r="12"/></g><path fill="#137781" d="M49 46v19l16-9.5z"/></svg></span>Puffle</Link>;}
 export default function SiteShell({children,bare=false}:{children:React.ReactNode;bare?:boolean}){
  if(bare)return <div className="min-h-screen"><MetaPixel/><GoogleTags/>{children}<PrivacyChoices/></div>;

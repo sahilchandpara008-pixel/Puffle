@@ -7,7 +7,7 @@ Use only these Puffle resources:
 - Vercel project: puffle
 - Website: https://puffle-iota.vercel.app
 - Admin: https://puffle-iota.vercel.app/workspace-7f3c9a2e
-- Support: help.puffle@gmail.com
+- Support: help.puffle2026@gmail.com
 
 The existing owner account and Puffle data must be retained. Do not import another app's users, storage, signing configuration, ad identifiers, environment variables or payment settings. The private admin still requires authentication and an authorised role; its URL alone is not access control.
 
