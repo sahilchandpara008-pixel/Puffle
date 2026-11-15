@@ -1,7 +1,7 @@
 name: puffle
-description: Puffle — cloud storage and creator channels.
+description: Puffle â€” cloud storage and creator channels.
 publish_to: none
-version: 1.0.8+9
+version: 1.0.9+10
 
 environment:
   sdk: ">=3.4.0 <4.0.0"

@@ -1,47 +1,23 @@
-# Google Play listing for Orbix (own listing, own content)
+# Puffle Google Play listing
 
-Use your own screenshots, icon (`mobile/store/play_icon_512.png`) and text. Do not reuse another app's name, icon, screenshots or text.
+- App name: Puffle: Cloud & Channels
+- Short description: Private cloud storage and creator channels, made for India.
+- Package: `com.pufflecloud.app` (all distribution variants)
+- Contact: help.puffle@gmail.com
+- Website: https://puffle-iota.vercel.app
+- Privacy: https://puffle-iota.vercel.app/privacy
+- Account deletion: https://puffle-iota.vercel.app/delete-account
+- Community guidelines: https://puffle-iota.vercel.app/community-guidelines
 
-## Store listing
+## Description
+Puffle combines private cloud storage with creator channels. Store your files, browse channels available to your account, and watch videos. Eligible Premium users can request a channel; channels and uploaded content remain subject to administrator approval and audience restrictions. Premium benefits and storage allowances are shown in the app. Delete your account from the app or the website.
 
-- **App name:** Orbix: Cloud & Channels
-- **Short description (80 chars):** Private cloud storage and creator channels, made for India.
-- **Full description:**
-  Orbix gives you a private place for your photos, videos and files, and a feed of creator channels you can follow.
+## Release assets
+Use only the current Puffle Play Console kit: `play-console-assets/app_icon_512.png`, `feature_graphic_1024x500.png` and `phone-screenshots/`. Screenshots use actual app widgets with illustrative sample content. Review before submitting.
 
-  - 15 GB free cloud storage when you create an account
-  - Premium plans with 2 TB storage, full-length premium videos and downloads
-  - Join channels, share your own, report or block anything in one tap
-  - Your files stay private and open through short-lived secure links
-  - Delete your account any time from the app or the website
+## Data safety and review
+The app processes account identifiers, email when supplied, user-uploaded files/content, purchase history and service data needed to provide storage and subscriptions. Optional Puffle analytics, Meta sharing and Google/Firebase measurement start off and require the user's choice. Optional measurement can include app interactions, purchase history, account identifiers and device or other identifiers such as the Firebase app-instance ID. Meta can receive hashed account/email identifiers and eligible IP/browser/click context. Google can receive app-instance, session, event and verified purchase information. Hashing is not anonymisation. Android Advertising ID collection is disabled, and Google ad personalisation is denied.
 
-  Orbix is for people aged 18 and over.
-- **Category:** Tools (or Productivity)
-- **Contact email:** help.orbix2026@gmail.com
-- **Website:** https://orbix-gray.vercel.app
-- **Privacy policy URL:** https://orbix-gray.vercel.app/privacy
-- **Account deletion URL (required by Google):** https://orbix-gray.vercel.app/delete-account
+Complete Data safety using the current privacy policy and actual production configuration; do not claim that no analytics or sharing occurs. Users can request account deletion. Data is encrypted in transit. The app does not request contacts, messages or location access. External advertising campaigns do not themselves mean the app displays advertising; answer the Play Ads declaration according to ads actually displayed in the submitted build.
 
-## App content / policy answers
-
-- **Ads:** No ads. (The Play build has no advertising SDK and no advertising ID.)
-- **User-generated content:** Yes. Declare it, and point to the in-app Report and Block and to https://orbix-gray.vercel.app/community-guidelines.
-- **Target audience:** 18 and over.
-- **In-app purchases:** Leave the Play build with purchases OFF until Google approves User Choice Billing (see play-billing.md). The Play build never sells plans with UPI.
-- **Data safety (accurate for this app):**
-  - Collected: Email address, User IDs, Photos and videos, Files and docs (all for app functionality and account management); Purchase history is not collected in the Play build while purchases are off; Device or other IDs (a random install ID, for account management and fraud prevention).
-  - Shared with third parties: No. Supabase and Vercel are processors acting for us. (If you use the website or ads builds, anonymised purchase events may go to Meta; this is not part of the Play build.)
-  - Encrypted in transit: Yes.
-  - Users can request deletion: Yes (in-app and web link above).
-  - Does not collect: location, contacts, messages, advertising ID.
-- **Permissions:** Internet, Notifications.
-
-## Before you upload
-
-1. Package `com.orbixcloud.app` (reserved in Play Console) is a different app from the direct APK (`com.orbix.app`).
-2. Sign the AAB with the key from the GitHub secrets (CI does this).
-3. Complete the Play Integrity setup described in play-billing.md if you want the free-cloud verification.
-
-
-## Measurement update for v1.0.8
-This release includes optional Google Analytics for Firebase and server-side Meta/Google advertising measurement, disabled until configured and explicitly allowed by the user. Review the Data Safety form using the published privacy policy. Relevant optional data can include app interactions, purchase history, user/account identifiers and device or other identifiers (including the Firebase app-instance ID). Meta can receive hashed email/account IDs and eligible IP/browser/click information; Google receives native app-instance, session, event and verified order information. Hashing does not make an identifier anonymous. Android Advertising ID collection is excluded by the merged-manifest check. Personalised Google ad signals are denied. Account, content, storage and payment data needed to provide the service remain separate essential processing. A store disclosure must reflect actual sharing with linked providers, even when optional; do not reuse an earlier �no analytics/no sharing� declaration. Consult each SDK's current Play disclosure guide and the configuration actually enabled in production.
+Declare user-generated content, reporting/blocking features and the intended adult audience accurately. Use `Puffle-play.aab` for the standard Play build. The alternate with-plans bundle retains the existing external payment flow and requires the relevant Play billing eligibility. Review `play-billing.md` and `advertising-setup.md`. Complete content rating and reviewer access instructions. Publication and policy approval remain Google's decision.

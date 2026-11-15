@@ -10,8 +10,8 @@ class NavItem {
 }
 
 /// Bottom bar: the selected tab is a solid rounded pill holding icon + label.
-class OrbixNavBar extends StatelessWidget {
-  const OrbixNavBar({super.key, required this.items, required this.index, required this.onTap});
+class PuffleNavBar extends StatelessWidget {
+  const PuffleNavBar({super.key, required this.items, required this.index, required this.onTap});
   final List<NavItem> items;
   final int index;
   final ValueChanged<int> onTap;

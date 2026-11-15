@@ -34,7 +34,7 @@ export async function trackWebEvent(event:"PageView"|"Lead"|"PlanViewed",eventId
  window.fbq!(event==="PlanViewed"?"trackSingleCustom":"trackSingle",id,event,event==="Lead"?{content_name:"apk_download"}:{},{eventID:"web-"+eventId});
  const q=new URLSearchParams(location.search);
  let click=q.get("fbclid")??"";
- try{if(click){sessionStorage.setItem("orbix_fbclid",click);sessionStorage.setItem("orbix_ad","1");}else click=sessionStorage.getItem("orbix_fbclid")??"";}catch{}
+ try{if(click){sessionStorage.setItem("puffle_fbclid",click);sessionStorage.setItem("puffle_ad","1");}else click=sessionStorage.getItem("puffle_fbclid")??"";}catch{}
  await fetch(process.env.NEXT_PUBLIC_SUPABASE_URL+"/rest/v1/rpc/record_web_measurement",{method:"POST",keepalive:true,headers:{"apikey":process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,"content-type":"application/json"},body:JSON.stringify({p_event:event,p_event_id:eventId,p_consent:true,p_fbclid:click,p_fbc:cookie("_fbc"),p_fbp:cookie("_fbp"),p_url:location.origin+location.pathname})}).then(()=>{},()=>{});
 }
 export default function MetaPixel(){

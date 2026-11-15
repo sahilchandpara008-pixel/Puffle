@@ -1,8 +1,9 @@
 name: Package Play Console kit
 on:
-  push:
+  workflow_run:
+    workflows: [Publish successful Android release]
+    types: [completed]
     branches: [main]
-    paths: [".github/workflows/package-play-console-kit.yml", "tool/build_play_assets.py", "tool/store_capture_test.dart", "tool/PLAY-CONSOLE-README.txt"]
   workflow_dispatch:
 concurrency:
   group: play-console-kit
@@ -11,6 +12,7 @@ permissions:
   contents: write
 jobs:
   package:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -60,7 +62,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          tag=$(gh release view --json tagName --jq .tagName)
+          version=$(sed -n 's/^version: *//p' mobile/pubspec.yaml | tr -d '\r')
+          tag="v${version%%+*}"
           [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
           mkdir kit
           gh release download "$tag" --pattern '*.apk' --pattern '*.aab' --pattern 'checksums.txt' --dir kit

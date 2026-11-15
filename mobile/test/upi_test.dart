@@ -39,7 +39,7 @@ void main() {
   });
 
   group('navigation allowlist', () {
-    const site = 'https://orbix.example.app';
+    const site = 'https://puffle.example.app';
     test('allows /subscribe and /d on the site', () {
       expect(isAllowedWebUrl('$site/subscribe?app=1', site: site), isTrue);
       expect(isAllowedWebUrl('$site/d', site: site), isTrue);
@@ -47,7 +47,7 @@ void main() {
     test('blocks everything else', () {
       expect(isAllowedWebUrl('$site/privacy', site: site), isFalse);
       expect(isAllowedWebUrl('https://evil.example/subscribe', site: site), isFalse);
-      expect(isAllowedWebUrl('http://orbix.example.app/subscribe', site: site), isFalse);
+      expect(isAllowedWebUrl('http://puffle.example.app/subscribe', site: site), isFalse);
       expect(isAllowedWebUrl('intent://foo', site: site), isFalse);
     });
   });

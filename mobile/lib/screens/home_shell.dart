@@ -7,7 +7,7 @@ import 'cloud_screen.dart';
 import 'explore_screen.dart';
 import 'home_screen.dart';
 import 'profile_screen.dart';
-import '../widgets/orbix_nav_bar.dart';
+import '../widgets/puffle_nav_bar.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
@@ -57,7 +57,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     ];
     return Scaffold(
       body: SafeArea(bottom: false, child: IndexedStack(index: _i, children: pages)),
-      bottomNavigationBar: OrbixNavBar(
+      bottomNavigationBar: PuffleNavBar(
         index: _i,
         onTap: _tab,
         items: [

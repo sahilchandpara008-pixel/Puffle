@@ -14,6 +14,7 @@ jobs:
     defaults: { run: { working-directory: mobile } }
     steps:
       - uses: actions/checkout@v4
+      - run: python ../tool/check_app_identity.py
       - uses: subosito/flutter-action@v2
         with: { flutter-version: "${{ env.FLUTTER_VERSION }}", cache: true }
       - uses: actions/setup-java@v4
@@ -35,6 +36,7 @@ jobs:
       KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
     steps:
       - uses: actions/checkout@v4
+      - run: python ../tool/check_app_identity.py
       - uses: subosito/flutter-action@v2
         with: { flutter-version: "${{ env.FLUTTER_VERSION }}", cache: true }
       - uses: actions/setup-java@v4
@@ -68,6 +70,7 @@ jobs:
       - name: Checksums and manifest checks
         working-directory: .
         run: |
+          python tool/check_app_identity.py Puffle.apk Puffle-ads.apk Puffle-play.aab Puffle-play-with-plans.aab
           sha256sum Puffle.apk Puffle-ads.apk Puffle-play.aab Puffle-play-with-plans.aab | tee checksums.txt
           # merged-manifest assertions
           M=$(find mobile/build -path '*merged_manifests*' -path '*irectRelease*' -name AndroidManifest.xml | head -1)

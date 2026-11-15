@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:puffle/screens/consent_gate.dart';
 import 'package:puffle/screens/plans_page.dart';
-import 'package:puffle/widgets/orbix_nav_bar.dart';
+import 'package:puffle/widgets/puffle_nav_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Future<List<Map<String, dynamic>>> plans() async => [
@@ -62,11 +62,11 @@ void main() {
       expect(find.text('Trial Plan'), findsOneWidget);
       expect(find.text('Diamond Plan'), findsOneWidget);
       expect(find.text('Best value'), findsOneWidget);
-      expect(find.text('Get Gold Plan · ₹259'), findsOneWidget);
+      expect(find.text('Get Gold Plan Â· â‚¹259'), findsOneWidget);
       await tester.tap(find.text('Silver Plan'));
       await tester.pump();
-      expect(find.text('Get Silver Plan · ₹129'), findsOneWidget);
-      await tester.tap(find.text('Get Silver Plan · ₹129'));
+      expect(find.text('Get Silver Plan Â· â‚¹129'), findsOneWidget);
+      await tester.tap(find.text('Get Silver Plan Â· â‚¹129'));
       await tester.pumpAndSettle();
       expect(bought, 'p2');
     });
@@ -105,7 +105,7 @@ void main() {
   testWidgets('nav bar: five tabs, tap changes selection', (tester) async {
     var idx = 1;
     await tester.pumpWidget(MaterialApp(home: StatefulBuilder(builder: (c, set) => Scaffold(
-          bottomNavigationBar: OrbixNavBar(index: idx, onTap: (v) => set(() => idx = v), items: const [
+          bottomNavigationBar: PuffleNavBar(index: idx, onTap: (v) => set(() => idx = v), items: const [
             NavItem(Icons.cloud_outlined, 'Cloud'), NavItem(Icons.grid_view_rounded, 'Home'), NavItem(Icons.explore_outlined, 'Explore'),
             NavItem(Icons.tv_outlined, 'Channel'), NavItem(Icons.workspace_premium_outlined, 'Premium'),
           ]),

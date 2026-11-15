@@ -65,7 +65,7 @@ create table public.profiles (
 );
 
 create table private.owner_bootstrap (email text primary key);
-insert into private.owner_bootstrap (email) values ('perfumwala@gmail.com'); -- Original Orbix owner excluded.
+insert into private.owner_bootstrap (email) values ('perfumwala@gmail.com'); -- Original Puffle owner excluded.
 
 create table public.admins (
   user_id uuid primary key references auth.users(id) on delete cascade,

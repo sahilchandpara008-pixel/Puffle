@@ -12,10 +12,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          mkdir -p out/Orbix-all-assets/{play-console-upload,apk,store-images}
-          gh release download play-upload -D out/Orbix-all-assets/play-console-upload -p '*.aab' -p checksums.txt
-          gh release download latest -D out/Orbix-all-assets/apk -p '*.apk'
-          cp mobile/store/play/*.png out/Orbix-all-assets/store-images/
-          (cd out/Orbix-all-assets/play-console-upload && sha256sum -c --ignore-missing checksums.txt)
-          cd out && zip -r -0 Orbix-all-assets.zip Orbix-all-assets && ls -la
-          gh release upload play-upload Orbix-all-assets.zip --clobber
+          mkdir -p out/Puffle-all-assets/{play-console-upload,apk,store-images}
+          gh release download play-upload -D out/Puffle-all-assets/play-console-upload -p '*.aab' -p checksums.txt
+          gh release download latest -D out/Puffle-all-assets/apk -p '*.apk'
+          gh release download --pattern "Puffle-Play-Console-kit-*.zip" --dir out/Puffle-all-assets/store-images/
+          (cd out/Puffle-all-assets/play-console-upload && sha256sum -c --ignore-missing checksums.txt)
+          cd out && zip -r -0 Puffle-all-assets.zip Puffle-all-assets && ls -la
+          gh release upload play-upload Puffle-all-assets.zip --clobber

@@ -19,7 +19,7 @@ export default function PrivacyChoices(){
   if(!m){
    window.fbq?.("consent","revoke");
    for(const name of ["_fbc","_fbp"]){document.cookie=name+"=; Max-Age=0; Path=/; SameSite=Lax";document.cookie=name+"=; Max-Age=0; Path=/; Domain="+location.hostname+"; SameSite=Lax";}
-   try {sessionStorage.removeItem("orbix_fbclid");sessionStorage.removeItem("orbix_ad");}catch{}
+   try {sessionStorage.removeItem("puffle_fbclid");sessionStorage.removeItem("puffle_ad");}catch{}
   }
   if(!g){window.gtag?.("consent","update",{ad_storage:"denied",analytics_storage:"denied",ad_user_data:"denied",ad_personalization:"denied"});
    for(const c of document.cookie.split(';')){const name=c.trim().split('=')[0];if(/^(_ga|_gcl|_gid)/.test(name)){document.cookie=name+'=; Max-Age=0; Path=/; SameSite=Lax';document.cookie=name+'=; Max-Age=0; Path=/; Domain='+location.hostname+'; SameSite=Lax';}}}

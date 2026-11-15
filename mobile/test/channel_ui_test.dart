@@ -26,8 +26,8 @@ void main() {
   });
 
   testWidgets('InitialAvatar uses the first letter', (t) async {
-    await t.pumpWidget(const MaterialApp(home: Scaffold(body: InitialAvatar(name: 'orbix'))));
-    expect(find.text('O'), findsOneWidget);
+    await t.pumpWidget(const MaterialApp(home: Scaffold(body: InitialAvatar(name: 'puffle'))));
+    expect(find.text('P'), findsOneWidget);
   });
 
   test('fmtDuration formats minutes and hours', () {
