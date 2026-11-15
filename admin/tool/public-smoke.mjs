@@ -13,6 +13,9 @@ for(const width of [390,1280]){
   assert.equal(await page.locator('body').evaluate(el=>el.scrollWidth>innerWidth+1),false,'horizontal overflow '+path+' '+width);
   await page.screenshot({path:`shots/${width}_${path.replaceAll('/','_')||'home'}.png`,fullPage:true});
  }
+ const identity=await (await context.request.get(root+'/.well-known/assetlinks.json')).json();
+ assert.equal(identity.length,1);assert.equal(identity[0].target.package_name,'com.pufflecloud.app');
+ assert.match(identity[0].target.sha256_cert_fingerprints[0],/^([A-F0-9]{2}:){31}[A-F0-9]{2}$/);
  assert.equal(tracking.length,0,'No optional provider request before consent');
  await page.goto(root+'/');await page.getByRole('button',{name:'Essential only',exact:true}).click();
  assert.equal(await page.locator('[aria-labelledby="privacy-title"]').count(),0);
