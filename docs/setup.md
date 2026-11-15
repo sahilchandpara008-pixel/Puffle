@@ -1,42 +1,25 @@
-# Puffle — setup
+# Puffle setup and project isolation
 
-Live now: website + admin https://puffle-iota.vercel.app · Supabase project `dqufassvbkattmmsuwmf`.
+Use only these Puffle resources:
+- Repository: smitkhachariya2002-collab/Puffle
+- Android application ID (both flavours): com.pufflecloud.app
+- Supabase: dqufassvbkattmmsuwmf (Puffle, Mumbai)
+- Vercel project: puffle
+- Website: https://puffle-iota.vercel.app
+- Admin: https://puffle-iota.vercel.app/workspace-7f3c9a2e
+- Support: help.puffle@gmail.com
 
-## 1. Your owner account
-Supabase dashboard → Authentication → Users → *Add user* → `perfumwala@gmail.com` + a password, tick **Auto Confirm**.
-That email is the owner automatically. Then sign in at `/admin/login`.
+The existing owner account and Puffle data must be retained. Do not import another app's users, storage, signing configuration, ad identifiers, environment variables or payment settings. The private admin still requires authentication and an authorised role; its URL alone is not access control.
 
-## 2. Secrets (type them yourself — never paste in chat)
-Vercel → project **puffle** → Settings → Environment Variables
-- `SUPABASE_SECRET_KEY` (Supabase → Settings → API keys → secret) — enables rich `/p/<id>` link previews
-- `ANDROID_SIGNING_SHA256` — the SHA-256 of your release keystore (see §4)
-- `NEXT_PUBLIC_SUPPORT_EMAIL` — your support address
-- `NEXT_PUBLIC_APK_URL` — where the APK file is hosted (GitHub Release link works)
+## Secrets and deployment
+Keep signing material in this repository's GitHub secrets and back it up securely. Preserve the current release signing identity so existing installations can update. Never generate a replacement key for an already published app without a planned key-upgrade procedure. Keep server secrets out of source and public clients.
 
-Supabase → Edge Functions → Secrets (only the ones you use)
-- `META_CRON_KEY` (Meta events), `UPI_WEBHOOK_SECRET` / `PROVIDER_WEBHOOK_SECRET` (bank/webhook),
-  `GOOGLE_SERVICE_ACCOUNT_JSON` + `PLAY_CRON_KEY` (Google Play, later), `SITE_URL`.
+Public build configuration is pinned to the Puffle backend. Supabase automatic deployment is deliberately gated by DEPLOY_SUPABASE; use Puffle-specific credentials when enabling it. Link only with `supabase link --project-ref dqufassvbkattmmsuwmf`. Do not change a different project's settings.
 
-GitHub → repo → Settings → Secrets and variables → Actions
-- `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`, `ANDROID_KEYSTORE_BASE64`, `ANDROID_STORE_PASSWORD`,
-  `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`; variable `SUPABASE_PUBLISHABLE_KEY`.
+Vercel public configuration uses this project's backend URL, publishable key, website URL and support email. Meta and Google are configured in the private admin, initially off. See advertising-setup.md for the required native account linking and event validation.
 
-## 3. Push this folder to GitHub
-Install the Claude GitHub App on `smitkhachariya2002-collab/Puffle`, or: `git init && git remote add origin … && git push`.
-Export the live database as migration files: `supabase link --project-ref wppultvjscruthsuddae && supabase db pull`.
-Export the functions: `supabase functions download <name>` for each of the 11 functions.
+## Release
+The mobile workflow runs normal and Play-build tests, checks source and APK/AAB identity, and verifies the existing signing fingerprint. Successful builds publish versioned APKs/AABs; the Play kit is packaged after that release, using matching Puffle documents and newly generated Puffle graphics. The website uses the latest release links.
 
-## 4. Android keystore (on your computer, never in git)
-`keytool -genkeypair -v -keystore puffle.jks -alias puffle -keyalg RSA -keysize 2048 -validity 10000`
-`base64 -w0 puffle.jks` → paste into the `ANDROID_KEYSTORE_BASE64` GitHub secret.
-`keytool -list -v -keystore puffle.jks` → copy SHA256 into `ANDROID_SIGNING_SHA256` on Vercel.
-Back up the keystore: losing it means you can never update the app.
-
-## 5. Build the app
-Push to GitHub; the **mobile** workflow runs analyze + tests and uploads `Puffle.apk`, `Puffle-ads.apk`, `Puffle-play.aab`.
-Locally: `cd mobile && flutter create --platforms=android --org com.puffle --project-name puffle . && flutter pub get && flutter test`.
-
-## 6. Phone test plan
-1. Install `Puffle.apk`, open as guest, browse. 2. Sign up. 3. Premium → buy Trial (₹49) with GPay.
-4. Cancel once and confirm "Payment failed or cancelled". 5. Start a payment, force-close the app mid-way,
-reopen: the result is retried from the queue. 6. In `/admin/payments` verify the credit in your bank app, press **Mark paid** with the UTR.
+## Flow validation
+Check ads guest previews, organic login requirements, audience visibility, Premium channel creation, administrator approval and uploads. Test purchase success, cancellation, interrupted-result retry and guest account attachment. The database tests cover these permissions and payment rules. Do not change payment activation or checkout steps during branding maintenance. Real bank/provider and ad-platform verification require their respective accounts and test transactions.

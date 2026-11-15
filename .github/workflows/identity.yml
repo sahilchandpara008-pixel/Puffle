@@ -1,0 +1,8 @@
+name: Puffle project identity
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python tool/check_app_identity.py

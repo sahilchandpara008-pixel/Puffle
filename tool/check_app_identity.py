@@ -1,6 +1,6 @@
 """Fail builds if legacy branding or another backend enters Puffle's tracked source/artifacts."""
 from pathlib import Path
-import subprocess, sys, zipfile
+import subprocess, sys, zipfile, re
 legacy=bytes.fromhex('6f72626978')
 root=Path(__file__).resolve().parent.parent
 fail=[]
@@ -9,6 +9,8 @@ for name in filter(None,paths):
  p=root/name
  if not p.is_file(): continue
  data=p.read_bytes().lower()
+ for ref in re.findall(rb'https://([a-z0-9]+)\.supabase\.co',data):
+  if ref!=b'dqufassvbkattmmsuwmf': fail.append(name+': unexpected backend')
  if legacy in name.lower().encode() or legacy in data or legacy.decode().encode('utf-16le') in data: fail.append(name)
 for name in sys.argv[1:]:
  with zipfile.ZipFile(root/name) as archive:
