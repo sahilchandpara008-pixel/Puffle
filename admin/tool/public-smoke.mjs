@@ -38,7 +38,7 @@ for(const [query,expected] of [
  const context=await browser.newContext();const page=await context.newPage();
  await page.goto(root+'/d'+query,{waitUntil:'networkidle'});
  const href=await page.getByRole('link',{name:'Download APK',exact:true}).getAttribute('href');
- assert.equal(href,'https://github.com/smitkhachariya2002-collab/Puffle/releases/download/v1.0.9/'+expected);
+ assert.equal(href,'https://github.com/smitkhachariya2002-collab/Puffle/releases/download/v1.0.10/'+expected);
  if(expected==='Puffle-ads.apk'){
   await page.goto(root+'/d',{waitUntil:'networkidle'});
   assert.match(await page.getByRole('link',{name:'Download APK',exact:true}).getAttribute('href'),/Puffle-ads\.apk$/);
