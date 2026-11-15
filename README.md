@@ -14,7 +14,7 @@ Puffle Supabase project: `dqufassvbkattmmsuwmf` (Mumbai). Use only this project 
 `mobile/lib/config.dart` points to the Puffle backend. Android app IDs: `com.pufflecloud.app` (direct and Play). GitHub Actions → `mobile` runs tests and builds artifacts. Test on a real device before release. Signing keys belong only in GitHub secrets.
 
 ## Website
-The `admin/` directory is deployed on Vercel at `https://puffle-iota.vercel.app`. Public Supabase settings, the live site URL, and the support contact `help.puffle@gmail.com` are configured in Vercel. Privacy, terms, refund, community guidelines, report-content, and delete-account pages are included.
+The `admin/` directory is deployed on Vercel at `https://puffle-iota.vercel.app`. Public Supabase settings, the live site URL, and the support contact `help.puffle2026@gmail.com` are configured in Vercel. Privacy, terms, refund, community guidelines, report-content, and delete-account pages are included.
 
 ## Safety and launch checklist
 1. Register and verify the designated Puffle owner email through Supabase Auth; the password must never be committed to Git.

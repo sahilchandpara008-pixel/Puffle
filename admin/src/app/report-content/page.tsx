@@ -1,7 +1,8 @@
+import {SUPPORT_EMAIL} from "@/lib/support";
 import SiteShell from "@/components/SiteShell";
 
 export const metadata = { title: "Report Content" };
-const email = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "help.puffle@gmail.com";
+const email=SUPPORT_EMAIL;
 
 export default function Report() {
   return (

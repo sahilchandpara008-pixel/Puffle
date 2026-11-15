@@ -17,11 +17,12 @@ void main() {
     testWidgets('shown once, blocks until Agree, then asks for notifications', (tester) async {
       SharedPreferences.setMockInitialValues({});
       var asked = 0;
-      await tester.pumpWidget(MaterialApp(home: ConsentGate(requestNotifications: () async => asked++, child: const Text('home'))));
+      await tester.pumpWidget(MaterialApp(home: ConsentGate(saveMeasurementChoice: (_) async {}, requestNotifications: () async => asked++, child: const Text('home'))));
       await tester.pumpAndSettle();
       expect(find.text('Terms of Service and Privacy Policy'), findsOneWidget);
       expect(find.text('Agree and continue'), findsOneWidget);
       expect(find.textContaining('Privacy Policy', findRichText: true), findsWidgets);
+      await tester.ensureVisible(find.text('Agree and continue'));
       await tester.tap(find.text('Agree and continue'));
       await tester.pumpAndSettle();
       expect(find.text('Agree and continue'), findsNothing);
@@ -31,7 +32,7 @@ void main() {
 
     testWidgets('not shown again once accepted', (tester) async {
       SharedPreferences.setMockInitialValues({consentPrefKey: true});
-      await tester.pumpWidget(MaterialApp(home: ConsentGate(requestNotifications: () async {}, child: const Text('home'))));
+      await tester.pumpWidget(MaterialApp(home: ConsentGate(saveMeasurementChoice: (_) async {}, requestNotifications: () async {}, child: const Text('home'))));
       await tester.pumpAndSettle();
       expect(find.text('Agree and continue'), findsNothing);
       expect(find.text('home'), findsOneWidget);
