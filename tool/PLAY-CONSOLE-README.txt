@@ -1,4 +1,4 @@
-Puffle v1.0.11 — Android and Play Console kit
+Puffle v1.0.12 — Android and Play Console kit
 
 BUILDS (unchanged signed release files)
 Puffle.apk: organic / website Android install.
@@ -18,7 +18,7 @@ kit-checksums.txt verifies the complete package.
 
 PLAY CONSOLE
 Package: com.pufflecloud.app
-Version: 1.0.11 (version code 12)
+Version: 1.0.12 (version code 13)
 Upload Puffle-play.aab, then add the 512 icon, feature graphic and phone screenshots to the store listing.
 The ZIP and APK files are not uploaded as the Play release bundle.
 Complete your own Data safety, content rating, app access/reviewer instructions and publishing requirements in Play Console.

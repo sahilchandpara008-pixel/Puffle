@@ -180,7 +180,7 @@ class _LoginSheetState extends State<LoginSheet> {
   Widget build(BuildContext context) {
     final title = widget.saveMode ? 'Save your plan' : (_signup ? 'Create your account' : 'Welcome back');
     final sub = widget.saveMode
-        ? 'Add an email and password. Your plan stays on this account and works on any phone.'
+        ? 'Add email and password or link Google. Your plan stays on this account and works on any phone.'
         : (_signup ? 'Create your account with email and password.' : 'Log in to your Puffle account.');
     return Padding(
       padding: EdgeInsets.fromLTRB(20, 10, 20, MediaQuery.of(context).viewInsets.bottom + 20),
