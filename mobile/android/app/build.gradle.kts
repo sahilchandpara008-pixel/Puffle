@@ -12,6 +12,15 @@ val keyProps = Properties().apply {
     if (f.exists()) f.inputStream().use { load(it) }
 }
 
+// A release must never silently fall back to Android's debug signing identity.
+val releaseRequested = gradle.startParameter.taskNames.any { it.contains("Release", ignoreCase = true) }
+if (releaseRequested) {
+    check(listOf("storeFile", "storePassword", "keyAlias", "keyPassword").all { !keyProps.getProperty(it).isNullOrBlank() }) {
+        "Puffle release signing is missing. Configure the dedicated Puffle upload keystore before building a release."
+    }
+    check(file(keyProps.getProperty("storeFile")).isFile) { "Puffle release keystore file is missing." }
+}
+
 android {
     namespace = "com.pufflecloud.app"
     compileSdk = 35
@@ -57,7 +66,7 @@ android {
 
     buildTypes {
         release {
-            signingConfig = if (keyProps.containsKey("storeFile")) signingConfigs.getByName("release") else signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
         }

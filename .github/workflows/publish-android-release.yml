@@ -29,6 +29,17 @@ jobs:
           github-token: ${{ github.token }}
       - run: sha256sum -c checksums.txt
         if: steps.current.outputs.publish == 'true'
+      - uses: actions/setup-java@v4
+        if: steps.current.outputs.publish == 'true'
+        with: {distribution: temurin, java-version: 17}
+      - name: Reject debug-signed app bundles
+        if: steps.current.outputs.publish == 'true'
+        run: |
+          for bundle in Puffle-play.aab Puffle-play-with-plans.aab; do
+            jarsigner -verify "$bundle" | grep -q 'jar verified.'
+            certificate=$(keytool -printcert -jarfile "$bundle")
+            ! echo "$certificate" | grep -qi 'Android Debug' || { echo "Debug certificate rejected: $bundle"; exit 1; }
+          done
       - name: Publish verified APKs
         if: steps.current.outputs.publish == 'true'
         env:

@@ -27,6 +27,7 @@ jobs:
       - name: Play-build test (PLAY_STORE=true)
         run: flutter test --dart-define=PLAY_STORE=true
   build:
+    if: github.event_name != 'pull_request'
     needs: test
     runs-on: ubuntu-latest
     permissions:
@@ -36,6 +37,15 @@ jobs:
       KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
     steps:
       - uses: actions/checkout@v4
+      - name: Require Puffle release signing
+        env:
+          STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          for value in "$KEYSTORE_B64" "$STORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD"; do
+            test -n "$value" || { echo '::error::Puffle signing secrets are required. Refusing a debug-signed release.'; exit 1; }
+          done
       - run: python ../tool/check_app_identity.py
       - uses: subosito/flutter-action@v2
         with: { flutter-version: "${{ env.FLUTTER_VERSION }}", cache: true }
@@ -46,8 +56,8 @@ jobs:
       - name: Kotlin unit tests (UPI result conversion)
         run: cd android && ./gradlew :app:testDirectDebugUnitTest
       - name: Write signing config from secrets (never committed)
-        if: env.KEYSTORE_B64 != ''
         run: |
+          test -n "$KEYSTORE_B64" || { echo '::error::Puffle release keystore secret is missing. Debug signing is forbidden.'; exit 1; }
           echo "$KEYSTORE_B64" | base64 -d > android/release.jks
           cat > android/key.properties <<KP
           storeFile=../release.jks
@@ -78,19 +88,26 @@ jobs:
           grep -q 'com.pufflecloud.app' "$M" || (echo 'Puffle package missing'; exit 1)
           ! grep -q 'permission.AD_ID' "$M" || (echo 'AD_ID present'; exit 1)
       - name: Verify release signature
-        if: env.KEYSTORE_B64 != ''
         working-directory: .
         env:
-          EXPECTED: "B7:0A:41:56:E6:23:81:D3:3E:43:0D:AB:ED:74:62:52:3D:D6:06:7F:F7:76:B6:7A:55:E8:E0:26:C7:01:81:0C"
+          SIGN_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          SIGN_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
         run: |
+          EXPECTED=$(keytool -list -v -keystore mobile/android/release.jks -alias "$SIGN_ALIAS" -storepass:env SIGN_PASSWORD | sed -n 's/.*SHA256: //p' | head -1)
+          test -n "$EXPECTED" || { echo 'Missing expected upload certificate'; exit 1; }
           AS=$(ls $ANDROID_HOME/build-tools/*/apksigner | sort -V | tail -1)
           for f in Puffle.apk Puffle-ads.apk; do
             got=$($AS verify --print-certs $f | grep "SHA-256 digest" | head -1 | sed 's/.*: //' | tr a-f A-F | sed 's/../&:/g; s/:$//')
             echo "$f -> $got"
             [ "$got" = "$EXPECTED" ] || { echo "Signature mismatch for $f"; exit 1; }
           done
-          jarsigner -verify Puffle-play.aab | tail -1
-          jarsigner -verify Puffle-play-with-plans.aab | tail -1
+          for f in Puffle-play.aab Puffle-play-with-plans.aab; do
+            jarsigner -verify "$f" | grep -q 'jar verified.'
+            cert=$(keytool -printcert -jarfile "$f")
+            ! echo "$cert" | grep -qi 'Android Debug' || { echo "Debug certificate rejected: $f"; exit 1; }
+            got=$(echo "$cert" | sed -n 's/.*SHA256: //p' | head -1)
+            [ "$got" = "$EXPECTED" ] || { echo "Bundle certificate mismatch: $f"; exit 1; }
+          done
       - uses: actions/upload-artifact@v4
         with:
           name: Puffle-apks
