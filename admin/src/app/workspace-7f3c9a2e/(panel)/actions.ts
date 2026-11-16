@@ -1,6 +1,7 @@
 "use server";
 import { redirect } from "next/navigation";
 import { requireAdmin, flash, str, UUID } from "@/lib/admin";
+import {checkMetaCandidate} from "@/lib/meta-connection";
 
 const back = (fd: FormData, fallback: string) => {
   const b = str(fd, "back");
@@ -227,21 +228,35 @@ export async function addPlan(fd: FormData) {
 // ---------------- meta ----------------
 export async function saveMeta(fd: FormData) {
   const { sb } = await requireAdmin(true);
+  const path="/workspace-7f3c9a2e/meta";
+  if(fd.get("disable")==="yes"){
+    const {error}=await sb.from("meta_settings").update({enabled:false,updated_at:new Date().toISOString()}).eq("id",1);
+    flash(path,error,"Meta tracking is off. Saved credentials were kept.");
+  }
   const pixel = str(fd, "pixel_id").replace(/\s+/g, "");
   if (pixel && !/^\d{5,20}$/.test(pixel)) flash("/workspace-7f3c9a2e/meta", { message: "The Pixel ID is a number of about 15 or 16 digits. Copy it from Events Manager." }, "");
-  // Not-null text columns: empty string means "not set".
+  const {data:old,error:readError}=await sb.from("meta_settings").select("capi_token").eq("id",1).single();
+  if(readError)flash(path,readError,"");
+  const website="https://puffle-iota.vercel.app";
+  const store=str(fd,"store_url")||"https://play.google.com/store/apps/details?id=com.pufflecloud.app";
+  if(!/^https:\/\/play\.google\.com\/(store\/apps\/details|apps\/testing)\?id=com\.pufflecloud\.app(?:&[^\s]*)?$/.test(store))flash(path,{message:"Use Puffle's Google Play listing or tester link."},"");
   const patch: Record<string, unknown> = { pixel_id: pixel, test_event_code: str(fd, "test_event_code"), enabled: fd.get("enabled") === "on", updated_at: new Date().toISOString() };
   const token = str(fd, "capi_token").replace(/\s+/g, "");
   if (token) patch.capi_token = token; // write-only: an empty box keeps the saved token
   if (fd.get("clear_token") === "on") patch.capi_token = "";
+  const candidate=String(patch.capi_token??old?.capi_token??"");
+  let connection="unconfigured";
+  if(pixel||candidate||patch.enabled){
+    const check=await checkMetaCandidate(pixel,candidate,str(fd,"test_event_code"),website);
+    if(check.status==="rejected")flash(path,{message:check.message},"");
+    connection=check.status;
+    if(check.status==="timeout")patch.enabled=false;
+  }
+  Object.assign(patch,{website_url:website,store_url:store,page_title:str(fd,"page_title").slice(0,100)||"Puffle",page_subtitle:str(fd,"page_subtitle").slice(0,200),validation_status:connection});
   const { error } = await sb.from("meta_settings").update(patch).eq("id", 1);
   if (error) flash("/workspace-7f3c9a2e/meta", error, "");
-  if(!patch.enabled) flash("/workspace-7f3c9a2e/meta",null,"Settings saved. Meta event delivery is off.");
-  // Check the new Pixel ID and token with Meta straight away, so a typo shows up now and not after ads are running.
-  const { data, error: fe } = await sb.functions.invoke("meta-send", { body: { action: "verify" } });
-  const d = (data ?? {}) as { ok?: boolean; name?: string; message?: string };
-  if (fe || !d.ok) flash("/workspace-7f3c9a2e/meta", { message: "Saved, but Meta did not accept this Pixel ID and token: " + (d.message ?? (await fnError(fe))?.message ?? "no answer") }, "");
-  flash("/workspace-7f3c9a2e/meta", null, `Saved and connected to pixel “${d.name ?? pixel}”. The website and eligible, consented app events now use these central settings. Check Test Events before starting ads.`);
+  if(connection==="timeout")flash(path,null,"Meta timed out. Settings saved with tracking OFF. Retry Save and check connection before starting ads.");
+  flash(path,null,patch.enabled?"Settings saved after Meta accepted a real configuration event. Check Events Manager before starting ads.":"Settings saved. Meta event delivery is off.");
 }
 
 export async function metaSend(fd: FormData) {

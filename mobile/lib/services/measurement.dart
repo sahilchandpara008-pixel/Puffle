@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'google_measurement.dart';
+import 'install_attribution.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -42,11 +43,14 @@ class Measurement extends ChangeNotifier {
     final id=p.getString('install_id')??_uuid.v4();await p.setString('install_id',id);
     final native=await const MethodChannel('app/measurement').invokeMapMethod<String,dynamic>('context')??{};
     final view=PlatformDispatcher.instance.views.first;
-    return {'install_id':id,'extinfo':['a2','com.pufflecloud.app','13',Config.versionLabel,
+    return {'install_id':id,'extinfo':['a2','com.pufflecloud.app','14',Config.versionLabel,
       '${native['os']??''}','${native['model']??''}',PlatformDispatcher.instance.locale.toLanguageTag(),DateTime.now().timeZoneName,'',
       view.physicalSize.width.round().toString(),view.physicalSize.height.round().toString(),view.devicePixelRatio.toString(),'${native['cores']??''}','','','']};
   }
-  Future<void> _sync() async {await _sb.rpc('set_measurement_preferences',params:{'p_analytics':analytics,'p_advertising':advertising,'p_context':await _context()});}
+  Future<void> _sync() async {
+    await _sb.rpc('set_measurement_preferences',params:{'p_analytics':analytics,'p_advertising':advertising,'p_context':await _context()});
+    if(advertising){try{await InstallAttribution.record(forceLink:true);}catch(_){/* Attribution never blocks a consent choice. */}}
+  }
   Future<void> save(bool usage,bool ads,[bool googleAds=false]) async{
     final oldA=analytics,oldD=advertising,oldG=google;analytics=usage;advertising=ads;google=googleAds;
     try{await _sync();await _sb.rpc('set_google_preferences',params:{'p_enabled':google});}catch(_){analytics=oldA;advertising=oldD;google=oldG;rethrow;}

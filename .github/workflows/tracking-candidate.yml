@@ -1,0 +1,59 @@
+name: Puffle tracking release candidate
+on:
+  push:
+    branches: [codex/meta-attribution-v1.0.13]
+    paths: [mobile/**, .github/workflows/tracking-candidate.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.27.4'
+          cache: true
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Prepare Android scaffolding
+        run: flutter create --platforms=android --org com.puffle --project-name puffle . && rm -f android/app/build.gradle && sed -i 's/com.android.application" version "[0-9.]*"/com.android.application" version "8.1.4"/' android/settings.gradle
+      - run: flutter pub get
+      - run: flutter analyze --no-fatal-infos
+      - run: flutter test
+      - run: flutter test --dart-define=PLAY_STORE=true
+      - name: Create disposable candidate key (not an upload key)
+        run: |
+          candidate_password="$(openssl rand -hex 24)"
+          keytool -genkeypair -keystore android/candidate.p12 -storetype PKCS12 -storepass "$candidate_password" -keypass "$candidate_password" -alias candidate -keyalg RSA -keysize 2048 -validity 7 -dname 'CN=Puffle Build Candidate,O=Puffle'
+          printf 'storeFile=../candidate.p12\nstorePassword=%s\nkeyAlias=candidate\nkeyPassword=%s\n' "$candidate_password" "$candidate_password" > android/key.properties
+      - name: Native Kotlin tests
+        run: cd android && ./gradlew :app:testDirectDebugUnitTest
+      - run: flutter build apk --release --flavor direct
+      - run: cp build/app/outputs/flutter-apk/app-direct-release.apk ../Puffle.apk
+      - run: flutter build apk --release --flavor direct --dart-define=APK_REFERRER='utm_source=meta&utm_medium=paid_social&utm_campaign=apk_download'
+      - run: cp build/app/outputs/flutter-apk/app-direct-release.apk ../Puffle-ads.apk
+      - run: flutter build appbundle --release --flavor play --dart-define=PLAY_STORE=true
+      - run: cp build/app/outputs/bundle/playRelease/app-play-release.aab ../Puffle-play.aab
+      - run: flutter build appbundle --release --flavor play
+      - run: cp build/app/outputs/bundle/playRelease/app-play-release.aab ../Puffle-play-with-plans.aab
+      - name: Candidate checksums
+        working-directory: .
+        run: sha256sum Puffle.apk Puffle-ads.apk Puffle-play.aab Puffle-play-with-plans.aab > candidate-checksums.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Puffle-v1.0.13-candidates-not-for-distribution
+          retention-days: 3
+          path: |
+            Puffle.apk
+            Puffle-ads.apk
+            Puffle-play.aab
+            Puffle-play-with-plans.aab
+            candidate-checksums.txt
+            mobile/build/app/outputs/native-debug-symbols/**

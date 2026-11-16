@@ -2,12 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:uuid/uuid.dart';
 
 import '../config.dart';
 import 'measurement.dart';
+import 'install_attribution.dart';
 import 'google_measurement.dart';
 import '../models/status.dart';
 import '../payments/pending_queue.dart';
@@ -44,26 +43,15 @@ class AppState extends ChangeNotifier {
         .subscribe();
     _poll = Timer.periodic(const Duration(seconds:60),(_){refresh();GoogleMeasurement.instance.sync(Measurement.instance.google,force:true);Measurement.instance.flush();});
     sb.auth.onAuthStateChange.listen((event) async {
+      try { await InstallAttribution.record(); } catch (_) { /* Retry next launch; never interrupt login. */ }
       await refresh();
       if(event.event==AuthChangeEvent.signedIn||event.event==AuthChangeEvent.userUpdated){await Measurement.instance.start();}
     });
   }
 
   Future<void> _recordInstallOnce() async {
-    final p = await SharedPreferences.getInstance();
-    if (p.getBool('install_recorded') == true) return;
-    final id = p.getString('install_id') ?? const Uuid().v4();
-    final secret = p.getString('install_secret') ?? const Uuid().v4();
-    await p.setString('install_id', id);
-    await p.setString('install_secret', secret);
     try {
-      await sb.rpc('record_install', params: {
-        'p_install_id': id,
-        'p_referrer_status': Config.apkReferrer.isEmpty ? 'none' : 'apk_define',
-        'p_raw_referrer': Config.apkReferrer,
-        'p_install_secret': secret,
-      });
-      await p.setBool('install_recorded', true);
+      await InstallAttribution.record();
     } catch (_) {/* retried next launch */}
   }
 

@@ -30,18 +30,18 @@ begin
   perform pg_temp.rec('owner bootstrap by confirmed email', exists(select 1 from public.admins where user_id=owner_id and role='owner'));
   perform pg_temp.rec('profile guest flag', (select is_guest from public.profiles where id=a) and not (select is_guest from public.profiles where id=m));
 
-  perform pg_temp.imp(a,true); r1 := public.record_install('inst-ads-0001','ok','utm_source%3Dmeta%26utm_medium%3Dpaid_social%26utm_campaign%3Dapk','s'); reset role;
-  perform pg_temp.imp(b,true); r2 := public.record_install('inst-org-0001','ok','utm_source=google','s'); r3 := public.record_install('inst-org-0002','ok','utm_source=facebook','s'); reset role;
-  perform pg_temp.imp(m,false); r4 := public.record_install('inst-mem-0001','ok','','s'); reset role;
-  perform pg_temp.imp(am,false); r5 := public.record_install('inst-ads-0002','ok','UTM_SOURCE=Instagram&utm_medium=x','s'); reset role;
-  perform pg_temp.imp(g,true); perform public.record_install('inst-ads-0003','ok','utm_source=ig','s'); reset role;
+  perform pg_temp.imp(a,true); r1 := public.record_install('inst-ads-0001','ok','utm_source%3Dmeta%26utm_medium%3Dpaid_social%26utm_campaign%3Dapk','fixture-install-secret-0001'); reset role;
+  perform pg_temp.imp(b,true); r2 := public.record_install('inst-org-0001','ok','utm_source=google','fixture-install-secret-0001'); r3 := public.record_install('inst-org-0002','ok','utm_source=facebook','fixture-install-secret-0001'); reset role;
+  perform pg_temp.imp(m,false); r4 := public.record_install('inst-mem-0001','ok','','fixture-install-secret-0001'); reset role;
+  perform pg_temp.imp(am,false); r5 := public.record_install('inst-ads-0002','ok','UTM_SOURCE=Instagram&utm_medium=x','fixture-install-secret-0001'); reset role;
+  perform pg_temp.imp(g,true); perform public.record_install('inst-ads-0003','ok','utm_source=ig','fixture-install-secret-0001'); reset role;
   perform pg_temp.rec('meta referrer (url-encoded) -> ads', r1='ads');
   perform pg_temp.rec('google referrer -> organic', r2='organic');
   perform pg_temp.rec('first touch kept (later ads referrer ignored)', r3='organic' and private.source_of(b)='organic');
   perform pg_temp.rec('empty referrer -> organic', r4='organic');
   perform pg_temp.rec('Instagram any-case -> ads', r5='ads');
   update public.meta_settings set enabled=true, pixel_id='1234567890', capi_token='tok';
-  perform pg_temp.imp(a,true); perform public.record_install('inst-ads-0001','ok','utm_source=meta','s'); reset role;
+  perform pg_temp.imp(a,true); perform public.record_install('inst-ads-0001','ok','utm_source=meta','fixture-install-secret-0001'); reset role;
   perform pg_temp.rec('AppInstall event only for ads installs (organic/Play send nothing)',
     (select count(*) from public.meta_events where event_name='AppInstall' and user_id in (b,m))=0);
   update public.meta_settings set enabled=false, pixel_id='', capi_token='';

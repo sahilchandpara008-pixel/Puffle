@@ -10,7 +10,13 @@ export default function DownloadButton({ apk = APK_URL, adsApk = ADS_APK_URL, la
   const [href, setHref] = useState(apk);
   const path=usePathname();
   useEffect(() => { setHref(fromAd()?adsApk:apk); }, [adsApk,apk,path]);
-  const onClick = (event:React.MouseEvent<HTMLAnchorElement>) => { event.currentTarget.href=fromAd()?adsApk:apk; void trackWebEvent("Lead");void trackGoogleDownload(); };
+  const onClick = async (event:React.MouseEvent<HTMLAnchorElement>) => {
+    const target=fromAd()?adsApk:apk;event.currentTarget.href=target;
+    if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
+    event.preventDefault();
+    await Promise.race([Promise.allSettled([trackWebEvent("Lead"),trackGoogleDownload()]),new Promise(resolve=>setTimeout(resolve,750))]);
+    location.assign(target);
+  };
   return <a href={href} onClick={onClick} className={className} download>{label}</a>;
 }
 

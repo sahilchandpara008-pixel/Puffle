@@ -9,7 +9,7 @@ export default async function Meta() {
   const { sb } = await requireAdmin(true);
   const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
   const [ms, last, failed, pending, files, ov] = await Promise.all([
-    sb.from("meta_settings").select("pixel_id,test_event_code,enabled,updated_at,capi_token").eq("id", 1).single(),
+    sb.from("meta_settings").select("pixel_id,test_event_code,enabled,updated_at,capi_token,store_url,page_title,page_subtitle,validation_status").eq("id", 1).single(),
     sb.from("meta_events").select("sent_at").eq("status", "sent").order("sent_at", { ascending: false }).limit(1),
     sb.from("meta_events").select("id", { count: "exact", head: true }).not("last_error", "is", null).gte("created_at", since),
     sb.from("meta_events").select("id", { count: "exact", head: true }).eq("status", "pending"),
@@ -26,6 +26,8 @@ export default async function Meta() {
     InitiateCheckout: "Started a payment", Purchase: "Bank-verified paid plan (INR)",
   };
   const m = ms.data;
+  const attribution=await sb.rpc("admin_attribution_overview");
+  const acquisition=attribution.data as {installs_7d?:number;matched_installs_7d?:number}|null;
   const hasToken = !!m?.capi_token; // only a yes/no is ever sent to the browser
   const apk = (files.data ?? []).find((f) => f.name.toLowerCase().endsWith(".apk"));
   const steps: [boolean, string][] = [
@@ -53,13 +55,20 @@ export default async function Meta() {
               <Input name="capi_token" type="password" autoComplete="off" placeholder={hasToken ? "••••••••••••" : ""} />
             </Field>
             <label className="flex items-center gap-2 text-sm text-gray-800"><input type="checkbox" name="enabled" defaultChecked={!!m?.enabled} /> Tracking on</label>
+            <Field label="Google Play destination"><Input name="store_url" defaultValue={m?.store_url??"https://play.google.com/store/apps/details?id=com.pufflecloud.app"}/></Field>
+            <Field label="Landing page title"><Input name="page_title" defaultValue={m?.page_title??"Puffle"}/></Field>
+            <Field label="Landing page subtitle"><Input name="page_subtitle" defaultValue={m?.page_subtitle??"Your cloud and channels"}/></Field>
             {hasToken && <label className="flex items-center gap-2 text-sm text-gray-800"><input type="checkbox" name="clear_token" /> Remove the saved token</label>}
             <div className="sm:col-span-2 flex flex-wrap items-center gap-3"><SubmitButton>Save and check connection</SubmitButton><span className="text-xs text-gray-500">Saving checks the ID and token with Meta. No app update is needed.</span></div>
           </form>
+          <form action={saveMeta} className="mt-3"><Hidden name="disable" value="yes"/><SubmitButton small variant="secondary">Turn Meta tracking off</SubmitButton></form>
+          <p className="mt-2 text-xs text-gray-500">Connection: {m?.validation_status??"unconfigured"}. Rejected credentials are not saved. A timeout saves disabled settings for a later retry.</p>
         </Card>
       </div>
       <Card title="Before starting ads" className="mt-4"><p className="text-sm text-gray-600">Link this dataset to your Meta app in Events Manager once. Install the latest Puffle app so users can choose optional measurement. Enter a Test Event Code, send a test, then check Events Manager and remove the code for live campaigns. Download events measure button taps; installs measure first app opens. Purchase events are sent only after bank/provider verification. Users who decline advertising measurement are excluded.</p><p className="mt-2 text-sm text-gray-600">Changing the Dataset ID cancels unsent events for the previous destination. Updating only the token keeps eligible retries. Never paste access tokens into chat or public pages.</p></Card>
       <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Stat label="First opens, 7 days" value={acquisition?.installs_7d??0}/>
+        <Stat label="Meta-tagged first opens, 7 days" value={acquisition?.matched_installs_7d??0}/>
         <Stat label="Last sent" value={<span className="text-base">{last.data?.[0]?.sent_at ? ist(last.data[0].sent_at) : "Never"}</span>} />
         <Stat label="Failures in 24 h" value={failed.count ?? 0} tone={(failed.count ?? 0) > 0 ? "warn" : undefined} />
         <Stat label="Waiting to send" value={pending.count ?? 0} />

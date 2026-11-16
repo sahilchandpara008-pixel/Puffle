@@ -34,7 +34,7 @@ async function flush(){
    }
    const current=await settings();
    if(!current.enabled||current.pixel_id!==s.pixel_id||current.revision!==e.config_revision)throw new Error("SUPPRESS: Measurement configuration changed");
-   if(e.event_name==="Purchase"){
+   if(e.event_name==="Purchase"||e.event_name==="Subscribe"){
     const {data:o}=await admin.from("payment_orders").select("status,bank_verified,amount_paise,user_id").eq("id",e.order_id).single();
     if(o?.status!=="paid"||!o.bank_verified||o.user_id!==e.user_id||Number(e.value_inr)!==Number(o.amount_paise)/100)throw new Error("SUPPRESS: Purchase is not a verified paid order");
    }
@@ -44,14 +44,14 @@ async function flush(){
    const event=await buildEvent(e as QueuedEvent,e.user_id?emails.get(e.user_id):null);
    const response=await graph(s.pixel_id,s.capi_token,{data:[event],...(s.test_event_code?{test_event_code:s.test_event_code}:{})},"/events");
    const status=s.test_event_code?"test_sent":"sent";
-   const {error:saveError}=await admin.from("meta_events").update({status,sent_at:new Date().toISOString(),lease_until:null,last_error:null,meta_trace_id:response.fbtrace_id??null}).eq("id",e.id).eq("status","processing");
+   const {error:saveError}=await admin.from("meta_events").update({status,sent_at:new Date().toISOString(),lease_until:null,last_error:null,meta_trace_id:response.fbtrace_id??null,response:{events_received:response.events_received,fbtrace_id:response.fbtrace_id??null}}).eq("id",e.id).eq("status","processing");
    if(saveError)throw saveError;
    if(s.test_event_code)test_sent++;else sent++;
   }catch(error){
    const message=String(error instanceof Error?error.message:error).replaceAll(s.capi_token,"[redacted]").slice(0,500);
    const suppress=message.startsWith("SUPPRESS:");
    const terminal=e.attempts>=8||/outside the delivery window|Invalid event|permission|app_data/.test(message);
-   await admin.from("meta_events").update({status:suppress?"suppressed":terminal?"failed":"pending",lease_until:null,last_error:message,
+   await admin.from("meta_events").update({status:suppress?"suppressed":terminal?"failed":"pending",lease_until:null,last_error:message,response:{error:message},
     next_attempt_at:new Date(Date.now()+Math.min(3600,30*2**Math.min(e.attempts,7))*1000).toISOString()}).eq("id",e.id).eq("status","processing");
    if(suppress)suppressed++;else failed++;
   }
@@ -71,9 +71,9 @@ Deno.serve(async req=>{
   }
   if(action==="test"){
    if(!s.enabled||!s.pixel_id||!s.capi_token||!s.test_event_code)return json({ok:false,message:"Save enabled settings and a Meta Test Event Code first. No test is sent as a live purchase."});
-   const event={event_name:"Purchase",event_time:Math.floor(Date.now()/1000),event_id:"puffle-test-"+crypto.randomUUID(),action_source:"app",
+   const event={event_name:"MetaConfigurationTest",event_time:Math.floor(Date.now()/1000),event_id:"puffle-test-"+crypto.randomUUID(),action_source:"website",event_source_url:"https://puffle-iota.vercel.app",
     user_data:{external_id:[await hash("puffle-admin-test")]},custom_data:{currency:"INR",value:1},
-    app_data:{advertiser_tracking_enabled:1,application_tracking_enabled:1,extinfo:["a2","com.pufflecloud.app","9","1.0.8","14","","en_IN","IST","","1080","1920","3","4","","","Asia/Kolkata"]}};
+    };
    const data=await graph(s.pixel_id,s.capi_token,{data:[event],test_event_code:s.test_event_code},"/events");
    return json({ok:true,meta:{events_received:data.events_received,fbtrace_id:data.fbtrace_id},test_only:true});
   }

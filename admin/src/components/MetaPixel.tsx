@@ -43,7 +43,12 @@ export async function trackWebEvent(event:"PageView"|"Lead"|"PlanViewed",eventId
  const q=new URLSearchParams(location.search);
  let click=q.get("fbclid")??"";
  try{if(click){sessionStorage.setItem("puffle_fbclid",click);sessionStorage.setItem("puffle_ad","1");}else click=sessionStorage.getItem("puffle_fbclid")??"";}catch{}
- await fetch(process.env.NEXT_PUBLIC_SUPABASE_URL+"/rest/v1/rpc/record_web_measurement",{method:"POST",keepalive:true,headers:{"apikey":process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,"content-type":"application/json"},body:JSON.stringify({p_event:event,p_event_id:eventId,p_consent:true,p_fbclid:click,p_fbc:cookie("_fbc"),p_fbp:cookie("_fbp"),p_url:location.origin+location.pathname})}).then(()=>{},()=>{});
+ let fbc=cookie("_fbc");
+ if(!fbc&&click)fbc="fb.1."+Date.now()+"."+click;
+ const utm=new URLSearchParams();for(const key of ["utm_source","utm_medium","utm_campaign","utm_content","utm_term"]){const v=q.get(key);if(v)utm.set(key,v.slice(0,200));}
+ try{if(utm.size)sessionStorage.setItem("puffle_utm",utm.toString());}catch{}
+ let referrer=utm.toString();try{referrer||=sessionStorage.getItem("puffle_utm")??"";}catch{}
+ await fetch("/api/meta-event",{method:"POST",keepalive:true,headers:{"content-type":"application/json"},body:JSON.stringify({event,event_id:eventId,consent:true,fbc,fbp:cookie("_fbp"),path:location.pathname,referrer})}).then(()=>{},()=>{});
 }
 export default function MetaPixel(){
  const path=usePathname();
