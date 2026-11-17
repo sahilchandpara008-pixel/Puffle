@@ -1,0 +1,34 @@
+name: Recover matching Puffle v1.0.13 native symbols
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/recover-v1.0.13-symbols.yml
+      - tool/recover_v1_0_13_native_symbols.py
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  symbols:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download the original uploaded bundle
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release download v1.0.13 --pattern Puffle-play-with-plans.aab
+      - name: Recover official symbols and verify exact ELF build IDs
+        run: python tool/recover_v1_0_13_native_symbols.py
+      - name: Publish matching symbols (leave all APKs and AABs unchanged)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release upload v1.0.13 native-symbols/Puffle-v1.0.13-code14-native-debug-symbols.zip native-symbols/Puffle-v1.0.13-code14-native-symbols-verification.json --clobber
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Puffle-v1.0.13-code14-native-symbols
+          path: |
+            native-symbols/Puffle-v1.0.13-code14-native-debug-symbols.zip
+            native-symbols/Puffle-v1.0.13-code14-native-symbols-verification.json
