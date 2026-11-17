@@ -78,7 +78,7 @@ begin
 
   perform pg_temp.imp(u1,false); c := public.create_order(p_gold); c2 := public.create_order(p_gold); reset role;
   v_o1 := (c->>'order_id')::uuid;
-  perform pg_temp.rec('order snapshot: amount, OB reference, UPI id, payee', (c->>'amount_paise')::bigint=25900 and c->>'reference' ~ '^OB[0-9]{6}[A-F0-9]{8}$' and c->>'upi_id'='fixture@upi' and c->>'payee_name'='As Enterprice');
+  perform pg_temp.rec('order snapshot: amount, OB reference, UPI id, payee', (c->>'amount_paise')::bigint=25900 and c->>'reference' ~ '^OB[0-9]{6}[A-F0-9]{8}$' and c->>'upi_id'='fixture@upi' and c->>'payee_name'='Test Merchant');
   perform pg_temp.rec('same pending order is reused', c->>'order_id' = c2->>'order_id');
   perform pg_temp.imp(u1,false); c := public.create_order(p_silver); reset role;
   perform pg_temp.rec('order for another plan cancels the previous pending one', (select status from public.payment_orders where id=v_o1)='cancelled' and (c->>'status')='pending');
