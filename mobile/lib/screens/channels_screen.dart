@@ -101,12 +101,28 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
     await _load();
   }
 
+  Future<void> _searchJoined() async {
+    final selected = await showSearch<Map<String, dynamic>?>(
+      context: context,
+      delegate: JoinedChannelSearch(rows: _rows, joined: _joined),
+    );
+    if (selected == null || !mounted) return;
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => ChannelPage(
+      channelId: selected['id'] as String, name: selected['name'] as String? ?? '',
+    )));
+    await _load();
+  }
+
   @override
   Widget build(BuildContext context) {
     AppScope.of(context);
     return Scaffold(
       backgroundColor: widget.standalone ? Tokens.background : Colors.transparent,
-      appBar: widget.standalone ? AppBar(title: const Text('My channels')) : null,
+      appBar: AppBar(
+        title: Text(widget.standalone ? 'My channels' : 'Channels'),
+        automaticallyImplyLeading: widget.standalone,
+        actions: [IconButton(tooltip: 'Search joined channels', icon: const Icon(Icons.search_rounded), onPressed: _loading ? null : _searchJoined)],
+      ),
       floatingActionButton: FloatingActionButton.extended(onPressed: _create, icon: const Icon(Icons.add), label: const Text('Create')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -124,7 +140,6 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
                       ),
                     ])
                   : ListView(padding: const EdgeInsets.fromLTRB(16, 12, 16, 88), children: [
-                      if (!widget.standalone) const Padding(padding: EdgeInsets.only(bottom: 8), child: Text('Channels', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700))),
                       for (final r in _rows)
                         Padding(
                           padding: const EdgeInsets.only(bottom: 8),
@@ -161,6 +176,42 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
                     ]),
             ),
     );
+  }
+}
+
+/// Local search over memberships already authorized by backend RLS; never discovers unjoined channels.
+class JoinedChannelSearch extends SearchDelegate<Map<String, dynamic>?> {
+  JoinedChannelSearch({required List<Map<String, dynamic>> rows, required Set<String> joined})
+      : _rows = rows.where((r) => joined.contains(r['id'])).toList(),
+        super(searchFieldLabel: 'Search joined channels');
+  final List<Map<String, dynamic>> _rows;
+
+  @override
+  List<Widget> buildActions(BuildContext context) => [
+    if (query.isNotEmpty) IconButton(tooltip: 'Clear search', icon: const Icon(Icons.clear_rounded), onPressed: () => query = ''),
+  ];
+  @override
+  Widget buildLeading(BuildContext context) => IconButton(
+    tooltip: 'Back', icon: const Icon(Icons.arrow_back_rounded), onPressed: () => close(context, null),
+  );
+  @override
+  Widget buildResults(BuildContext context) => _results(context);
+  @override
+  Widget buildSuggestions(BuildContext context) => _results(context);
+
+  Widget _results(BuildContext context) {
+    final term = query.trim().toLowerCase();
+    final matches = _rows.where((r) => (r['name'] as String? ?? '').toLowerCase().contains(term)).toList();
+    if (matches.isEmpty) return Center(child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Text(_rows.isEmpty ? 'Join a channel to find it here.' : 'No joined channels match your search.', textAlign: TextAlign.center),
+    ));
+    return ListView.builder(itemCount: matches.length, itemBuilder: (context, index) {
+      final row = matches[index];
+      final name = row['name'] as String? ?? '';
+      return ListTile(leading: InitialAvatar(name: name, size: 42), title: Text(name),
+        subtitle: const Text('Joined channel'), onTap: () => close(context, row));
+    });
   }
 }
 
@@ -249,5 +300,6 @@ class _CreateChannelSheetState extends State<_CreateChannelSheet> {
         ),
       );
 }
+
 
 
