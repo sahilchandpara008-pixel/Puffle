@@ -1,8 +1,8 @@
--- Fixtures and cron changes are transaction-local. Execute inside BEGIN/ROLLBACK.
-create temp table attribution_checks(name text,ok boolean) on commit drop;
+-- Final exception reports results and rolls back all fixtures and cron changes.
 do $$
-declare u uuid:=gen_random_uuid(); other_ uuid:=gen_random_uuid(); id_ text:=gen_random_uuid()::text; secret_ text:=gen_random_uuid()::text; event_ uuid:=gen_random_uuid(); v boolean; result_ text;
+declare u uuid:=gen_random_uuid(); other_ uuid:=gen_random_uuid(); id_ text:=gen_random_uuid()::text; secret_ text:=gen_random_uuid()::text; event_ uuid:=gen_random_uuid(); v boolean; result_ text; total_ integer;failed_ integer;failures_ text;
 begin
+ create temp table attribution_checks(name text,ok boolean) on commit drop;
  insert into attribution_checks values
  ('Google Play organic classified',private.classify_referrer('utm_source=google-play&utm_medium=organic','play_ok')='organic'),
  ('Meta classified',private.classify_referrer('utm_source=meta&utm_medium=paid_social','play_ok')=private.meta_source()),
@@ -48,5 +48,7 @@ begin
  insert into attribution_checks values('anonymous cannot call trusted ingest',not has_function_privilege('anon','public.record_web_attribution(text,uuid,boolean,text,text,text,text,text,text)','EXECUTE'));
  insert into attribution_checks values('authenticated cannot forge trusted ingest',not has_function_privilege('authenticated','public.record_web_attribution(text,uuid,boolean,text,text,text,text,text,text)','EXECUTE'));
  insert into attribution_checks values('private parser unavailable to clients',not has_function_privilege('authenticated','private.parse_referrer(text)','EXECUTE'));
+ select count(*),count(*) filter(where not coalesce(ok,false)),string_agg(name,' | ') filter(where not coalesce(ok,false)) into total_,failed_,failures_ from attribution_checks;
+ raise exception 'RESULT total=% failed=% :: %',total_,failed_,coalesce(failures_,'none');
 end $$;
-select count(*) as total,count(*) filter(where not coalesce(ok,false)) as failed,jsonb_agg(name) filter(where not coalesce(ok,false)) as failures from attribution_checks;
+

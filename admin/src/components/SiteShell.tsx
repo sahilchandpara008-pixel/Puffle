@@ -6,12 +6,12 @@ import PrivacyChoices,{PrivacyChoicesButton} from "./PrivacyChoices";
 import DownloadButton from "@/app/d/DownloadButton";
 const email=SUPPORT_EMAIL;
 export function Logo(){return <Link href="/" className="flex items-center gap-3 text-xl font-semibold tracking-tight"><span className="grid h-10 w-10 place-items-center rounded-xl bg-teal-700"><svg width="28" height="28" viewBox="0 0 108 108" aria-hidden="true"><g fill="white"><rect x="26" y="47" width="56" height="26" rx="13"/><circle cx="50" cy="48" r="16"/><circle cx="65" cy="52" r="12"/></g><path fill="#137781" d="M49 46v19l16-9.5z"/></svg></span>Puffle</Link>;}
-export default function SiteShell({children,bare=false}:{children:React.ReactNode;bare?:boolean}){
+export default function SiteShell({children,bare=false,downloadApk}:{children:React.ReactNode;bare?:boolean;downloadApk?:string}){
  if(bare)return <div className="min-h-screen"><MetaPixel/><GoogleTags/>{children}<PrivacyChoices/></div>;
  return <div className="site min-h-screen flex flex-col">
   <MetaPixel/><GoogleTags/>
   <header className="sticky top-0 z-20 border-b border-white/10 bg-[#08151d]/95 backdrop-blur">
-   <div className="mx-auto flex h-20 max-w-6xl items-center justify-between gap-4 px-5"><Logo/><nav aria-label="Main navigation" className="flex items-center gap-5 text-sm text-slate-300"><Link href="/#features" className="hidden hover:text-white md:inline">Discover</Link><Link href="/#pricing" className="hidden hover:text-white sm:inline">Premium</Link><Link href="/report-content" className="hidden hover:text-white md:inline">Support</Link><DownloadButton className="btn" label="Get the app"/></nav></div>
+   <div className="mx-auto flex h-20 max-w-6xl items-center justify-between gap-4 px-5"><Logo/><nav aria-label="Main navigation" className="flex items-center gap-5 text-sm text-slate-300"><Link href="/#features" className="hidden hover:text-white md:inline">Discover</Link><Link href="/#pricing" className="hidden hover:text-white sm:inline">Premium</Link><Link href="/report-content" className="hidden hover:text-white md:inline">Support</Link><DownloadButton apk={downloadApk} className="btn" label="Get the app"/></nav></div>
   </header>
   <div className="flex-1">{children}</div>
   <footer className="border-t border-white/10 bg-[#061118] text-sm text-slate-300">
@@ -23,4 +23,5 @@ export default function SiteShell({children,bare=false}:{children:React.ReactNod
   </footer><PrivacyChoices/>
  </div>;
 }
+
 

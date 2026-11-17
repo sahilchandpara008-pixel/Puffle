@@ -1,4 +1,5 @@
 const assert=require('node:assert/strict'),ts=require('typescript'),fs=require('fs'),vm=require('vm');
+const rules={};vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/lib/download-attribution.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{exports:rules});
 async function scenario(query,{consent=true,pixel='123456789012'}={}){
  const memory=new Map(),requests=[],exports_={};
  const window={};
@@ -8,7 +9,7 @@ async function scenario(query,{consent=true,pixel='123456789012'}={}){
   document:{cookie:'_fbp=fb.1.123.browser; _fbc=fb.1.123.click',createElement:()=>({}),head:{appendChild(){}}},
   fetch:async(url,options)=>{requests.push({url,options,body:JSON.parse(options.body)});return {ok:true};},
   process:{env:{}},
-  require:n=>n==='react'?{useEffect(){}}:n==='next/navigation'?{usePathname:()=>'/get'}:n.includes('PrivacyChoices')?{hasAdvertisingConsent:()=>consent}:{supabaseBrowser:()=>({rpc:async()=>({data:{pixel_id:pixel}})})}
+  require:n=>n==='react'?{useEffect(){}}:n==='next/navigation'?{usePathname:()=>'/get'}:n.includes('download-attribution')?rules:n.includes('PrivacyChoices')?{hasAdvertisingConsent:()=>consent}:{supabaseBrowser:()=>({rpc:async()=>({data:{pixel_id:pixel}})})}
  };
  vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/components/MetaPixel.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,context);
  return {api:exports_,requests,window,location,memory};

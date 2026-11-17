@@ -19,5 +19,8 @@ jobs:
         with: { node-version: 20 }
       - run: npm install --no-audit --no-fund
       - run: npm run typecheck
+      - run: node test-meta-connection.cjs
+      - run: node test-meta-browser.cjs
       - run: npm run build
+
 
