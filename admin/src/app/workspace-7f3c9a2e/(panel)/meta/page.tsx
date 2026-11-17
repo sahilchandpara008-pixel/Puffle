@@ -22,7 +22,7 @@ export default async function Meta() {
   const funnel = o.funnel ?? [];
   const purchase = funnel.find((f) => f.event_name === "Purchase");
   const LABEL: Record<string, string> = {
-    Lead: "Tapped Download on the website", MobileAppInstall: "First open, after advertising permission", CompleteRegistration: "Signed up with email",
+    Lead: "Tapped Download on the website", MobileAppInstall: "First open, after advertising permission", CompleteRegistration: "Created an account",
     InitiateCheckout: "Started a payment", Purchase: "Bank-verified paid plan (INR)",
   };
   const m = ms.data;
@@ -41,6 +41,10 @@ export default async function Meta() {
     <>
       <PageHeader title="Meta Pixel" sub="One central configuration for the website Pixel and server-side app events. Replace the Dataset/Pixel ID and token here to change the destination; no app rebuild is needed." />
       <ErrorNote error={ms.error ?? ov.error} />
+      <Card title="Your Meta ad link" className="mb-4">
+        <p className="break-all text-sm"><a className="underline" href="https://puffle-iota.vercel.app/get?utm_source=meta&utm_medium=paid_social&utm_campaign=puffle_meta" target="_blank" rel="noreferrer">https://puffle-iota.vercel.app/get?utm_source=meta&amp;utm_medium=paid_social&amp;utm_campaign=puffle_meta</a></p>
+        <p className="mt-2 text-sm text-gray-600">Use this landing-page link in your ads. Its Android download button offers the Ads APK. Reuse it as-is, or change only puffle_meta to a different campaign name for separate campaign reporting. Ordinary website visitors receive the Organic APK. The Google Play alternative requires an available Play release.</p>
+      </Card>
       <div className="grid gap-4 lg:grid-cols-3">
         <Card title="Setup checklist">
           <ul className="space-y-1.5 text-sm">
@@ -76,7 +80,7 @@ export default async function Meta() {
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
         <form action={metaSend}><Hidden name="kind" value="verify" /><SubmitButton small variant="secondary">Check connection</SubmitButton></form>
-        <form action={metaSend}><Hidden name="kind" value="test" /><SubmitButton small variant="secondary">Send test Purchase</SubmitButton></form>
+        <form action={metaSend}><Hidden name="kind" value="test" /><SubmitButton small variant="secondary">Send test event</SubmitButton></form>
         <form action={metaSend}><Hidden name="kind" value="flush" /><SubmitButton small variant="secondary">Send waiting events now</SubmitButton></form>
         <form action={metaSend}><Hidden name="kind" value="retry" /><SubmitButton small variant="secondary">Retry failed events</SubmitButton></form>
       </div>
@@ -124,4 +128,5 @@ export default async function Meta() {
     </>
   );
 }
+
 

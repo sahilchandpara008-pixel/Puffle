@@ -1,0 +1,50 @@
+name: Publish verified Puffle v1.0.13
+on:
+  push:
+    branches: [main]
+    paths: [tool/puffle-v1.0.13-signatures.json.gz.b64]
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Download exact tested candidates
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          candidate_run="$(python -c "import base64,gzip,json; print(json.loads(gzip.decompress(base64.b64decode(open('tool/puffle-v1.0.13-signatures.json.gz.b64').read())))['candidate_run_id'])")"
+          gh run download "$candidate_run" -R "$GITHUB_REPOSITORY" -n Puffle-v1.0.13-candidates-not-for-distribution -D release-files
+      - name: Collect existing Puffle image assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download v1.0.12 -R "$GITHUB_REPOSITORY" -p Puffle-Play-Console-kit-v1.0.12.zip -D previous-kit
+          python - <<'PY'
+          from pathlib import Path
+          import zipfile
+          out=Path('release-files/image-assets');out.mkdir(parents=True,exist_ok=True)
+          with zipfile.ZipFile('previous-kit/Puffle-Play-Console-kit-v1.0.12.zip') as z:
+            for n in z.namelist():
+              if n.lower().endswith('.png'):(out/Path(n).name).write_bytes(z.read(n))
+          assert len(list(out.glob('*.png')))>=6
+          PY
+      - name: Verify and apply dedicated release signatures
+        run: |
+          apk_signer="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)"
+          test -n "$apk_signer"
+          python tool/publish_puffle_tracking_release.py release-files "$apk_signer"
+      - name: Publish verified files
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view v1.0.13 -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 || gh release create v1.0.13 -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title 'Puffle v1.0.13' --notes 'Release-signed Android builds with Play install attribution, validated Meta setup and joined-channel search. Existing payment flow retained. Meta tracking remains off until configured and opted into. Image assets included in the Play Console kit.'
+          gh release upload v1.0.13 -R "$GITHUB_REPOSITORY" --clobber release-files/Puffle.apk release-files/Puffle-ads.apk release-files/Puffle-play.aab release-files/Puffle-play-with-plans.aab release-files/Puffle-apks-v1.0.13.zip release-files/Puffle-Play-Console-kit-v1.0.13.zip release-files/checksums.txt release-files/release-signing-verification.json
+

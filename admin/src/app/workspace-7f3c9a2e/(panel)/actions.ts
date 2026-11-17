@@ -272,7 +272,7 @@ export async function metaSend(fd: FormData) {
   const d = (data ?? {}) as Record<string, unknown>;
   if (kind === "verify") flash("/workspace-7f3c9a2e/meta", d.ok ? null : { message: "Meta did not accept the Pixel ID and token: " + d.message }, `Connected to pixel “${d.name}”.`);
   if (d.skipped) flash("/workspace-7f3c9a2e/meta", { message: "Meta is not set up or not enabled yet." }, "");
-  if (kind === "test") flash("/workspace-7f3c9a2e/meta", d.ok ? null : { message: String(d.message ?? "Meta rejected the test event.") }, "Test Purchase sent. Open Events Manager → Test events to see it.");
+  if (kind === "test") flash("/workspace-7f3c9a2e/meta", d.ok ? null : { message: String(d.message ?? "Meta rejected the test event.") }, "Configuration test sent. Open Events Manager → Test events to see it.");
   flash("/workspace-7f3c9a2e/meta", null, `Sent ${d.sent ?? 0}, test events ${d.test_sent ?? 0}, suppressed ${d.suppressed ?? 0}, failed ${d.failed ?? 0}, still waiting ${d.pending ?? 0}.`);
 }
 
@@ -293,5 +293,6 @@ export async function removeAdmin(fd: FormData) {
   const { error } = await sb.from("admins").delete().eq("user_id", id);
   flash("/workspace-7f3c9a2e/admins", error, "Admin removed.");
 }
+
 
 
