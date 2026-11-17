@@ -2,10 +2,10 @@ name: mobile
 on:
   workflow_dispatch:
   pull_request:
-    paths: ["mobile/**", ".github/workflows/mobile.yml"]
+    paths: ["mobile/**", ".github/workflows/mobile.yml", "tool/embed_native_symbols.py"]
   push:
     branches: [main]
-    paths: ["mobile/**", ".github/workflows/mobile.yml"]
+    paths: ["mobile/**", ".github/workflows/mobile.yml", "tool/embed_native_symbols.py"]
 env:
   FLUTTER_VERSION: "3.27.4"   # pinned
 jobs:
@@ -79,11 +79,40 @@ jobs:
         run: flutter build apk --release --flavor direct --dart-define=AUTH_SCHEME=com.pufflecloud.app --dart-define=APK_REFERRER="utm_source=meta&utm_medium=paid_social&utm_campaign=apk_download"
       - run: cp build/app/outputs/flutter-apk/app-direct-release.apk ../Puffle-ads.apk
       - name: Play AAB
-        run: flutter build appbundle --release --flavor play --dart-define=PLAY_STORE=true --dart-define=AUTH_SCHEME=com.pufflecloud.app
+        run: flutter build appbundle --release --flavor play --split-debug-info=build/dart-symbols/play --dart-define=PLAY_STORE=true --dart-define=AUTH_SCHEME=com.pufflecloud.app
       - run: cp build/app/outputs/bundle/playRelease/app-play-release.aab ../Puffle-play.aab
+      - name: Embed exact Play native symbols
+        run: python ../tool/embed_native_symbols.py --bundle ../Puffle-play.aab --dart-dir build/dart-symbols/play --output ../native-symbols/Puffle-play-native-symbols
       - name: Play AAB with plans (UPI payments ON, owner's choice)
-        run: flutter build appbundle --release --flavor play --dart-define=AUTH_SCHEME=com.pufflecloud.app
+        run: flutter build appbundle --release --flavor play --split-debug-info=build/dart-symbols/play-plans --dart-define=AUTH_SCHEME=com.pufflecloud.app
       - run: cp build/app/outputs/bundle/playRelease/app-play-release.aab ../Puffle-play-with-plans.aab
+      - name: Embed exact plans AAB native symbols
+        run: python ../tool/embed_native_symbols.py --bundle ../Puffle-play-with-plans.aab --dart-dir build/dart-symbols/play-plans --output ../native-symbols/Puffle-plans-native-symbols
+      - name: Sign bundles with embedded debug symbols
+        env:
+          STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          for bundle in ../Puffle-play.aab ../Puffle-play-with-plans.aab; do
+            jarsigner -keystore android/release.jks -storepass:env STORE_PASSWORD -keypass:env KEY_PASSWORD "$bundle" "$KEY_ALIAS"
+          done
+      - name: Validate symbol metadata and app bundles
+        working-directory: .
+        run: |
+          curl --fail --location --retry 3 https://github.com/google/bundletool/releases/download/1.18.3/bundletool-all-1.18.3.jar -o "$RUNNER_TEMP/bundletool.jar"
+          for bundle in Puffle-play.aab Puffle-play-with-plans.aab; do
+            python tool/embed_native_symbols.py --bundle "$bundle" --verify-only
+            java -jar "$RUNNER_TEMP/bundletool.jar" validate --bundle="$bundle"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Puffle-native-debug-symbols
+          path: |
+            native-symbols/Puffle-play-native-symbols.zip
+            native-symbols/Puffle-plans-native-symbols.zip
+            native-symbols/Puffle-play-native-symbols/verification.json
+            native-symbols/Puffle-plans-native-symbols/verification.json
       - name: Checksums and manifest checks
         working-directory: .
         run: |
@@ -148,4 +177,3 @@ jobs:
           for name in ['android/release.jks','android/key.properties']:
             Path(name).unlink(missing_ok=True)
           PY
-
