@@ -2,10 +2,10 @@ name: mobile
 on:
   workflow_dispatch:
   pull_request:
-    paths: ["mobile/**"]
+    paths: ["mobile/**", ".github/workflows/mobile.yml"]
   push:
     branches: [main]
-    paths: ["mobile/**"]
+    paths: ["mobile/**", ".github/workflows/mobile.yml"]
 env:
   FLUTTER_VERSION: "3.27.4"   # pinned
 jobs:
@@ -56,15 +56,22 @@ jobs:
       - name: Kotlin unit tests (UPI result conversion)
         run: cd android && ./gradlew :app:testDirectDebugUnitTest
       - name: Write signing config from secrets (never committed)
+        env:
+          STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          test -n "$KEYSTORE_B64" || { echo '::error::Puffle release keystore secret is missing. Debug signing is forbidden.'; exit 1; }
-          echo "$KEYSTORE_B64" | base64 -d > android/release.jks
-          cat > android/key.properties <<KP
-          storeFile=../release.jks
-          storePassword=${{ secrets.ANDROID_STORE_PASSWORD }}
-          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
-          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
-          KP
+          python - <<'PY'
+          from pathlib import Path
+          import base64,os
+          values={k:os.environ.get(k,'') for k in ['KEYSTORE_B64','STORE_PASSWORD','KEY_ALIAS','KEY_PASSWORD']}
+          assert all(values.values()),'All Puffle release signing secrets are required'
+          key=Path('android/release.jks');key.write_bytes(base64.b64decode(values['KEYSTORE_B64'],validate=True));key.chmod(0o600)
+          def escaped(value):
+            return ''.join('\\u%04x'%ord(c) if ord(c)<32 or ord(c)>126 else '\\'+c if c in '\\ =:#!' else c for c in value)
+          properties=Path('android/key.properties')
+          properties.write_text('storeFile=../release.jks\n'+''.join(k+'='+escaped(v)+'\n' for k,v in [('storePassword',values['STORE_PASSWORD']),('keyAlias',values['KEY_ALIAS']),('keyPassword',values['KEY_PASSWORD'])]),encoding='ascii');properties.chmod(0o600)
+          PY
       - name: Website APK (direct)
         run: flutter build apk --release --flavor direct --dart-define=AUTH_SCHEME=com.pufflecloud.app
       - run: cp build/app/outputs/flutter-apk/app-direct-release.apk ../Puffle.apk
@@ -133,3 +140,12 @@ jobs:
         run: |
           gh release view play-upload >/dev/null 2>&1 || gh release create play-upload --title "Puffle Play bundles" --notes "Signed AABs for upload to Google Play Console." --prerelease --latest=false
           gh release upload play-upload Puffle-play-with-plans.aab Puffle-play.aab checksums.txt --clobber
+      - name: Remove temporary signing files
+        if: always()
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          for name in ['android/release.jks','android/key.properties']:
+            Path(name).unlink(missing_ok=True)
+          PY
+

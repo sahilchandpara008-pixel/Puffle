@@ -2,6 +2,8 @@
 do $outer$
 declare u uuid:=gen_random_uuid();owner_ uuid:=gen_random_uuid();other_ uuid:=gen_random_uuid();plan_ uuid;order_ jsonb;result_ jsonb;v boolean;old_rev bigint;total_ int;failed_ int;names text;
 begin
+  -- Disposable payment fixture; the final test report rolls this back.
+  update public.payment_settings set upi_id='fixture@upi',payee_name='Test Merchant',enabled=true,activation_mode='instant';
  create temp table checks(name text,ok boolean) on commit drop;
  create function pg_temp.ck(n text,v boolean) returns void language plpgsql security definer as $f$begin insert into pg_temp.checks values(n,coalesce(v,false));end$f$;
  create function pg_temp.imp(u uuid) returns void language plpgsql as $f$begin perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated','is_anonymous',false)::text,true);perform set_config('request.jwt.claim.sub',u::text,true);set local role authenticated;end$f$;
@@ -38,3 +40,4 @@ begin
  select count(*),count(*) filter(where not ok),string_agg(name,' | ') filter(where not ok) into total_,failed_,names from checks;
  raise exception 'RESULT total=% failed=% :: %',total_,failed_,coalesce(names,'none');
 end $outer$;
+

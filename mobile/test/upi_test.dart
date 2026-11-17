@@ -4,10 +4,10 @@ import 'package:puffle/payments/upi.dart';
 void main() {
   group('buildUpiUri', () {
     test('has every required parameter, 2-decimal amount, encoded payee', () {
-      final u = buildUpiUri(upiId: '2728412a@bandhan', payee: 'As Enterprice', reference: 'OB261109AB12CD34', amountInr: 49);
+      final u = buildUpiUri(upiId: 'fixture@upi', payee: 'As Enterprice', reference: 'OB261109AB12CD34', amountInr: 49);
       expect(u, startsWith('upi://pay?'));
       final q = Uri.parse(u).queryParameters;
-      expect(q['pa'], '2728412a@bandhan');
+      expect(q['pa'], 'fixture@upi');
       expect(q['pn'], 'As Enterprice');
       expect(q['tr'], 'OB261109AB12CD34');
       expect(q['am'], '49.00');
@@ -63,3 +63,4 @@ void main() {
     });
   });
 }
+

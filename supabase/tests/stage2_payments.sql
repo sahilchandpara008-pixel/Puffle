@@ -11,6 +11,8 @@ declare
   c jsonb; c2 jsonb; r jsonb; v_o1 uuid; v_o2 uuid; v_o3 uuid; v_o4 uuid; v_ref text; v_st text; v_n int; v_raised boolean; v_t text;
   v_end timestamptz; i int; plans uuid[]; fail_list text; total int; failed int;
 begin
+  -- Disposable payment fixture; the final test report rolls this back.
+  update public.payment_settings set upi_id='fixture@upi',payee_name='Test Merchant',enabled=true,activation_mode='instant';
   insert into private.owner_bootstrap(email) values ('owner@example.test') on conflict do nothing;
   create temp table t_res (n text, ok boolean) on commit drop;
   create function pg_temp.rec(nm text, o boolean) returns void language plpgsql security definer as $f$ begin insert into pg_temp.t_res values (nm, coalesce(o,false)); end $f$;
@@ -76,7 +78,7 @@ begin
 
   perform pg_temp.imp(u1,false); c := public.create_order(p_gold); c2 := public.create_order(p_gold); reset role;
   v_o1 := (c->>'order_id')::uuid;
-  perform pg_temp.rec('order snapshot: amount, OB reference, UPI id, payee', (c->>'amount_paise')::bigint=25900 and c->>'reference' ~ '^OB[0-9]{6}[A-F0-9]{8}$' and c->>'upi_id'='2728412a@bandhan' and c->>'payee_name'='As Enterprice');
+  perform pg_temp.rec('order snapshot: amount, OB reference, UPI id, payee', (c->>'amount_paise')::bigint=25900 and c->>'reference' ~ '^OB[0-9]{6}[A-F0-9]{8}$' and c->>'upi_id'='fixture@upi' and c->>'payee_name'='As Enterprice');
   perform pg_temp.rec('same pending order is reused', c->>'order_id' = c2->>'order_id');
   perform pg_temp.imp(u1,false); c := public.create_order(p_silver); reset role;
   perform pg_temp.rec('order for another plan cancels the previous pending one', (select status from public.payment_orders where id=v_o1)='cancelled' and (c->>'status')='pending');
@@ -102,7 +104,7 @@ begin
   perform pg_temp.imp(u1,false); v_raised := false;
   begin perform public.create_order(p_trial); exception when others then v_raised := true; end; reset role;
   perform pg_temp.rec('create_order refused when UPI ID cleared (payments off)', v_raised and not (select public.payments_available()));
-  update public.payment_settings set upi_id='2728412a@bandhan';
+  update public.payment_settings set upi_id='fixture@upi';
   update public.plans set active=false where id=p_silver;
   perform pg_temp.imp(u1,false); v_raised := false;
   begin perform public.create_order(p_silver); exception when others then v_raised := true; end; reset role;
@@ -181,7 +183,7 @@ begin
   update public.payment_settings set upi_id='newname@upi';
   perform pg_temp.imp(u8,false); c2 := public.create_order(p_gold); reset role;
   perform pg_temp.rec('UPI ID change cancels old-UPI pending order; new order uses new UPI', (select status from public.payment_orders where id=(c->>'order_id')::uuid)='cancelled' and c2->>'upi_id'='newname@upi');
-  update public.payment_settings set upi_id='2728412a@bandhan';
+  update public.payment_settings set upi_id='fixture@upi';
   v_raised := false; begin update public.payment_settings set upi_id='not a upi id'; exception when others then v_raised := true; end;
   perform pg_temp.rec('invalid UPI id format rejected', v_raised);
 
@@ -231,7 +233,7 @@ begin
   perform pg_temp.imp(u1,false); select count(*) into v_n from public.payment_settings; reset role;
   perform pg_temp.rec('non-owner cannot read payment settings', v_n=0);
   perform pg_temp.imp(u1,false); update public.plans set price_inr=1 where id=p_gold; update public.payment_settings set upi_id='evil@upi'; reset role;
-  perform pg_temp.rec('non-owner cannot edit plans or UPI', (select price_inr from public.plans where id=p_gold)=259 and (select upi_id from public.payment_settings)='2728412a@bandhan');
+  perform pg_temp.rec('non-owner cannot edit plans or UPI', (select price_inr from public.plans where id=p_gold)=259 and (select upi_id from public.payment_settings)='fixture@upi');
   perform pg_temp.imp(owner_id,false); r := public.admin_dashboard(); c := public.admin_payment_stats(); c2 := public.admin_users(null,null,null,null,null,10,0); reset role;
   perform pg_temp.rec('owner dashboard/stats/users RPCs work', r ?& array['ads_installs','organic_installs','users','logged_in','premium_users','revenue_today','revenue_month','free_claims','alerts'] and c ?& array['paid_orders','revenue_total','sales_per_plan','repeat_buyers'] and (c2->>'total')::int >= 10);
   v_raised := false; begin update public.plans set code='hacked' where id=p_gold; exception when others then v_raised := true; end;
@@ -256,4 +258,5 @@ begin
   select count(*), count(*) filter (where not x.ok), string_agg(x.n, ' | ') filter (where not x.ok) into total, failed, fail_list from t_res x;
   raise exception 'RESULT total=% failed=% :: %', total, failed, coalesce(fail_list,'none');
 end $outer$;
+
 

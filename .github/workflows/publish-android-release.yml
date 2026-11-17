@@ -18,9 +18,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           RUN_ID: ${{ github.event.workflow_run.id }}
+          BUILD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           latest=$(gh api "repos/$GH_REPO/actions/workflows/mobile.yml/runs?branch=main&per_page=1" --jq '.workflow_runs[0].id')
-          if [ "$latest" = "$RUN_ID" ]; then echo "publish=true" >> "$GITHUB_OUTPUT"; else echo "publish=false" >> "$GITHUB_OUTPUT"; fi
+          version=$(gh api "repos/$GH_REPO/contents/mobile/pubspec.yaml?ref=$BUILD_SHA" --jq .content | base64 -d | sed -n 's/^version: *//p' | tr -d '\r')
+          version="${version%%+*}"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
+          if [ "$latest" != "$RUN_ID" ]; then
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          elif gh release view "v$version" >/dev/null 2>&1; then
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::v$version is already published. Verified builds remain available as workflow artifacts and mutable latest/play-upload downloads; bump the app version before publishing a new versioned release."
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/download-artifact@v4
         if: steps.current.outputs.publish == 'true'
         with:
@@ -53,3 +64,4 @@ jobs:
           gh release view "v$version" >/dev/null 2>&1 || gh release create "v$version" --target main --title "Puffle v$version" --notes "Verified Android build ($BUILD_SHA). Install Puffle.apk; Puffle-ads.apk preserves ad attribution." --latest
           zip -j "Puffle-apks-v$version.zip" Puffle.apk Puffle-ads.apk Puffle-play.aab Puffle-play-with-plans.aab checksums.txt
           gh release upload "v$version" Puffle.apk Puffle-ads.apk Puffle-play.aab Puffle-play-with-plans.aab "Puffle-apks-v$version.zip" checksums.txt --clobber
+

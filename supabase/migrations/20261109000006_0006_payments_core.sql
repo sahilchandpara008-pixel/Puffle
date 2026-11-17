@@ -329,7 +329,8 @@ begin
   return private.order_json(o.id);
 end $$;
 
-update public.payment_settings set upi_id = '2728412a@bandhan', payee_name = 'As Enterprice', enabled = true, activation_mode = 'manual' where id = 1;
+-- Configure the payment destination through the owner admin panel.
+-- Real payment addresses belong in backend settings, not source control.
 
 do $$
 declare r record;
@@ -345,3 +346,4 @@ begin
     end if;
   end loop;
 end $$;
+

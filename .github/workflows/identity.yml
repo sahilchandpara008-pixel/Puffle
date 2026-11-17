@@ -6,3 +6,5 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: python tool/check_app_identity.py
+      - run: python tool/check_payment_privacy.py
+

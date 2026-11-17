@@ -8,4 +8,5 @@ Flow: app → `create_order(plan)` (server snapshots price + UPI ID, reference `
 
 Other paths: `upi-webhook` / `provider-payment` edge functions (HMAC-signed) confirm orders from a bank feed; stale pending orders auto-cancel after 24 h;
 payment rows are kept 8 years, anonymised if the account is deleted.
-UPI: `2728412a@bandhan`, payee “As Enterprice”.
+Payment destination and payee name are configured in Admin > Settings > Payments and stored in backend settings. Never commit a real UPI address.
+
