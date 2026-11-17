@@ -1,6 +1,8 @@
 import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
-import {mkdir} from 'node:fs/promises';
+import {mkdir,readFile} from 'node:fs/promises';
+const version=(await readFile(new URL('../../mobile/pubspec.yaml',import.meta.url),'utf8')).match(/^version:\s*([0-9]+\.[0-9]+\.[0-9]+)\+/m)?.[1];
+assert.ok(version,'Android release version is configured');
 const root='http://localhost:3000';
 await mkdir('shots',{recursive:true});
 const browser=await chromium.launch();
@@ -8,7 +10,7 @@ const report=[];
 for(const width of [390,1280]){
  const context=await browser.newContext({viewport:{width,height:900}});const page=await context.newPage();
  const tracking=[];page.on('request',r=>{if(/connect\.facebook|facebook\.com\/tr|googletagmanager\.com|google-analytics\.com/.test(r.url()))tracking.push(r.url());});
- for(const path of ['/','/d','/privacy','/terms','/refund','/delete-account','/community-guidelines','/report-content','/workspace-7f3c9a2e/login']){
+ for(const path of ['/','/d','/get','/privacy','/terms','/refund','/delete-account','/community-guidelines','/report-content','/workspace-7f3c9a2e/login']){
   const response=await page.goto(root+path,{waitUntil:'networkidle'});assert.equal(response.status(),200,path);
   assert.match(await page.locator('link[rel="icon"]').first().getAttribute('href'),/icon\.svg/);
   assert.equal(await page.locator('body').evaluate(el=>el.scrollWidth>innerWidth+1),false,'horizontal overflow '+path+' '+width);
@@ -38,12 +40,21 @@ for(const [query,expected] of [
  const context=await browser.newContext();const page=await context.newPage();
  await page.goto(root+'/d'+query,{waitUntil:'networkidle'});
  const href=await page.getByRole('link',{name:'Download APK',exact:true}).getAttribute('href');
- assert.equal(href,'https://github.com/smitkhachariya2002-collab/Puffle/releases/download/v1.0.12/'+expected);
+ assert.equal(href,'https://github.com/smitkhachariya2002-collab/Puffle/releases/download/v'+version+'/'+expected);
  if(expected==='Puffle-ads.apk'){
   await page.goto(root+'/d',{waitUntil:'networkidle'});
   assert.match(await page.getByRole('link',{name:'Download APK',exact:true}).getAttribute('href'),/Puffle-ads\.apk$/);
  }
  await context.close();
 }
+for(const [query,expected] of [['','Puffle.apk'],['?utm_source=meta&utm_medium=paid_social&utm_campaign=puffle_meta','Puffle-ads.apk']]){
+ const context=await browser.newContext();const response=await context.request.get(root+'/get'+query);
+ const html=await response.text();assert.equal(response.status(),200);
+ assert.ok(html.includes('/releases/download/v'+version+'/'+expected),'campaign download available before hydration');
+ const page=await context.newPage();await page.goto(root+'/get'+query,{waitUntil:'networkidle'});
+ assert.equal(await page.getByRole('link',{name:'Download Puffle for Android',exact:true}).getAttribute('href'),'https://github.com/smitkhachariya2002-collab/Puffle/releases/download/v'+version+'/'+expected);
+ await context.close();
+}
 assert.equal((await (await browser.newContext()).request.get(root+'/icon.svg')).status(),200);
 await browser.close();console.log(JSON.stringify(report));
+
