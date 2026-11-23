@@ -54,7 +54,7 @@ class _CloudScreenState extends State<CloudScreen> {
       _files = [];
     } else {
       try {
-        final d = await sb.from('cloud_files').select('id,name,size_bytes,mime,created_at').order('created_at', ascending: false);
+        final d = await sb.from('cloud_files').select().order('created_at', ascending: false);
         _files = List<Map<String, dynamic>>.from(d);
       } catch (_) {}
     }
@@ -103,6 +103,16 @@ class _CloudScreenState extends State<CloudScreen> {
     } catch (_) {
       _fail('Could not open this file. Please try again.');
     }
+  }
+
+  Future<void> _finishUpload(String id) async {
+    try {
+      await _fn({'action': 'finalize', 'id': id});
+      _fail('Uploaded');
+    } catch (_) {
+      _fail('Could not finish the upload. Try again, or delete it and upload the file again.');
+    }
+    if (mounted) await _load();
   }
 
   Future<void> _delete(String id) async {
@@ -178,8 +188,11 @@ class _CloudScreenState extends State<CloudScreen> {
                 ListTile(
                   leading: const Icon(Icons.insert_drive_file_outlined),
                   title: Text(f['name'] ?? '', maxLines: 1, overflow: TextOverflow.ellipsis),
-                  subtitle: Text(fmtBytes((f['size_bytes'] as num?) ?? 0), style: const TextStyle(color: Tokens.muted)),
-                  onTap: () => _open(f['id'] as String),
+                  subtitle: Text(f['storage_provider'] == 'bunny_pending'
+                      ? 'Upload pending · Tap to retry'
+                      : fmtBytes((f['size_bytes'] as num?) ?? 0), style: const TextStyle(color: Tokens.muted)),
+                  onTap: () => f['storage_provider'] == 'bunny_pending'
+                      ? _finishUpload(f['id'] as String) : _open(f['id'] as String),
                   trailing: PopupMenuButton<String>(
                     onSelected: (v) => v == 'rename' ? _rename(f) : _delete(f['id'] as String),
                     itemBuilder: (_) => const [PopupMenuItem(value: 'rename', child: Text('Rename')), PopupMenuItem(value: 'delete', child: Text('Delete'))],
