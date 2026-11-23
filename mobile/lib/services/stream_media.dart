@@ -17,7 +17,7 @@ Future<Map<String, String>> signMedia(Iterable<String> keys, {required String ki
     final links = await sb.storage.from('media').createSignedUrls(ordinary, 3600);
     for (final link in links) {
       final path = link.path;
-      if (path != null && link.signedUrl.isNotEmpty) result[path] = link.signedUrl;
+      if (link.signedUrl.isNotEmpty) result[path] = link.signedUrl;
     }
   }
   for (var offset = 0; offset < stream.length; offset += 80) {
