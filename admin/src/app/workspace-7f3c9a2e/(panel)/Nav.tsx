@@ -22,6 +22,7 @@ const groups: { label: string; items: Item[] }[] = [
     { href: "/workspace-7f3c9a2e/meta", label: "Meta Pixel", icon: "M4 20V10 M10 20V4 M16 20v-8 M22 20H2", owner: true },
   ] },
   { label: "Settings", items: [
+    { href: "/workspace-7f3c9a2e/storage-cleanup", label: "Storage cleanup", icon: "M3 6h18 M8 6V4h8v2 M6 6l1 14h10l1-14", owner: true },
     { href: "/workspace-7f3c9a2e/admins", label: "Administrators", icon: "M12 3l8 4v6c0 4-8 8-8 8s-8-4-8-8V7z M12 8v5 M12 16h.01", owner: true },
   ] },
 ];
@@ -47,3 +48,4 @@ export default function Nav({ owner, counts }: { owner: boolean; counts: Record<
   </nav>;
 }
 
+

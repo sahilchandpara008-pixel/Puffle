@@ -9,6 +9,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../services/app_scope.dart';
 import '../services/app_state.dart';
+import '../services/stream_media.dart';
 import '../services/playback_access.dart';
 import '../services/measurement.dart';
 import '../theme.dart';
@@ -84,7 +85,7 @@ class _PostPageState extends State<PostPage> {
       final p = await sb.from('posts').select('id,title,description,channel_id').eq('id', _postId).maybeSingle();
       final items = await sb.from('post_items').select('id,media_key,trailer_key,thumbnail_key,mime,is_premium,duration_s').eq('post_id', _postId).order('position');
       final tk = items.isEmpty ? null : items.first['thumbnail_key'] as String?;
-      final poster = tk == null ? null : await _signed(tk);
+      final poster = tk == null ? null : await _signed(tk, 'thumbnail');
       if (!mounted) return;
       setState(() {
         _poster = poster;
@@ -106,11 +107,7 @@ class _PostPageState extends State<PostPage> {
           };
           if (keys.isNotEmpty) {
             try {
-              final urls = await sb.storage.from('media').createSignedUrls(keys.toList(), 3600);
-              for (final url in urls) {
-                final String? path = url.path;
-                if (path != null) _suggestionThumbs[path] = url.signedUrl;
-              }
+              _suggestionThumbs.addAll(await signMedia(keys, kind: 'thumbnail'));
             } catch (_) { /* Poster placeholders remain usable. */ }
           }
           if (mounted) setState(() => _suggestions = List<Map<String, dynamic>>.from([...same, ...other]));
@@ -122,9 +119,9 @@ class _PostPageState extends State<PostPage> {
   }
 
   /// Signed URL, short-lived. The storage policy decides whether the full file is allowed.
-  Future<String?> _signed(String key) async {
+  Future<String?> _signed(String key, String kind) async {
     try {
-      return await sb.storage.from('media').createSignedUrl(key, 3600);
+      return (await signMedia([key], kind: kind))[key];
     } catch (_) {
       return null;
     }
@@ -133,22 +130,29 @@ class _PostPageState extends State<PostPage> {
   Future<void> _play(Map<String, dynamic> it) async {
     final app = AppScope.of(context);
     final premium = it['is_premium'] == true;
-    var access = playbackAccess(app.status, premium: premium, hasTrailer: it['trailer_key'] != null);
+    final mainKey = it['media_key'] as String?;
+    final hasAutomatic = mainKey != null && isStreamKey(mainKey) && app.status.source == 'ads';
+    final hasPreview = it['trailer_key'] != null || hasAutomatic;
+    var access = playbackAccess(app.status, premium: premium, hasTrailer: hasPreview);
     if (access == PlaybackAccess.login) {
       if (!await requireAccount(context) || !mounted) return;
-      access = playbackAccess(app.status, premium: premium, hasTrailer: it['trailer_key'] != null);
+      access = playbackAccess(app.status, premium: premium, hasTrailer: hasPreview);
       if (access == PlaybackAccess.login) return;
     }
     final allowed = access == PlaybackAccess.full;
     // Ads users who are not premium get the trailer; everyone else without access sees the lock.
-    final key = (allowed ? it['media_key'] : it['trailer_key']) as String?;
+    final trailerKey = it['trailer_key'] as String?;
+    final key = allowed ? mainKey : trailerKey ?? (hasAutomatic ? mainKey : null);
     if (key == null) {
       _lockedMessage(app);
       return;
     }
     if (_opening) return;
     setState(() => _opening = true);
-    final url = await _signed(key);
+    var url = await _signed(key, allowed ? 'full' : trailerKey == null ? 'preview' : 'trailer');
+    if (url == null && !allowed && trailerKey != null && mainKey != null && hasAutomatic) {
+      url = await _signed(mainKey, 'preview');
+    }
     if (!mounted) return;
     if (url == null) {
       setState(() => _opening = false);
@@ -161,7 +165,8 @@ class _PostPageState extends State<PostPage> {
       await old?.dispose();
       return;
     }
-    final c = VideoPlayerController.networkUrl(Uri.parse(url));
+    final c = VideoPlayerController.networkUrl(Uri.parse(url),
+        formatHint: isStreamKey(key) || url.contains('/functions/v1/bunny-stream?') ? VideoFormat.hls : null);
     try {
       await c.initialize();
     } catch (_) {
@@ -771,3 +776,4 @@ class _PlayerState extends State<_Player> {
 }
 
 
+

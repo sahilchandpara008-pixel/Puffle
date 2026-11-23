@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/app_scope.dart';
 import '../services/app_state.dart';
+import '../services/stream_media.dart';
 import '../services/measurement.dart';
 import '../theme.dart';
 import '../widgets/ui.dart';
@@ -108,11 +109,7 @@ class _PostListState extends State<PostList> {
     }..removeAll(_thumbs.keys);
     if (keys.isEmpty) return;
     try {
-      final res = await sb.storage.from('media').createSignedUrls(keys.toList(), 3600);
-      for (final e in res) {
-        final k = e.path as String?;
-        if (k != null && e.signedUrl.isNotEmpty) _thumbs[k] = e.signedUrl;
-      }
+      _thumbs.addAll(await signMedia(keys, kind: 'thumbnail'));
     } catch (_) {/* cards fall back to the placeholder */}
   }
 
@@ -151,7 +148,12 @@ class _PostListState extends State<PostList> {
 class _Skeleton extends StatelessWidget {
   const _Skeleton();
   @override
-  Widget build(BuildContext context) => AspectRatio(aspectRatio: 16 / 9, child: Container(decoration: BoxDecoration(color: Tokens.surface, borderRadius: BorderRadius.circular(14))));
+  Widget build(BuildContext context) => Align(
+    alignment: Alignment.topCenter,
+    child: AspectRatio(aspectRatio: 2 / 3, child: Container(
+      decoration: BoxDecoration(color: Tokens.surface, borderRadius: BorderRadius.circular(14)),
+    )),
+  );
 }
 
 class ExploreScreen extends StatefulWidget {
@@ -207,3 +209,4 @@ class _ExploreScreenState extends State<ExploreScreen> {
 }
 
 
+

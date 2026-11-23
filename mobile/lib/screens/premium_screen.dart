@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../config.dart';
@@ -202,6 +203,16 @@ Future<void> startPurchase(BuildContext context, String planId) async {
       return;
     }
     final shown = (plan['price_inr'] as num);
+    final agreed = await showDialog<bool>(context: context, builder: (dialog) => AlertDialog(
+      title: Text('Continue with ${plan['name']} · ₹$shown'),
+      content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('Review the terms before opening your UPI app.'),
+        TextButton(onPressed: () => launchUrl(Uri.parse('${Config.websiteUrl}/terms')),
+            child: const Text('Terms and conditions')),
+      ]),
+      actions: [FilledButton(onPressed: () => Navigator.pop(dialog, true), child: const Text('Continue to UPI'))],
+    ));
+    if (agreed != true || !context.mounted) return;
     final order = await app.createOrder(planId);
     final amount = order['amount_inr'] as num;
     if (amount != shown && context.mounted) {
@@ -255,3 +266,4 @@ Future<void> _manualSheet(BuildContext context, Map<String, dynamic> o) => showM
       ),
     );
 
+

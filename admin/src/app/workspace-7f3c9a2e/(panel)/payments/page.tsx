@@ -5,7 +5,7 @@ import { requireAdmin } from "@/lib/admin";
 import { inr, ist, rowsOf } from "@/lib/format";
 import { PageHeader, Card, Stat, Table, Th, Td, Empty, StatusBadge, Badge, Field, Input, Select, Button, Hidden, LinkButton, ErrorNote } from "@/components/admin/ui";
 import { SubmitButton } from "@/components/admin/client";
-import { savePaymentSettings, clearUpi, orderAction } from "../actions";
+import { orderAction } from "../actions";
 
 type Q = ReportQuery;
 const STATUSES = ["pending", "submitted", "review", "paid", "failed", "cancelled", "rejected", "revoked"];
@@ -15,45 +15,25 @@ const n = (v: unknown) => new Intl.NumberFormat("en-IN").format(Number(v ?? 0));
 export default async function Payments({ searchParams: q }: { searchParams: Q }) {
   const { sb } = await requireAdmin(true);
   const dates=range(q);
-  const [ps, stats, orders, plans, audit] = await Promise.all([
-    sb.from("payment_settings").select("*").eq("id", 1).single(),
+  const sizes = [10, 20, 50, 100, 200];
+  const size = sizes.includes(Number(q.size)) ? Number(q.size) : 50;
+  const [stats, orders, plans, audit] = await Promise.all([
     sb.rpc("admin_analytics",{p_from:dates.from,p_to:dates.to,p_source:q.source||null,p_plan:q.plan||null}),
-    sb.rpc("admin_payments_filtered", { p_status: q.status ?? null, p_plan: q.plan ?? null, p_from: dates.from, p_to: dates.to, p_search: q.q ?? null, p_sort: q.sort ?? "newest", p_verify: q.verify ?? null, p_source:q.source||null,p_customer:q.customer||null,p_date_basis:q.date_basis||"created",p_limit:100,p_offset:(pageNumber(q.page)-1)*100 }),
+    sb.rpc("admin_payments_filtered", { p_status: q.status ?? null, p_plan: q.plan ?? null, p_from: dates.from, p_to: dates.to, p_search: q.q ?? null, p_sort: q.sort ?? "newest", p_verify: q.verify ?? null, p_source:q.source||null,p_customer:q.customer||null,p_date_basis:q.date_basis||"created",p_limit:size,p_offset:(pageNumber(q.page)-1)*size }),
     sb.from("plans").select("code,name").order("position"),
     sb.rpc("admin_audit", { p_limit: 40 }),
   ]);
-  const s = ps.data as Record<string, any> | null;
   const st = (stats.data ?? {}) as Record<string, unknown>;
   const rows = rowsOf(orders.data);
-  const live = !!s?.enabled && !!s?.upi_id;
   const back = "/workspace-7f3c9a2e/payments?" + new URLSearchParams(Object.entries(q).filter(([, v]) => v) as [string, string][]).toString();
   const filtered = Object.values(q).some(Boolean);
 
   return (
     <>
       <PageHeader title="Payments" sub="UPI payments. Dates use India time (IST)." />
-      <ErrorNote error={ps.error ?? orders.error ?? stats.error} />
+      <ErrorNote error={orders.error ?? stats.error} />
 
-      <Card title="UPI settings" className="mb-5">
-        <div className="mb-3 flex flex-wrap items-center gap-2 text-sm">
-          <Badge tone={live ? "green" : "red"}>{live ? "Payments live" : "Payments off"}</Badge>
-          <span className="text-gray-700">Money goes to <strong className="text-gray-900">{s?.upi_id || "no UPI ID set"}</strong>{s?.payee_name ? <> · {s.payee_name}</> : null}</span>
-        </div>
-        <form action={savePaymentSettings} className="grid gap-3 md:grid-cols-2">
-          <Field label="UPI ID" hint="Like name@bank"><Input name="upi_id" defaultValue={s?.upi_id ?? ""} placeholder="name@bank" /></Field>
-          <Field label="Payee name" hint="Shown in the customer's UPI app"><Input name="payee_name" defaultValue={s?.payee_name ?? ""} /></Field>
-          <Field label="Activation" hint="Automatic: the plan starts when the UPI app reports success; check your bank later. Manual: you check the bank first, then mark each order paid." className="md:col-span-2">
-            <Select name="activation_mode" defaultValue={s?.activation_mode ?? "instant"}>
-              <option value="instant">Automatic (instant)</option><option value="manual">Manual (verify bank first)</option>
-            </Select>
-          </Field>
-          <label className="flex items-center gap-2 text-sm text-gray-800"><input type="checkbox" name="enabled" defaultChecked={!!s?.enabled} /> Enable payments</label>
-          <div className="flex flex-wrap gap-2 md:col-span-2">
-            <SubmitButton confirm="New payments will go to the UPI ID you entered. Continue?">Save UPI settings</SubmitButton>
-          </div>
-        </form>
-        {s?.upi_id ? <form action={clearUpi} className="mt-2"><SubmitButton variant="danger" small confirm="Clear the UPI ID? This stops all new payments.">Clear UPI ID</SubmitButton></form> : null}
-      </Card>
+      <p className="mb-5 text-sm">Configure UPI under <Link className="underline" href="/workspace-7f3c9a2e/plans#upi-settings">Plans → UPI settings</Link>.</p>
 
       <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-5">
         <Stat label="Verified revenue · range" value={inr(Number(st.verified_revenue ?? 0))} />
@@ -75,10 +55,10 @@ export default async function Payments({ searchParams: q }: { searchParams: Q })
         <Input type="date" name="to" defaultValue={q.to ?? ""} aria-label="To date" />
         <Input name="q" defaultValue={q.q ?? ""} placeholder="Reference, UTR, email" aria-label="Search" />
         <Select name="sort" defaultValue={q.sort ?? "newest"} aria-label="Sort"><option value="newest">Newest first</option><option value="highest">Highest amount</option><option value="lowest">Lowest amount</option><option value="oldest">Oldest first</option><option value="activated">Recently activated</option></Select>
-        <Select name="source" defaultValue={q.source??""} aria-label="Source"><option value="">All sources</option><option value="ads">Ads</option><option value="organic">Organic</option></Select><Select name="customer" defaultValue={q.customer??""} aria-label="Customer"><option value="">All customers</option><option value="repeat">Repeat buyers</option><option value="first">One paid order</option></Select><Select name="date_basis" defaultValue={q.date_basis??"created"} aria-label="Date basis"><option value="created">Order creation date</option><option value="activated">Plan activation date</option></Select><Select name="verify" defaultValue={q.verify??""} aria-label="Bank verification"><option value="">Any verification</option><option value="verified">Bank verified</option><option value="unverified">Not bank verified</option><option value="all">Outstanding bank checks</option><option value="today">Today's bank checks</option></Select><Button variant="secondary">Filter</Button>
+        <Select name="source" defaultValue={q.source??""} aria-label="Source"><option value="">All sources</option><option value="ads">Ads</option><option value="organic">Organic</option></Select><Select name="customer" defaultValue={q.customer??""} aria-label="Customer"><option value="">All customers</option><option value="repeat">Repeat buyers</option><option value="first">One paid order</option></Select><Select name="date_basis" defaultValue={q.date_basis??"created"} aria-label="Date basis"><option value="created">Order creation date</option><option value="activated">Plan activation date</option></Select><Select name="verify" defaultValue={q.verify??""} aria-label="Bank verification"><option value="">Any verification</option><option value="verified">Bank verified</option><option value="unverified">Not bank verified</option><option value="all">Outstanding bank checks</option><option value="today">Today's bank checks</option></Select><Select name="size" defaultValue={String(size)} aria-label="Rows per page">{sizes.map(value => <option key={value} value={value}>{value} rows</option>)}</Select><Button variant="secondary">Filter</Button>
       </form>
 
-      <p className="mb-3 text-xs text-gray-500">Revenue summaries use activation date and the source/plan filters. The orders below also use status, search, customer and verification filters.</p><Pagination path="/workspace-7f3c9a2e/payments" q={q} total={Number((orders.data as {total?:number}|null)?.total??0)} size={100}/>
+      <p className="mb-3 text-xs text-gray-500">Revenue summaries use activation date and the source/plan filters. The orders below also use status, search, customer and verification filters.</p><Pagination path="/workspace-7f3c9a2e/payments" q={q} total={Number((orders.data as {total?:number}|null)?.total??0)} size={size}/>
       {rows.length === 0 ? <Empty>No payments in this view.</Empty> : (
         <Table min={900}>
           <thead><tr><Th>Date</Th><Th>User and plan</Th><Th>Amount</Th><Th>Reference</Th><Th>Status</Th><Th>Actions</Th></tr></thead>
@@ -167,3 +147,5 @@ export default async function Payments({ searchParams: q }: { searchParams: Q })
     </>
   );
 }
+
+

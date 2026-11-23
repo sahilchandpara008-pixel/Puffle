@@ -32,3 +32,34 @@ the Bunny credentials available for any existing files or queued deletions.
 
 See the [Bunny HTTP API](https://github.com/BunnyWay/documentation/blob/main/storage/http.mdx)
 and [Bunny CDN token format](https://github.com/BunnyWay/BunnyCDN.TokenAuthentication).
+
+## Creator videos and trailers
+
+Use a dedicated Puffle Bunny Stream library. Enable token authentication for
+the Stream CDN, choose standard HLS with multiplexed audio and video, and
+disable public originals and early playback. The server checks that a signed
+playlist is readable and that an unsigned playlist is denied before publishing
+an encoded video. The optional preview uses only independently signed media
+segments. It requires ordinary HLS segments rather than shared byte ranges.
+
+Add these four values in the same Supabase Edge Function Secrets screen:
+
+| Secret | Value |
+| --- | --- |
+| `BUNNY_STREAM_LIBRARY_ID` | Numeric Stream video library ID |
+| `BUNNY_STREAM_API_KEY` | That Stream library's write API key |
+| `BUNNY_STREAM_CDN_HOST` | The library CDN hostname, with no scheme |
+| `BUNNY_STREAM_TOKEN_KEY` | Token authentication key for that CDN |
+
+Uploads use 32 MB resumable TUS chunks. Puffle checks encoding every minute.
+Existing videos and images stored in Supabase continue to work. The Stream
+credentials must be kept available while any posts reference that library.
+Do not replace the library ID with another library to rotate a key.
+
+After activation, check a free video, a premium video with a trailer, a premium
+video without a trailer, and a creator post awaiting review. Use separate test
+accounts to check audience and premium access. Confirm that a linked video
+and a video aged less than 24 hours do not appear in Settings → Storage cleanup.
+Optionally set `BUNNY_STREAM_INR_PER_GB_MONTH` to your actual storage rate to
+display monthly saving estimates in the cleanup screen.
+

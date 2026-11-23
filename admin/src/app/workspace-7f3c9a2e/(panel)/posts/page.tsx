@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireAdmin, allowedChannels } from "@/lib/admin";
+import { mediaUrls } from "@/lib/stream-media";
 import { ist } from "@/lib/format";
 import { PageHeader, Table, Th, Td, Empty, AudienceBadge, StatusBadge, LinkButton, Select, Input, Badge, Button, ErrorNote, Hidden } from "@/components/admin/ui";
 
@@ -23,11 +24,7 @@ export default async function Posts({ searchParams }: { searchParams: Q }) {
   const [{ data: channels }, { data: posts, error }] = await Promise.all([cq, pq]);
 
   const keys = (posts ?? []).map((p) => (p.post_items as { thumbnail_key: string | null }[])?.find((i) => i.thumbnail_key)?.thumbnail_key).filter(Boolean) as string[];
-  const thumbs: Record<string, string> = {};
-  if (keys.length) {
-    const { data } = await sb.storage.from("media").createSignedUrls(keys, 3600);
-    for (const s of data ?? []) if (s.path && s.signedUrl) thumbs[s.path] = s.signedUrl;
-  }
+  const thumbs = await mediaUrls(sb, keys, "thumbnail").catch(() => ({} as Record<string, string>));
   return (
     <>
       <PageHeader title="Posts" sub="Review uploaded videos, choose their audience, then approve them. Draft videos stay hidden from viewers."><div className="flex gap-2"><LinkButton href="/workspace-7f3c9a2e/posts/bulk" variant="primary">Bulk upload</LinkButton><LinkButton href="/workspace-7f3c9a2e/posts/new">New post</LinkButton></div></PageHeader>
@@ -80,3 +77,4 @@ export default async function Posts({ searchParams }: { searchParams: Q }) {
   );
 }
 
+

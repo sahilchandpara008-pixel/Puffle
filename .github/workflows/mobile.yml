@@ -26,6 +26,8 @@ jobs:
       - run: flutter test
       - name: Play-build test (PLAY_STORE=true)
         run: flutter test --dart-define=PLAY_STORE=true
+      - name: Plans build payment test
+        run: flutter test test/upi_test.dart test/version_test.dart --dart-define=PLAY_STORE=true --dart-define=PLAY_SELLS_UPI=true
   build:
     if: github.event_name != 'pull_request'
     needs: test
@@ -84,7 +86,7 @@ jobs:
       - name: Embed exact Play native symbols
         run: python ../tool/embed_native_symbols.py --bundle ../Puffle-play.aab --dart-dir build/dart-symbols/play --output ../native-symbols/Puffle-play-native-symbols
       - name: Play AAB with plans (UPI payments ON, owner's choice)
-        run: flutter build appbundle --release --flavor play --split-debug-info=build/dart-symbols/play-plans --dart-define=AUTH_SCHEME=com.pufflecloud.app
+        run: flutter build appbundle --release --flavor play --split-debug-info=build/dart-symbols/play-plans --dart-define=PLAY_STORE=true --dart-define=PLAY_SELLS_UPI=true --dart-define=AUTH_SCHEME=com.pufflecloud.app
       - run: cp build/app/outputs/bundle/playRelease/app-play-release.aab ../Puffle-play-with-plans.aab
       - name: Embed exact plans AAB native symbols
         run: python ../tool/embed_native_symbols.py --bundle ../Puffle-play-with-plans.aab --dart-dir build/dart-symbols/play-plans --output ../native-symbols/Puffle-plans-native-symbols
@@ -177,3 +179,4 @@ jobs:
           for name in ['android/release.jks','android/key.properties']:
             Path(name).unlink(missing_ok=True)
           PY
+

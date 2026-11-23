@@ -3,6 +3,8 @@ import { useState } from "react";
 import SavedMediaPreview from "./SavedMediaPreview";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
+import { uploadStream } from "@/lib/bunny-upload";
+import { isBunnyKey } from "@/lib/stream-media";
 
 export type Item = {
   id: string; media_key: string; thumbnail_key: string | null; trailer_key: string | null; mime: string;
@@ -14,8 +16,10 @@ const extOf = (f: File) => (f.name.includes(".") ? f.name.split(".").pop()! : "b
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
 
 /** Upload with real progress (the JS client has no progress callback). */
-export async function upload(path: string, file: Blob, type: string, onProgress: (pct: number) => void) {
+export async function upload(path: string, file: Blob, type: string, onProgress: (pct: number) => void, purpose: "main" | "trailer" = "main") {
   const sb = supabaseBrowser();
+  const stream = await uploadStream(sb, path, file, type, onProgress, purpose);
+  if (stream) return stream;
   const { data } = await sb.auth.getSession();
   const token = data.session?.access_token;
   if (!token) throw new Error("Your session expired. Sign in again.");
@@ -36,6 +40,7 @@ export async function upload(path: string, file: Blob, type: string, onProgress:
     x.onerror = () => reject(new Error("Network error during upload."));
     x.send(file);
   });
+  return path;
 }
 
 /** Duration and a JPEG frame from a local video file (both optional). */
@@ -86,12 +91,16 @@ export default function MediaEditor({ postId, channelId, items, thumbs }: { post
   const fail = (e: { message: string } | null) => { if (e) throw new Error(e.message); };
 
   const addMain = (file: File) => run(`Uploading ${file.name}…`, async () => {
-    const key = `${channelId}/${uid()}.${extOf(file)}`;
-    const isVideo = file.type.startsWith("video");
+    const localKey = `${channelId}/${uid()}.${extOf(file)}`;
+    const type = file.type || "video/mp4";
+    const isVideo = type.startsWith("video");
     const info = isVideo ? await probe(file) : { duration: null, thumb: null };
-    await upload(key, file, file.type, setPct);
+    const key = await upload(localKey, file, type, setPct);
     let thumbKey: string | null = null;
-    if (info.thumb) { thumbKey = `${channelId}/${uid()}.jpg`; await upload(thumbKey, info.thumb, "image/jpeg", () => {}); }
+    if (info.thumb && !isBunnyKey(key)) {
+      try { thumbKey = await upload(`${channelId}/${uid()}.jpg`, info.thumb, "image/jpeg", () => {}); }
+      catch { /* The post can be saved with a placeholder. */ }
+    }
     else if (file.type.startsWith("image")) thumbKey = key;
     const { error } = await sb.from("post_items").insert({
       post_id: postId, media_key: key, thumbnail_key: thumbKey, mime: file.type || "video/mp4", duration_s: info.duration,
@@ -101,8 +110,9 @@ export default function MediaEditor({ postId, channelId, items, thumbs }: { post
   });
 
   const attach = (it: Item, field: "trailer_key" | "thumbnail_key", file: File) => run(`Uploading ${file.name}…`, async () => {
-    const key = `${channelId}/${uid()}.${extOf(file)}`;
-    await upload(key, file, file.type, setPct);
+    const key = await upload(`${channelId}/${uid()}.${extOf(file)}`, file,
+      file.type || (field === "trailer_key" ? "video/mp4" : "image/jpeg"),
+      setPct, field === "trailer_key" ? "trailer" : "main");
     const old = it[field];
     const { error } = await sb.from("post_items").update({ [field]: key }).eq("id", it.id);
     if (error) { await sb.storage.from("media").remove([key]); fail(error); }
@@ -153,7 +163,7 @@ export default function MediaEditor({ postId, channelId, items, thumbs }: { post
             </div>
           </div>
           <SavedMediaPreview key={it.media_key} storageKey={it.media_key} label={it.mime.startsWith("video") ? "Preview full video" : "Preview image"} mime={it.mime} poster={it.thumbnail_key ? thumbs[it.thumbnail_key] : undefined} />
-          {it.trailer_key && <SavedMediaPreview key={it.trailer_key} storageKey={it.trailer_key} label="Preview trailer" mime="video/mp4" />}
+          {it.trailer_key && <SavedMediaPreview key={it.trailer_key} storageKey={it.trailer_key} label="Preview trailer" mime="video/mp4" kind="trailer" />}
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <label className={fileBtn} aria-disabled={busy}>{it.trailer_key ? "Replace trailer" : "Add trailer"}{pick("video/*", (f) => attach(it, "trailer_key", f))}</label>
             <label className={fileBtn} aria-disabled={busy}>{it.thumbnail_key ? "Replace thumbnail" : "Add thumbnail"}{pick("image/*", (f) => attach(it, "thumbnail_key", f))}</label>
@@ -181,3 +191,4 @@ export default function MediaEditor({ postId, channelId, items, thumbs }: { post
     </div>
   );
 }
+

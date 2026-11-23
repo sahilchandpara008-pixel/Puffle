@@ -1,3 +1,4 @@
+import UpiSettings from "./UpiSettings";
 import {Button} from "@/components/admin/ui";
 import type {ReportQuery} from "@/lib/reporting";
 import { requireAdmin } from "@/lib/admin";
@@ -49,11 +50,12 @@ function PlanForm({ p, impact }: { p?: Record<string, any>; impact?: { subscribe
 
 export default async function Plans({searchParams:q}:{searchParams:ReportQuery}) {
   const { sb } = await requireAdmin(true);
-  const [mode, plans, impact, claims] = await Promise.all([
+  const [mode, plans, impact, claims, paymentSettings] = await Promise.all([
     sb.from("app_mode").select("*").eq("id", 1).single(),
     sb.from("plans").select("*").order("position"),
     sb.rpc("admin_plan_impact"),
     sb.rpc("admin_free_plan_claims"),
+    sb.from("payment_settings").select("enabled,upi_id,payee_name,activation_mode").eq("id", 1).maybeSingle(),
   ]);
   const m = (mode.data ?? {}) as Record<string, any>;
   const imp = (impact.data ?? {}) as Record<string, { subscribers: number; orders: number }>;
@@ -62,7 +64,7 @@ export default async function Plans({searchParams:q}:{searchParams:ReportQuery})
   return (
     <>
       <PageHeader title="Plans" sub="Changes reach the app within a minute." />
-      <ErrorNote error={mode.error ?? plans.error} />
+      <ErrorNote error={mode.error ?? plans.error ?? paymentSettings.error} />
       <div className="grid gap-4 lg:grid-cols-3">
         <Card title="Free mode" sub="ON: no prices anywhere in the app, everyone gets 15 GB, ads users get full access and organic users request access.">
           <form action={saveMode} className="space-y-3">
@@ -83,6 +85,7 @@ export default async function Plans({searchParams:q}:{searchParams:ReportQuery})
           </form>
         </Card>
       </div>
+      <section id="upi-settings"><UpiSettings settings={paymentSettings.data} /></section>
       <h2 className="mb-2 mt-6 text-sm font-semibold text-gray-900">Plans</h2><form className="mb-4 grid gap-2 sm:grid-cols-4"><Input name="q" defaultValue={q.q??""} placeholder="Search plan" aria-label="Search plan"/><Select name="visibility" defaultValue={q.visibility??""} aria-label="Visibility"><option value="">All plans</option><option value="active">Shown in app</option><option value="hidden">Hidden</option></Select><Select name="sort" defaultValue={q.sort??""} aria-label="Sort"><option value="">Display order</option><option value="price_low">Price: low to high</option><option value="price_high">Price: high to low</option><option value="duration">Duration: shortest first</option><option value="name">Name</option></Select><Button variant="secondary">Apply</Button></form>
       <div className="grid gap-4 lg:grid-cols-2">
         {visible.map((p) => (
@@ -101,3 +104,4 @@ export default async function Plans({searchParams:q}:{searchParams:ReportQuery})
   );
 }
 
+

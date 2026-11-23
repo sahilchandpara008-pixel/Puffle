@@ -3,18 +3,18 @@ import 'package:google_fonts/google_fonts.dart';
 
 /// All colours live here as tokens.
 class Tokens {
-  static const background = Color(0xFF08151D);
-  static const surface = Color(0xFF122630);
-  static const border = Color(0xFF29414C);
+  static const background = Color(0xFF131019);
+  static const surface = Color(0xFF221C29);
+  static const border = Color(0xFF45384A);
   static const text = Color(0xFFFFFFFF);
-  static const muted = Color(0xFFADC0C9);
-  static const primary = Color(0xFF137D79);
-  static const accent = Color(0xFF71E3D0);
+  static const muted = Color(0xFFC9BBCD);
+  static const primary = Color(0xFFA54019);
+  static const accent = Color(0xFFFFA469);
   static const gold = Color(0xFFFFC94D); // Premium only
   static const success = Color(0xFF35D07F);
   static const warning = Color(0xFFFFB020);
   static const danger = Color(0xFFFF4D5E);
-  static const gradient = LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF137D79), Color(0xFF17697E)]);
+  static const gradient = LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFFA54019), Color(0xFF77361F)]);
 }
 
 /// A consistent line height keeps headings and supporting copy readable.
@@ -39,12 +39,14 @@ ThemeData buildTheme() {
       surfaceContainerHigh: Tokens.surface,
       error: Tokens.danger,
     ),
-    textTheme: _tight(GoogleFonts.interTextTheme(base.textTheme).apply(bodyColor: Tokens.text, displayColor: Tokens.text)),
+    textTheme: _tight(GoogleFonts.interTextTheme(base.textTheme).apply(bodyColor: Tokens.text, displayColor: Tokens.text))
+        .copyWith(headlineLarge: GoogleFonts.spaceGrotesk(textStyle: base.textTheme.headlineLarge, color: Tokens.text),
+            headlineMedium: GoogleFonts.spaceGrotesk(textStyle: base.textTheme.headlineMedium, color: Tokens.text)),
     listTileTheme: const ListTileThemeData(dense: false, contentPadding: EdgeInsets.symmetric(horizontal: 12), minVerticalPadding: 8, horizontalTitleGap: 12),
     dividerTheme: const DividerThemeData(color: Tokens.border, space: 1, thickness: 1),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
-      backgroundColor: const Color(0xFF1A3440),
+      backgroundColor: Tokens.surface,
       contentTextStyle: GoogleFonts.inter(color: Tokens.text, fontSize: 13),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: Tokens.border)),
     ),
@@ -80,7 +82,7 @@ ThemeData buildTheme() {
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        foregroundColor: Tokens.primary,
+        foregroundColor: Tokens.accent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         textStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
       ),
@@ -100,7 +102,7 @@ ThemeData buildTheme() {
     navigationBarTheme: const NavigationBarThemeData(backgroundColor: Tokens.surface, indicatorColor: Tokens.primary),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: const Color(0xFF0D1E28),
+      fillColor: Tokens.surface,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       labelStyle: const TextStyle(color: Tokens.muted, fontSize: 14),
       floatingLabelStyle: const TextStyle(color: Tokens.primary, fontSize: 14),
@@ -142,3 +144,4 @@ class GradientButton extends StatelessWidget {
       );
 }
 
+

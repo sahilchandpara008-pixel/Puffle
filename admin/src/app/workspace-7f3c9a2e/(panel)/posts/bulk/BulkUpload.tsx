@@ -4,6 +4,7 @@ import Link from "next/link";
 import BulkMediaPreview from "./BulkMediaPreview";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { upload, probe } from "../[id]/MediaEditor";
+import { isBunnyKey } from "@/lib/stream-media";
 
 type Channel = { id: string; name: string; audience: string; review_status: string; status: string; hidden: boolean };
 type Entry = { id: string; file?: File; thumbnail?: File; trailer?: File; title: string; description: string; state: "ready" | "uploading" | "done" | "error"; progress: number; error?: string; postId?: string; mediaDone?: boolean };
@@ -82,15 +83,17 @@ export default function BulkUpload({ channels, initialChannelId }: { channels: C
             const file = row.file;
             const mime = mediaType(file);
             const ext = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "bin";
-            const key = `${channel.id}/${crypto.randomUUID()}.${ext}`;
-            filesToClean.push(key);
-            await upload(key, file, mime, percent => patch(row.id, { progress: percent }));
+            const key = await upload(`${channel.id}/${crypto.randomUUID()}.${ext}`,
+              file, mime, percent => patch(row.id, { progress: percent }));
+            if (!isBunnyKey(key)) filesToClean.push(key);
             let thumbnail: string | null = null;
             let duration: number | null = null;
             let thumb: Blob | null = row.thumbnail ?? null;
             const thumbnailMime = row.thumbnail?.type || 'image/jpeg';
             if (mime.startsWith("video/")) {
-              const info = await probe(file); thumb ??= info.thumb; duration = info.duration;
+              if (!isBunnyKey(key)) {
+                const info = await probe(file); thumb ??= info.thumb; duration = info.duration;
+              }
             } else if (!thumb) {
               try {
                 const image = await createImageBitmap(file);
@@ -103,16 +106,17 @@ export default function BulkUpload({ channels, initialChannelId }: { channels: C
             }
             if (thumb) {
               const thumbExt = thumbnailMime === "image/png" ? "png" : thumbnailMime === "image/webp" ? "webp" : "jpg";
-              thumbnail = `${channel.id}/${crypto.randomUUID()}.${thumbExt}`;
-              filesToClean.push(thumbnail);
-              await upload(thumbnail, thumb, thumbnailMime, () => {});
+              try {
+                thumbnail = await upload(`${channel.id}/${crypto.randomUUID()}.${thumbExt}`, thumb, thumbnailMime, () => {});
+                filesToClean.push(thumbnail);
+              } catch { /* Use Bunny's generated thumbnail or the legacy placeholder. */ }
             }
             let trailerKey: string | null = null;
             if (row.trailer) {
               const trailerExt = row.trailer.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "mp4";
-              trailerKey = `${channel.id}/${crypto.randomUUID()}.${trailerExt}`;
-              filesToClean.push(trailerKey);
-              await upload(trailerKey, row.trailer, mediaType(row.trailer), percent => patch(row.id, { progress: percent }));
+              trailerKey = await upload(`${channel.id}/${crypto.randomUUID()}.${trailerExt}`,
+                row.trailer, mediaType(row.trailer), percent => patch(row.id, { progress: percent }), "trailer");
+              if (!isBunnyKey(trailerKey)) filesToClean.push(trailerKey);
             }
             metadataAttempted = true;
             const { error } = await sb.from("post_items").insert({ post_id: postId, media_key: key, thumbnail_key: thumbnail, trailer_key: trailerKey, mime, duration_s: duration, size_bytes: file.size, position: 0, is_premium: premium });
@@ -190,3 +194,4 @@ export default function BulkUpload({ channels, initialChannelId }: { channels: C
   </div>;
 }
 
+

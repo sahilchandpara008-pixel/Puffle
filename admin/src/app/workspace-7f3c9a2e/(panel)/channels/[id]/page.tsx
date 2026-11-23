@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
 import { PageHeader, Card, Field, Input, Textarea, Select, Hidden, LinkButton, StatusBadge } from "@/components/admin/ui";
 import { SubmitButton } from "@/components/admin/client";
-import { saveChannel } from "../../actions";
+import { deleteChannel, saveChannel } from "../../actions";
 import IconUpload from "./IconUpload";
 
 const CATS = ["Movies", "Music", "Education", "Gaming", "Lifestyle", "Tech", "Other"];
@@ -59,8 +59,15 @@ export default async function ChannelEdit({ params }: { params: { id: string } }
         </Card>
         <Card title="Picture" sub={isNew ? "Save the channel first, then add a picture." : "Square image, up to 2 MB."}>
           {!isNew && c && <IconUpload channelId={c.id} current={iconUrl} />}
+          {!isNew && c && role === "owner" && <form action={deleteChannel} className="mt-4 border-t pt-4">
+            <Hidden name="id" value={c.id} />
+            <SubmitButton variant="danger" confirm="Permanently delete this channel, its posts and its attached files?">
+              Delete channel
+            </SubmitButton>
+          </form>}
         </Card>
       </div>
     </>
   );
 }
+

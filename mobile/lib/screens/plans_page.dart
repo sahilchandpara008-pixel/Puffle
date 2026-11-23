@@ -75,7 +75,8 @@ class _PlansPageState extends State<PlansPage> {
       final l = await (widget.plansLoader ?? defaultPlansLoader)();
       l.sort((a, b) => ((a['position'] as num?) ?? 0).compareTo((b['position'] as num?) ?? 0));
       _plans = l;
-      final pop = l.where((p) => p['badge'] == 'Popular');
+      final pop = l.where((p) => p['badge'] == 'Popular' || p['badge'] == 'Best value').toList()
+        ..sort((a, b) => (a['badge'] == 'Popular' ? 0 : 1).compareTo(b['badge'] == 'Popular' ? 0 : 1));
       _selected = (pop.isNotEmpty ? pop.first : (l.isNotEmpty ? l.first : null))?['id'] as String?;
     } catch (_) {
       _error = true;
@@ -111,7 +112,10 @@ class _PlansPageState extends State<PlansPage> {
         ? 'Choose a plan'
         : isFree
             ? 'Claim free ${sel['name']} Plan'
-            : 'Get ${sel['name']} Plan · ₹${sel['price_inr']}';
+            : 'Continue with ${sel['name']} · ₹${sel['price_inr']}';
+    final standardRates = _plans.where((p) => !widget.freeIds.contains(p['id']) && (p['price_inr'] as num) > 0)
+        .map(_rate).toList()..sort();
+    final topRate = standardRates.isEmpty ? 0.0 : standardRates.last;
     return Container(
       key: const Key('plans_page'),
       decoration: BoxDecoration(
@@ -156,7 +160,9 @@ class _PlansPageState extends State<PlansPage> {
               ]))
             else
               for (final p in _plans)
-                _PlanTile(plan: p, selected: p['id'] == _selected, free: widget.freeIds.contains(p['id']), onTap: () => setState(() => _selected = p['id'] as String)),
+                _PlanTile(plan: p, selected: p['id'] == _selected, free: widget.freeIds.contains(p['id']),
+                  savings: topRate > 0 ? ((1 - _rate(p) / topRate) * 100).floor().clamp(0, 100).toInt() : 0,
+                  onTap: () => setState(() => _selected = p['id'] as String)),
           ]),
         ),
         Padding(
@@ -170,10 +176,18 @@ class _PlansPageState extends State<PlansPage> {
           TextButton(key: const Key('link_privacy'), onPressed: () => _open('/privacy'), child: const Text('Privacy Policy', style: TextStyle(color: Tokens.muted, fontSize: 12))),
           TextButton(key: const Key('link_terms'), onPressed: () => _open('/terms'), child: const Text('Terms & Conditions', style: TextStyle(color: Tokens.muted, fontSize: 12))),
           TextButton(key: const Key('link_refund'), onPressed: () => _open('/refund'), child: const Text('Refund Policy', style: TextStyle(color: Tokens.muted, fontSize: 12))),
+          TextButton(onPressed: () => launchUrl(Uri(scheme: 'mailto', path: Config.supportEmail)),
+              child: const Text('Need help? Email us', style: TextStyle(color: Tokens.muted, fontSize: 12))),
         ]),
       ]),
     );
   }
+}
+
+double _rate(Map<String, dynamic> plan) {
+  final hours = (plan['duration_hours'] as num?) ?? 0;
+  final days = hours > 0 ? hours / 24 : ((plan['duration_days'] as num?) ?? 1);
+  return (plan['price_inr'] as num) / (days > 0 ? days : 1);
 }
 
 class _Perk extends StatelessWidget {
@@ -193,9 +207,10 @@ class _Perk extends StatelessWidget {
 }
 
 class _PlanTile extends StatelessWidget {
-  const _PlanTile({required this.plan, required this.selected, required this.free, required this.onTap});
+  const _PlanTile({required this.plan, required this.selected, required this.free, required this.onTap, required this.savings});
   final Map<String, dynamic> plan;
   final bool selected, free;
+  final int savings;
   final VoidCallback onTap;
 
   @override
@@ -231,8 +246,11 @@ class _PlanTile extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(color: Colors.white.withValues(alpha: selected ? .25 : .1), borderRadius: BorderRadius.circular(10)),
-                          child: Text(badge, style: TextStyle(fontSize: 11, color: selected ? Colors.white : Tokens.accent)),
+                          child: Text(badge == 'Popular' ? 'MOST POPULAR' : badge.toUpperCase(),
+                              style: TextStyle(fontSize: 11, color: selected ? Colors.white : Tokens.accent)),
                         ),
+                      if (!free && savings > 0)
+                        Text('SAVE $savings%', style: TextStyle(fontSize: 11, color: selected ? Colors.white : Tokens.accent)),
                     ]),
                     const SizedBox(height: 2),
                     Text('${hours > 0 && hours < 24 ? '${durationLabel(days, hours)} · ₹$price' : '${durationLabel(days, hours)} · ₹${perDay(price, days, hours)} / day'}', style: TextStyle(color: selected ? Colors.white.withValues(alpha: .85) : Tokens.muted, fontSize: 13)),
@@ -253,3 +271,4 @@ class _PlanTile extends StatelessWidget {
     );
   }
 }
+

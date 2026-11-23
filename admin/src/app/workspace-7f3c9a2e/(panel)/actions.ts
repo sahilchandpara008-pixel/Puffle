@@ -102,7 +102,17 @@ export async function deletePost(fd: FormData) {
   const { error } = await sb.functions.invoke("post-delete", { body: { post_id: id } });
   const e = await fnError(error);
   if (e) flash(`/workspace-7f3c9a2e/posts/${id}`, e, "");
-  flash("/workspace-7f3c9a2e/posts", null, "Post and its files deleted.");
+  flash("/workspace-7f3c9a2e/posts", null, "Post removed. Attached Bunny files are queued for deletion.");
+}
+
+export async function deleteChannel(fd: FormData) {
+  const { sb } = await requireAdmin(true);
+  const id = str(fd, "id");
+  if (!UUID.test(id)) flash("/workspace-7f3c9a2e/channels", { message: "Invalid channel." }, "");
+  const { error } = await sb.functions.invoke("post-delete", { body: { channel_id: id } });
+  const failure = await fnError(error);
+  if (failure) flash(`/workspace-7f3c9a2e/channels/${id}`, failure, "");
+  flash("/workspace-7f3c9a2e/channels", null, "Channel removed. Attached Bunny files are queued for deletion.");
 }
 
 // ---------------- approvals / users ----------------
@@ -124,18 +134,18 @@ export async function grantPremium(fd: FormData) {
 export async function savePaymentSettings(fd: FormData) {
   const { sb } = await requireAdmin(true);
   const upi = str(fd, "upi_id");
-  if (upi && !/^[A-Za-z0-9._-]{2,256}@[A-Za-z0-9]{2,64}$/.test(upi)) flash("/workspace-7f3c9a2e/payments", { message: "UPI ID must look like name@bank." }, "");
+  if (upi && !/^[A-Za-z0-9._-]{2,256}@[A-Za-z0-9]{2,64}$/.test(upi)) flash("/workspace-7f3c9a2e/plans", { message: "UPI ID must look like name@bank." }, "");
   const enabled = fd.get("enabled") === "on" && upi !== "";
   const { error } = await sb.from("payment_settings").update({
     upi_id: upi, payee_name: str(fd, "payee_name"), enabled, activation_mode: str(fd, "activation_mode") === "manual" ? "manual" : "instant",
   }).eq("id", 1);
-  flash("/workspace-7f3c9a2e/payments", error, enabled ? `Saved. New payments go to ${upi}.` : "Saved. Payments are off.");
+  flash("/workspace-7f3c9a2e/plans", error, enabled ? `Saved. New payments go to ${upi}.` : "Saved. Payments are off.");
 }
 
 export async function clearUpi() {
   const { sb } = await requireAdmin(true);
   const { error } = await sb.from("payment_settings").update({ upi_id: "", enabled: false }).eq("id", 1);
-  flash("/workspace-7f3c9a2e/payments", error, "UPI ID cleared. Payments are off.");
+  flash("/workspace-7f3c9a2e/plans", error, "UPI ID cleared. Payments are off.");
 }
 
 export async function orderAction(fd: FormData) {
@@ -295,4 +305,4 @@ export async function removeAdmin(fd: FormData) {
 }
 
 
-
+

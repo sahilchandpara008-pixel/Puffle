@@ -115,13 +115,22 @@ begin
   perform pg_temp.imp(u1,false); r := public.report_result(v_o2, 'garbage-xyz'); reset role;
   perform pg_temp.rec('garbage result: raw saved, stays pending', (select raw_result='garbage-xyz' and status='pending' from public.payment_orders where id=v_o2));
   perform pg_temp.imp(u1,false); perform public.report_result(v_o2, 'Status=SUBMITTED&txnRef='||v_ref); perform public.report_result(v_o2, 'NO_RESPONSE'); reset role;
-  perform pg_temp.rec('SUBMITTED / NO_RESPONSE stay pending', (select status='pending' from public.payment_orders where id=v_o2));
+  perform pg_temp.rec('SUBMITTED survives a missing response', (select status='submitted' from public.payment_orders where id=v_o2));
+  perform pg_temp.imp(u1,false); c2 := public.create_order(p_gold); reset role;
+  perform pg_temp.rec('starting a new order keeps a submitted order', (select status='submitted' from public.payment_orders where id=v_o2));
   perform pg_temp.imp(u1,false); perform public.report_result(v_o2, 'Status=SUCCESS&txnId=TXNWRONG123&txnRef=WRONGREF'); reset role;
-  perform pg_temp.rec('SUCCESS with wrong txnRef is NOT activated', (select status='pending' and success_reported from public.payment_orders where id=v_o2) and not exists (select 1 from public.subscriptions where order_id=v_o2));
+  perform pg_temp.rec('SUCCESS with wrong txnRef is NOT activated', (select status='submitted' and success_reported from public.payment_orders where id=v_o2) and not exists (select 1 from public.subscriptions where order_id=v_o2));
   perform pg_temp.imp(u1,false); perform public.report_result(v_o2, 'Status=FAILURE&txnRef='||v_ref); reset role;
-  perform pg_temp.rec('FAILURE marks order failed', (select status from public.payment_orders where id=v_o2)='failed');
-  perform pg_temp.imp(u1,false); perform public.report_result(v_o2, 'Status=SUCCESS&txnId=LATE123456&txnRef='||v_ref); reset role;
-  perform pg_temp.rec('terminal order cannot be changed by later report', (select status from public.payment_orders where id=v_o2)='failed');
+  perform pg_temp.rec('late FAILURE leaves submitted evidence intact', (select status='submitted' and success_reported from public.payment_orders where id=v_o2));
+  perform pg_temp.imp(u1,false); r := public.submit_order_utr(v_o2, '987654321098'); reset role;
+  perform pg_temp.rec('manual UTR goes to review without activation', r->>'status'='review' and
+    (select utr='987654321098' and not bank_verified from public.payment_orders where id=v_o2) and
+    not exists (select 1 from public.subscriptions where order_id=v_o2));
+  v_o1 := (c2->>'order_id')::uuid;
+  perform pg_temp.imp(u1,false); perform public.report_result(v_o1, 'Status=FAILURE'); reset role;
+  perform pg_temp.rec('FAILURE marks an unpaid, unsubmitted order failed', (select status from public.payment_orders where id=v_o1)='failed');
+  perform pg_temp.imp(u1,false); perform public.report_result(v_o1, 'Status=SUCCESS&txnId=LATE123456&txnRef='||(c2->>'reference')); reset role;
+  perform pg_temp.rec('terminal order cannot be changed by later report', (select status from public.payment_orders where id=v_o1)='failed');
 
   r := pg_temp.pay(u1, p_trial, 'ABC1234567');
   perform pg_temp.rec('valid SUCCESS (instant mode) activates plan', r->>'status'='paid' and (select count(*) from public.subscriptions where user_id=u1 and kind='payment')=1);
@@ -258,5 +267,3 @@ begin
   select count(*), count(*) filter (where not x.ok), string_agg(x.n, ' | ') filter (where not x.ok) into total, failed, fail_list from t_res x;
   raise exception 'RESULT total=% failed=% :: %', total, failed, coalesce(fail_list,'none');
 end $outer$;
-
-

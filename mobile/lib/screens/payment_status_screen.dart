@@ -1,11 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../services/app_scope.dart';
 import '../services/app_state.dart';
 import '../theme.dart';
 import '../widgets/ui.dart';
+import '../config.dart';
 import 'login_sheet.dart';
 
 class PaymentStatusScreen extends StatefulWidget {
@@ -20,6 +23,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
   Timer? _t;
   AppState? _app;
   int _ticks = 0;
+  bool _sendingUtr = false;
 
   @override
   void didChangeDependencies() {
@@ -53,6 +57,42 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
     } catch (_) {/* try again on the next tick */}
   }
 
+  Future<void> _enterUtr() async {
+    var reference = '';
+    final saved = await showDialog<String>(context: context, builder: (dialogContext) {
+      return StatefulBuilder(builder: (context, refresh) => AlertDialog(
+        title: const Text('Enter bank reference'),
+        content: TextField(
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(12)],
+          decoration: const InputDecoration(labelText: '12-digit UTR'),
+          onChanged: (value) => refresh(() => reference = value),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
+          FilledButton(onPressed: reference.length == 12 ? () => Navigator.pop(dialogContext, reference) : null,
+              child: const Text('Send for review')),
+        ],
+      ));
+    });
+    if (!mounted || saved == null) return;
+    setState(() => _sendingUtr = true);
+    try {
+      await sb.rpc('submit_order_utr', params: {'p_order': widget.orderId, 'p_utr': saved});
+      await _check();
+      if (_t?.isActive != true && mounted && _o?['status'] == 'review') {
+        _t = Timer.periodic(const Duration(seconds: 2), (_) => _check());
+      }
+    } catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not save the reference. Try again or contact support.')),
+      );
+    } finally {
+      if (mounted) setState(() => _sendingUtr = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final st = (_o?['status'] as String?) ?? 'pending';
@@ -61,17 +101,17 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
       case 'paid':
         icon = Icons.check_circle; color = Tokens.success; text = 'Payment successful! Your plan is now active.';
       case 'review':
-        icon = Icons.hourglass_top; color = Tokens.warning; text = 'Payment received, being verified';
+        icon = Icons.hourglass_top; color = Tokens.warning; text = 'Payment reference received. Verification pending.';
       case 'failed':
       case 'cancelled':
       case 'rejected':
-        icon = Icons.error; color = Tokens.danger; text = 'Payment failed or cancelled';
+        icon = Icons.error; color = Tokens.danger; text = 'Payment not completed';
       default:
         icon = Icons.sync; color = Tokens.muted; text = 'Waiting for confirmation…';
     }
     return Scaffold(
       appBar: AppBar(title: const Text('Payment')),
-      body: Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [
+      body: Center(child: SingleChildScrollView(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [
         Icon(icon, size: 72, color: color),
         const SizedBox(height: 16),
         Text(text, textAlign: TextAlign.center, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
@@ -85,10 +125,15 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
         const SizedBox(height: 24),
         if (st == 'failed' || st == 'cancelled' || st == 'rejected')
           GradientButton(label: 'Try again', onPressed: () => Navigator.pop(context))
-        else if (st == 'pending')
+        else if (st == 'pending' || st == 'submitted')
           OutlinedButton(onPressed: _check, child: const Text('Check again'))
         else
           GradientButton(label: 'Done', onPressed: () => Navigator.pop(context)),
+        if (_o != null && ['pending', 'submitted', 'review', 'failed', 'cancelled'].contains(st))
+          TextButton(onPressed: _sendingUtr ? null : _enterUtr, child: const Text("I've paid – enter UTR")),
+        if (st != 'paid')
+          TextButton(onPressed: () => launchUrl(Uri(scheme: 'mailto', path: Config.supportEmail)),
+              child: const Text('Get help')),
       ]))),
     );
   }
@@ -117,3 +162,4 @@ class PaymentHistoryScreen extends StatelessWidget {
         ),
       );
 }
+

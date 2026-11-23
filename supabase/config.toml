@@ -4,6 +4,9 @@ project_id = "puffle"
 [functions.bunny-cloud-cleanup]
 verify_jwt = false
 
+[functions.bunny-stream]
+verify_jwt = false
+
 [functions.meta-send]
 verify_jwt = false
 
@@ -12,3 +15,4 @@ verify_jwt = false
 
 [functions.deletion-request]
 verify_jwt = false
+

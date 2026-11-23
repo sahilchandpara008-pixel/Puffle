@@ -1,7 +1,7 @@
 name: puffle
 description: Puffle — cloud storage and creator channels.
 publish_to: none
-version: 1.0.16+17
+version: 1.0.17+18
 
 environment:
   sdk: ">=3.4.0 <4.0.0"
@@ -38,3 +38,4 @@ flutter:
   assets:
     - assets/icon.png
 
+

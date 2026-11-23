@@ -59,7 +59,7 @@ class GoogleMeasurement {
   const names={'AppOpen':'app_open','ScreenView':'screen_view','Login':'login','ViewContent':'select_content','VideoStart':'video_start','VideoProgress':'video_progress','PreviewComplete':'preview_complete','SearchUsed':'search_used','ChannelCreated':'channel_created','ChannelJoined':'join_group','VideoUploaded':'video_uploaded','CloudUploaded':'cloud_uploaded','CloudDeleted':'cloud_deleted','PlanViewed':'plan_viewed','SubscriptionPrompt':'subscription_prompt','CompleteRegistration':'sign_up'};
   final name=names[event];if(name==null)return;
   final safe=<String,Object>{};
-  if(['Cloud','Home','Explore','Channel','Profile','Premium','Post','Safety'].contains(properties['screen']))safe['screen_name']=properties['screen'] as String;
+  if(['Cloud','Home','Feed','Explore','Channel','Channels','Profile','Premium','Post','Safety'].contains(properties['screen']))safe['screen_name']=properties['screen'] as String;
   if([25,50,75,100].contains(properties['progress']))safe['progress']=properties['progress'] as int;
   for(final key in ['premium','preview']){if(properties[key] is bool)safe[key]=properties[key]==true?1:0;}
   if(event=='Login'||event=='CompleteRegistration')safe['method']='email';
@@ -71,3 +71,4 @@ class GoogleMeasurement {
  }
  Future<void> revoke()async{enabled=false;await _disable();try{await _analytics?.resetAnalyticsData();}catch(_){} }
 }
+

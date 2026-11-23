@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 import 'package:video_thumbnail/video_thumbnail.dart' as vt;
 
 import '../services/app_state.dart';
+import '../services/stream_media.dart';
 import '../services/measurement.dart';
 import '../theme.dart';
 import '../widgets/ui.dart';
@@ -193,21 +194,24 @@ class _NewPostScreenState extends State<NewPostScreen> {
     setState(() { _busy = true; _err = null; _stage = 'Uploading video…'; });
     final media = sb.storage.from('media');
     final ext = _ext(f, 'mp4');
-    final key = '${widget.channelId}/${const Uuid().v4()}.$ext';
+    final legacyKey = '${widget.channelId}/${const Uuid().v4()}.$ext';
     final uploaded = <String>[];
     try {
       await sb.rpc('accept_consent', params: {'p_policy': 'v1'});
-      await media.upload(key, File(f.path!), fileOptions: FileOptions(contentType: _mimeOf(ext)));
-      uploaded.add(key);
+      final key = await uploadVideo(legacyPath: legacyKey, file: File(f.path!),
+          contentType: _mimeOf(ext), title: _title.text.trim(), purpose: 'main',
+          progress: (pct) { if (mounted) setState(() => _stage = 'Uploading video… $pct%'); });
+      if (!isStreamKey(key)) uploaded.add(key);
 
       String? trailerKey;
       final t = _trailer;
       if (t != null && t.path != null) {
         if (mounted) setState(() => _stage = 'Uploading trailer…');
         final te = _ext(t, 'mp4');
-        trailerKey = '${widget.channelId}/${const Uuid().v4()}.$te';
-        await media.upload(trailerKey, File(t.path!), fileOptions: FileOptions(contentType: _mimeOf(te)));
-        uploaded.add(trailerKey);
+        trailerKey = await uploadVideo(legacyPath: '${widget.channelId}/${const Uuid().v4()}.$te',
+            file: File(t.path!), contentType: _mimeOf(te), title: t.name, purpose: 'trailer',
+            progress: (pct) { if (mounted) setState(() => _stage = 'Uploading trailer… $pct%'); });
+        if (!isStreamKey(trailerKey)) uploaded.add(trailerKey);
       }
 
       // Thumbnail: the chosen picture, or a frame from the video. A post still publishes if neither works.
@@ -220,7 +224,7 @@ class _NewPostScreenState extends State<NewPostScreen> {
           thumbKey = '${widget.channelId}/${const Uuid().v4()}.$ie';
           await media.upload(thumbKey, File(th.path!), fileOptions: FileOptions(contentType: ie == 'png' ? 'image/png' : ie == 'webp' ? 'image/webp' : 'image/jpeg'));
           uploaded.add(thumbKey);
-        } else {
+        } else if (!isStreamKey(key)) {
           // No picture chosen: take a frame from one second into the video.
           final bytes = await vt.VideoThumbnail.thumbnailData(video: f.path!, imageFormat: vt.ImageFormat.JPEG, maxWidth: 720, quality: 80, timeMs: 1000);
           if (bytes != null && bytes.isNotEmpty) {
@@ -359,3 +363,4 @@ class _NewPostScreenState extends State<NewPostScreen> {
 }
 
 
+

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/app_scope.dart';
 import '../services/app_state.dart';
+import '../services/stream_media.dart';
 import '../theme.dart';
 import '../widgets/ui.dart';
 import 'channel_page.dart';
@@ -62,11 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ];
       if (keys.isNotEmpty) {
         try {
-          final res = await sb.storage.from('media').createSignedUrls(keys, 3600);
-          for (final r in res) {
-            final String? path = r.path;
-            if (path != null) _thumbs[path] = r.signedUrl;
-          }
+          _thumbs.addAll(await signMedia(keys, kind: 'thumbnail'));
         } catch (_) {/* thumbnails are optional */}
       }
     } catch (_) {}
@@ -150,6 +147,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 title: post['title'] as String? ?? '',
                 channel: (post['channels'] as Map?)?['name'] as String? ?? '',
                 url: _thumbFor(post),
+                seconds: items.isEmpty ? null : (items.first as Map)['duration_s'] as int?,
                 premium: items.any((item) => item['is_premium'] == true),
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PostPage(postId: post['id'] as String))),
               );
@@ -172,3 +170,4 @@ class _SquareButton extends StatelessWidget {
       );
 }
 
+

@@ -18,7 +18,9 @@ class PuffleNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        decoration: const BoxDecoration(color: Tokens.surface, border: Border(top: BorderSide(color: Tokens.border))),
+        margin: const EdgeInsets.fromLTRB(12, 0, 12, 6),
+        decoration: BoxDecoration(color: Tokens.surface, borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Tokens.border)),
         child: SafeArea(
           top: false,
           child: Padding(
@@ -52,3 +54,4 @@ class PuffleNavBar extends StatelessWidget {
         ),
       );
 }
+

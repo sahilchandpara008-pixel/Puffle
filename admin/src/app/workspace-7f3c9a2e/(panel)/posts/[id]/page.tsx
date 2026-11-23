@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
+import { mediaUrls } from "@/lib/stream-media";
 import { PageHeader, Card, LinkButton, Hidden, StatusBadge, Badge } from "@/components/admin/ui";
 import { SubmitButton } from "@/components/admin/client";
 import { savePost, deletePost, setHidden } from "../../actions";
@@ -14,11 +15,7 @@ export default async function PostEdit({ params }: { params: { id: string } }) {
   if (!can) notFound();
   const { data: items } = await sb.from("post_items").select("*").eq("post_id", params.id).order("position");
   const keys = (items ?? []).map((i) => i.thumbnail_key).filter(Boolean) as string[];
-  const thumbs: Record<string, string> = {};
-  if (keys.length) {
-    const { data } = await sb.storage.from("media").createSignedUrls(keys, 3600);
-    for (const s of data ?? []) if (s.path && s.signedUrl) thumbs[s.path] = s.signedUrl;
-  }
+  const thumbs = await mediaUrls(sb, keys, "thumbnail").catch(() => ({} as Record<string, string>));
   const ch = p.channels as { name?: string } | null;
   return (
     <>
@@ -55,3 +52,4 @@ export default async function PostEdit({ params }: { params: { id: string } }) {
     </>
   );
 }
+

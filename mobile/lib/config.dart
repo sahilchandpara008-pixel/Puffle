@@ -8,14 +8,15 @@ class Config {
   static const supabaseUrl = String.fromEnvironment('SUPABASE_URL', defaultValue: 'https://dqufassvbkattmmsuwmf.supabase.co');
   static const supabaseKey = String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY', defaultValue: 'sb_publishable_V1Mz2QEjH6Xh2ydtPFEChw_9akgiOZE');
 
-  /// Set by CI for the Play bundle: no UPI, no WebView, no prices.
-  static const playStore = bool.fromEnvironment('PLAY_STORE');
+  /// The standard Play bundle hides checkout. The plans build opts in explicitly.
+  static const playStore = bool.fromEnvironment('PLAY_STORE') && !bool.fromEnvironment('PLAY_SELLS_UPI');
 
   /// Set by CI for the ads APK: utm_source=meta&utm_medium=paid_social&utm_campaign=apk_download
   static const apkReferrer = String.fromEnvironment('APK_REFERRER');
   static const authScheme = String.fromEnvironment('AUTH_SCHEME', defaultValue: 'com.pufflecloud.app');
 
   /// Kept in sync with pubspec.yaml; a test fails when they differ.
-  static const versionLabel = '1.0.16';
+  static const versionLabel = '1.0.17';
 }
 
+
