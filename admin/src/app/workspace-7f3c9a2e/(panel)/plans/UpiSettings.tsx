@@ -29,4 +29,3 @@ export default function UpiSettings({ settings: s }: { settings: Settings | null
       </Card>
   );
 }
-

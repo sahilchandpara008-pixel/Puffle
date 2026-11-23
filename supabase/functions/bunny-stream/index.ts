@@ -259,4 +259,3 @@ Deno.serve(async (request) => {
     return json({ error: "Video service temporarily unavailable" }, 503);
   }
 });
-

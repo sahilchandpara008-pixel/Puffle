@@ -52,4 +52,3 @@ export default async function PostEdit({ params }: { params: { id: string } }) {
     </>
   );
 }
-

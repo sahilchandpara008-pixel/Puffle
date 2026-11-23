@@ -32,4 +32,3 @@ export default function Privacy(){return <SiteShell><article className="prose-do
  <h2>Contact</h2><p>Privacy, support and complaints: <a href={`mailto:${email}`}>{email}</a>. See also our <a href="/terms">Terms</a>, <a href="/refund">Refund Policy</a> and <a href="/community-guidelines">Community Guidelines</a>.</p>
  </article></SiteShell>;}
 
-

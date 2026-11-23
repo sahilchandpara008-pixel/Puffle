@@ -77,4 +77,3 @@ export default async function Posts({ searchParams }: { searchParams: Q }) {
   );
 }
 
-

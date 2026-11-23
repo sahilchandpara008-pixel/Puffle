@@ -130,4 +130,3 @@ export async function previewPlaylist(config: StreamConfig, id: string, expiry: 
   }
   return await cutPreview(config, path, directory, manifest, expiry);
 }
-

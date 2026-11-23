@@ -54,4 +54,3 @@ export default function SavedMediaPreview({ storageKey, label, mime, poster, kin
     {error && <div className="mt-2 text-xs text-red-700" role="alert">{error} <button type="button" className="underline" disabled={loading} onClick={() => void load()}>Retry preview</button></div>}
   </details>;
 }
-

@@ -54,4 +54,3 @@ class PuffleNavBar extends StatelessWidget {
         ),
       );
 }
-

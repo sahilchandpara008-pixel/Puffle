@@ -15,4 +15,3 @@ verify_jwt = false
 
 [functions.deletion-request]
 verify_jwt = false
-

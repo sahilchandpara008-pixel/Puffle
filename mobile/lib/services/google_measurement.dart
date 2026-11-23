@@ -71,4 +71,3 @@ class GoogleMeasurement {
  }
  Future<void> revoke()async{enabled=false;await _disable();try{await _analytics?.resetAnalyticsData();}catch(_){} }
 }
-

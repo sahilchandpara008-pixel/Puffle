@@ -47,4 +47,3 @@ export async function uploadStream(
   localStorage.removeItem(fingerprint);
   return key as string;
 }
-

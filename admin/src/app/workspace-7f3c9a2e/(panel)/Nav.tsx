@@ -48,4 +48,3 @@ export default function Nav({ owner, counts }: { owner: boolean; counts: Record<
   </nav>;
 }
 
-

@@ -110,4 +110,3 @@ Future<String> uploadVideo({
     client.close(force: true);
   }
 }
-

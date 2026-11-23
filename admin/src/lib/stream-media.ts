@@ -21,4 +21,3 @@ export async function mediaUrls(sb: SupabaseClient, keys: string[], kind: "thumb
   }
   return urls;
 }
-
