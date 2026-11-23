@@ -16,8 +16,13 @@ class HomeShell extends StatefulWidget {
 }
 
 class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
-  int _i = 1;
-  void _tab(int index){setState(()=>_i=index);Measurement.instance.track('ScreenView',{'screen':['Cloud','Home','Explore','Channel','Profile'][index]});}
+  int _i = 2;
+  void _tab(int index) {
+    setState(() => _i = index);
+    Measurement.instance.track('ScreenView', {
+      'screen': ['Cloud', 'Feed', 'Explore', 'Channels', 'Profile'][index],
+    });
+  }
 
   @override
   void initState() {
@@ -62,9 +67,9 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         onTap: _tab,
         items: [
           const NavItem(Icons.cloud_outlined, 'Cloud', Icons.cloud),
-          const NavItem(Icons.grid_view_outlined, 'Home', Icons.grid_view_rounded),
+          const NavItem(Icons.grid_view_outlined, 'Feed', Icons.grid_view_rounded),
           const NavItem(Icons.explore_outlined, 'Explore', Icons.explore),
-          const NavItem(Icons.live_tv_outlined, 'Channel', Icons.live_tv),
+          const NavItem(Icons.live_tv_outlined, 'Channels', Icons.live_tv),
           premiumTab ? const NavItem(Icons.workspace_premium_outlined, 'Premium', Icons.workspace_premium) : const NavItem(Icons.person_outline, 'Profile', Icons.person),
         ],
       ),
