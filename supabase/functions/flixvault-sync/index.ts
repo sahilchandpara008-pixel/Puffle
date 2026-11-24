@@ -7,13 +7,25 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.8";
 
-const FEED = Deno.env.get("FLIXVAULT_FEED_URL") ??
-  "https://lcfiohprmviolzwglkhm.supabase.co/functions/v1/partner-feed";
+// Flixvault's feed address: project secret FLIXVAULT_FEED_URL, else the
+// private.flixvault_settings row (read with the service role, cached).
+let feedUrl: string | null = Deno.env.get("FLIXVAULT_FEED_URL") || null;
+async function feedAddress(): Promise<string> {
+  if (feedUrl) return feedUrl;
+  const svc = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data } = await svc.rpc("flixvault_feed_url");
+  feedUrl = typeof data === "string" && data.startsWith("https://") ? data : null;
+  return feedUrl ?? "";
+}
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { "content-type": "application/json" } });
 
 async function feed(body: Record<string, unknown>): Promise<any> {
   const key = Deno.env.get("FLIXVAULT_PARTNER_KEY") ?? "";
   if (!key) throw new Error("FLIXVAULT_PARTNER_KEY not set");
+  const FEED = await feedAddress();
+  if (!FEED) throw new Error("Flixvault feed address not set");
   const ctl = new AbortController();
   const t = setTimeout(() => ctl.abort(), 20000);
   try {

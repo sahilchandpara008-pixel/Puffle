@@ -10,7 +10,7 @@
 //
 // Secrets (Supabase → Edge Functions → Secrets):
 //   FLIXVAULT_PARTNER_KEY   the key from Flixvault admin → "Share with Puffle"
-//   FLIXVAULT_FEED_URL      optional; defaults to Flixvault's partner-feed URL
+//   FLIXVAULT_FEED_URL      Flixvault's feed address (or private.flixvault_settings)
 //
 // App request: POST JSON { action, ... }
 //   explore   { tab?, offset?, search? }
@@ -27,8 +27,18 @@ import { createClient } from "npm:@supabase/supabase-js@2.49.8";
 
 const url = Deno.env.get("SUPABASE_URL")!;
 const anon = Deno.env.get("SUPABASE_ANON_KEY")!;
-const FEED = Deno.env.get("FLIXVAULT_FEED_URL") ??
-  "https://lcfiohprmviolzwglkhm.supabase.co/functions/v1/partner-feed";
+// Flixvault's feed address: project secret FLIXVAULT_FEED_URL, else the
+// private.flixvault_settings row (read with the service role, cached).
+let feedUrl: string | null = Deno.env.get("FLIXVAULT_FEED_URL") || null;
+async function feedAddress(): Promise<string> {
+  if (feedUrl) return feedUrl;
+  const svc = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data } = await svc.rpc("flixvault_feed_url");
+  feedUrl = typeof data === "string" && data.startsWith("https://") ? data : null;
+  return feedUrl ?? "";
+}
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -45,7 +55,8 @@ async function viewerId(uid: string): Promise<string> {
 
 async function feed(body: Record<string, unknown>): Promise<{ status: number; data: any }> {
   const key = Deno.env.get("FLIXVAULT_PARTNER_KEY") ?? "";
-  if (!key) return { status: 503, data: { error: "not_configured" } };
+  const FEED = await feedAddress();
+  if (!key || !FEED) return { status: 503, data: { error: "not_configured" } };
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), 15000);
   try {
