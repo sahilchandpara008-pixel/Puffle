@@ -131,19 +131,17 @@ class _PlansPageState extends State<PlansPage> {
                 const Expanded(child: Text('Go Premium', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700))),
                 ...widget.actions,
               ]),
-            const SizedBox(height: 6),
-            const Text('Unlock more space, full-length videos and downloads.', style: TextStyle(color: Tokens.muted, fontSize: 13)),
-            const SizedBox(height: 16),
-            Row(children: const [
-              Expanded(child: _Perk(Icons.cloud_outlined, '2 TB\ncloud')),
-              SizedBox(width: 10),
-              Expanded(child: _Perk(Icons.play_circle_outline, 'Full\nvideos')),
-              SizedBox(width: 10),
-              Expanded(child: _Perk(Icons.download_outlined, 'Offline\ndownloads')),
+            const Text('One-time UPI payment · No auto-renewal',
+              style: TextStyle(color: Tokens.muted, fontSize: 13)),
+            const SizedBox(height: 8),
+            const Wrap(spacing: 6, runSpacing: 4, children: [
+              _Perk(Icons.cloud_outlined, '2 TB cloud'),
+              _Perk(Icons.play_circle_outline, 'Full videos'),
+              _Perk(Icons.download_outlined, 'Offline downloads'),
             ]),
-            const SizedBox(height: 16),
-            const Text('Choose your plan', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
             const SizedBox(height: 10),
+            const Text('Choose your plan', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 6),
             if (widget.paused)
               Container(
                 margin: const EdgeInsets.only(bottom: 12),
@@ -163,22 +161,22 @@ class _PlansPageState extends State<PlansPage> {
                 _PlanTile(plan: p, selected: p['id'] == _selected, free: widget.freeIds.contains(p['id']),
                   savings: topRate > 0 ? ((1 - _rate(p) / topRate) * 100).floor().clamp(0, 100).toInt() : 0,
                   onTap: () => setState(() => _selected = p['id'] as String)),
+            Wrap(alignment: WrapAlignment.center, children: [
+              TextButton(key: const Key('link_privacy'), onPressed: () => _open('/privacy'), child: const Text('Privacy Policy', style: TextStyle(color: Tokens.muted, fontSize: 12))),
+              TextButton(key: const Key('link_terms'), onPressed: () => _open('/terms'), child: const Text('Terms & Conditions', style: TextStyle(color: Tokens.muted, fontSize: 12))),
+              TextButton(key: const Key('link_refund'), onPressed: () => _open('/refund'), child: const Text('Refund Policy', style: TextStyle(color: Tokens.muted, fontSize: 12))),
+              TextButton(onPressed: () => launchUrl(Uri(scheme: 'mailto', path: Config.supportEmail)),
+                  child: const Text('Email support', style: TextStyle(color: Tokens.muted, fontSize: 12))),
+            ]),
           ]),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
           child: SizedBox(
             width: double.infinity,
             child: GradientButton(label: _busy ? 'Please wait…' : cta, onPressed: (sel == null || _busy || (widget.paused && !isFree)) ? null : _buy),
           ),
         ),
-        Wrap(alignment: WrapAlignment.center, children: [
-          TextButton(key: const Key('link_privacy'), onPressed: () => _open('/privacy'), child: const Text('Privacy Policy', style: TextStyle(color: Tokens.muted, fontSize: 12))),
-          TextButton(key: const Key('link_terms'), onPressed: () => _open('/terms'), child: const Text('Terms & Conditions', style: TextStyle(color: Tokens.muted, fontSize: 12))),
-          TextButton(key: const Key('link_refund'), onPressed: () => _open('/refund'), child: const Text('Refund Policy', style: TextStyle(color: Tokens.muted, fontSize: 12))),
-          TextButton(onPressed: () => launchUrl(Uri(scheme: 'mailto', path: Config.supportEmail)),
-              child: const Text('Need help? Email us', style: TextStyle(color: Tokens.muted, fontSize: 12))),
-        ]),
       ]),
     );
   }
@@ -196,12 +194,12 @@ class _Perk extends StatelessWidget {
   final String text;
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 6),
-        decoration: BoxDecoration(color: Tokens.surface.withValues(alpha: .9), borderRadius: BorderRadius.circular(18), border: Border.all(color: Tokens.border)),
-        child: Column(children: [
-          Icon(icon, color: Tokens.primary, size: 26),
-          const SizedBox(height: 6),
-          Text(text, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, height: 1.25)),
+        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 8),
+        decoration: BoxDecoration(color: Tokens.surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: Tokens.border)),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icon, color: Tokens.accent, size: 15),
+          const SizedBox(width: 4),
+          Flexible(child: Text(text, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600))),
         ]),
       );
 }
@@ -219,51 +217,56 @@ class _PlanTile extends StatelessWidget {
     final hours = ((plan['duration_hours'] ?? 0) as num).toInt();
     final price = plan['price_inr'] as num;
     final badge = plan['badge'] as String?;
+    final detailStyle = TextStyle(color: selected ? Colors.white.withValues(alpha: .9) : Tokens.muted, fontSize: 12);
+    final badgeStyle = TextStyle(color: selected ? Colors.white : Tokens.accent, fontSize: 10, fontWeight: FontWeight.w600);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Material(
-        color: Colors.transparent,
-        child: Ink(
-          decoration: BoxDecoration(
-            gradient: selected ? Tokens.gradient : null,
-            color: selected ? null : Tokens.surface,
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: selected ? Colors.white.withValues(alpha: .6) : Tokens.border, width: selected ? 1.5 : 1),
-          ),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(22),
-            onTap: onTap,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-              child: Row(children: [
-                SizedBox(width: 84, child: Center(child: Text(free ? 'FREE' : '₹$price', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700)))),
-                Container(width: 1, height: 40, margin: const EdgeInsets.symmetric(horizontal: 12), color: Colors.white.withValues(alpha: .18)),
-                Expanded(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 8, children: [
-                      Text('${plan['name']} Plan', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                      if (badge != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(color: Colors.white.withValues(alpha: selected ? .25 : .1), borderRadius: BorderRadius.circular(10)),
-                          child: Text(badge == 'Popular' ? 'MOST POPULAR' : badge.toUpperCase(),
-                              style: TextStyle(fontSize: 11, color: selected ? Colors.white : Tokens.accent)),
-                        ),
-                      if (!free && savings > 0)
-                        Text('SAVE $savings%', style: TextStyle(fontSize: 11, color: selected ? Colors.white : Tokens.accent)),
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Semantics(
+        selected: selected,
+        button: true,
+        child: Material(
+          color: Colors.transparent,
+          child: Ink(
+            decoration: BoxDecoration(
+              gradient: selected ? Tokens.gradient : null,
+              color: selected ? null : Tokens.surface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: selected ? Tokens.accent : Tokens.border),
+            ),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: onTap,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                child: Row(children: [
+                  Icon(selected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                    color: selected ? Colors.white : Tokens.muted, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 3,
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('${plan['name']} Plan', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                      Text(durationLabel(days, hours), style: detailStyle),
+                      if (badge != null || (!free && savings > 0))
+                        Wrap(spacing: 6, children: [
+                          if (badge != null)
+                            Text(badge == 'Popular' ? 'MOST POPULAR' : badge.toUpperCase(), style: badgeStyle),
+                          if (!free && savings > 0) Text('SAVE $savings%', style: badgeStyle),
+                        ]),
                     ]),
-                    const SizedBox(height: 2),
-                    Text('${hours > 0 && hours < 24 ? '${durationLabel(days, hours)} · ₹$price' : '${durationLabel(days, hours)} · ₹${perDay(price, days, hours)} / day'}', style: TextStyle(color: selected ? Colors.white.withValues(alpha: .85) : Tokens.muted, fontSize: 13)),
-                  ]),
-                ),
-                if (selected)
-                  Container(
-                    width: 34,
-                    height: 34,
-                    decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                    child: const Icon(Icons.check, color: Tokens.primary, size: 20),
                   ),
-              ]),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 2,
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                      Text(free ? 'FREE' : '₹$price', textAlign: TextAlign.end,
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                      if (!free && (hours == 0 || hours >= 24))
+                        Text('₹${perDay(price, days, hours)}/day', textAlign: TextAlign.end, style: detailStyle),
+                    ]),
+                  ),
+                ]),
+              ),
             ),
           ),
         ),

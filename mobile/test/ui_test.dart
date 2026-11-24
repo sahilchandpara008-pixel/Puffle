@@ -1,3 +1,4 @@
+import 'package:puffle/screens/premium_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:puffle/screens/consent_gate.dart';
@@ -101,6 +102,43 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
     });
+  });
+
+  testWidgets('payment confirmation stays usable at large text on a small phone', (tester) async {
+    tester.view.physicalSize = const Size(320, 600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    bool? confirmed;
+    await tester.pumpWidget(MaterialApp(
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(1.6)),
+        child: child!,
+      ),
+      home: Scaffold(body: Builder(builder: (context) => TextButton(
+        child: const Text('Open confirmation'),
+        onPressed: () async {
+          confirmed = await showDialog<bool>(context: context,
+            builder: (_) => const PaymentConfirmationDialog(plan: {
+              'name': 'Gold', 'price_inr': 259, 'duration_days': 30,
+              'perks': ['2 TB cloud storage', 'Full-length premium videos', 'Offline downloads'],
+            }));
+        },
+      ))),
+    ));
+    await tester.tap(find.text('Open confirmation'));
+    await tester.pumpAndSettle();
+    expect(find.text('Gold'), findsOneWidget);
+    expect(find.text('1 Month of Premium'), findsOneWidget);
+    expect(find.text('2 TB cloud storage'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.tap(find.byTooltip('Close payment confirmation'));
+    await tester.pumpAndSettle();
+    expect(confirmed, isFalse);
+    await tester.tap(find.text('Open confirmation'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Pay ₹259 securely'));
+    await tester.pumpAndSettle();
+    expect(confirmed, isTrue);
   });
 
   testWidgets('nav bar: five tabs, tap changes selection', (tester) async {

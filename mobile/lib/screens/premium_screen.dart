@@ -188,30 +188,26 @@ Future<void> startPurchase(BuildContext context, String planId) async {
     return;
   }
   if (!context.mounted) return;
-  final plan = await sb.from('plans').select('id,name,price_inr,active').eq('id', planId).eq('active', true).maybeSingle();
-  if (plan == null) {
-    messenger.showSnackBar(const SnackBar(content: Text('This plan is no longer available.')));
-    return;
-  }
-  if (!context.mounted) return;
-
   try {
+    final plan = await sb.from('plans')
+        .select('name,price_inr,duration_days,duration_hours,perks')
+        .eq('id', planId).eq('active', true).maybeSingle();
+    if (plan == null) {
+      messenger.showSnackBar(const SnackBar(content: Text('This plan is no longer available.')));
+      return;
+    }
+    if (!context.mounted) return;
     if (app.freePlanIds.contains(planId)) {
       final r = await app.claimFree(planId);
       final end = r['ends_at'] ?? r['plan_ends_at'];
       messenger.showSnackBar(SnackBar(content: Text('Plan activated${end != null ? ' until ${DateTime.parse(end as String).toLocal().toString().split(' ').first}' : ''}')));
       return;
     }
-    final shown = (plan['price_inr'] as num);
-    final agreed = await showDialog<bool>(context: context, builder: (dialog) => AlertDialog(
-      title: Text('Continue with ${plan['name']} · ₹$shown'),
-      content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('Review the terms before opening your UPI app.'),
-        TextButton(onPressed: () => launchUrl(Uri.parse('${Config.websiteUrl}/terms')),
-            child: const Text('Terms and conditions')),
-      ]),
-      actions: [FilledButton(onPressed: () => Navigator.pop(dialog, true), child: const Text('Continue to UPI'))],
-    ));
+    final shown = plan['price_inr'] as num;
+    final agreed = await showDialog<bool>(
+      context: context,
+      builder: (_) => PaymentConfirmationDialog(plan: plan),
+    );
     if (agreed != true || !context.mounted) return;
     final order = await app.createOrder(planId);
     final amount = order['amount_inr'] as num;
@@ -247,6 +243,98 @@ Future<void> startPurchase(BuildContext context, String planId) async {
   }
 }
 
+class PaymentConfirmationDialog extends StatelessWidget {
+  const PaymentConfirmationDialog({super.key, required this.plan});
+  final Map<String, dynamic> plan;
+
+  @override
+  Widget build(BuildContext context) {
+    final amount = '₹${plan['price_inr']}';
+    final days = (plan['duration_days'] as num).toInt();
+    final hours = (plan['duration_hours'] as num?)?.toInt() ?? 0;
+    final perks = (plan['perks'] as List? ?? const []).whereType<String>()
+        .where((perk) => perk.trim().isNotEmpty).toList();
+    const secondary = TextStyle(color: Tokens.muted, fontSize: 13, height: 1.35);
+    return AlertDialog(
+      scrollable: true,
+      backgroundColor: Tokens.surface,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: const BorderSide(color: Tokens.border),
+      ),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      titlePadding: const EdgeInsets.fromLTRB(16, 10, 8, 4),
+      title: Row(children: [
+        const Icon(Icons.workspace_premium, color: Tokens.accent, size: 24),
+        const SizedBox(width: 8),
+        Expanded(child: Text('${plan['name']}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700))),
+        IconButton(
+          tooltip: 'Close payment confirmation',
+          onPressed: () => Navigator.pop(context, false),
+          icon: const Icon(Icons.close_rounded),
+        ),
+      ]),
+      contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+      content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Wrap(alignment: WrapAlignment.spaceBetween, spacing: 10, runSpacing: 4,
+          crossAxisAlignment: WrapCrossAlignment.center, children: [
+            Text('${durationLabel(days, hours)} of Premium', style: secondary),
+            Text(amount, style: const TextStyle(color: Tokens.accent, fontSize: 22, fontWeight: FontWeight.w700)),
+          ]),
+        if (perks.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: Tokens.background, borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Tokens.border)),
+            child: Column(children: [
+              for (final perk in perks)
+                Padding(padding: const EdgeInsets.symmetric(vertical: 3),
+                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    const Icon(Icons.check_circle, size: 16, color: Tokens.success),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(perk, style: const TextStyle(fontSize: 13))),
+                  ])),
+            ]),
+          ),
+        ],
+        const SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(color: Tokens.primary.withValues(alpha: .15), borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Tokens.primary)),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Icon(Icons.lock_outline, color: Tokens.accent, size: 18),
+            const SizedBox(width: 8),
+            Expanded(child: Text("You'll pay $amount for Puffle Premium in your UPI app. One-time payment · No auto-renewal.",
+              style: const TextStyle(fontSize: 13, height: 1.35))),
+          ]),
+        ),
+        const SizedBox(height: 10),
+        const Text("Money debited but Premium hasn't activated? Check the payment status or email support with your order reference before paying again.", style: secondary),
+        const SizedBox(height: 8),
+        const Text('By paying, you accept the Terms & Refund Policy.', style: secondary),
+        Wrap(spacing: 4, children: [
+          TextButton(onPressed: () => launchUrl(Uri.parse('${Config.websiteUrl}/terms'), mode: LaunchMode.externalApplication),
+            child: const Text('Terms', style: TextStyle(color: Tokens.accent))),
+          TextButton(onPressed: () => launchUrl(Uri.parse('${Config.websiteUrl}/refund'), mode: LaunchMode.externalApplication),
+            child: const Text('Refund Policy', style: TextStyle(color: Tokens.accent))),
+          TextButton(onPressed: () => launchUrl(Uri(scheme: 'mailto', path: Config.supportEmail)),
+            child: const Text('Email support', style: TextStyle(color: Tokens.accent))),
+        ]),
+      ]),
+      actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      actions: [
+        SizedBox(width: double.infinity, child: GradientButton(
+          label: 'Pay $amount securely',
+          onPressed: () => Navigator.pop(context, true),
+        )),
+      ],
+    );
+  }
+}
+
 Future<void> _manualSheet(BuildContext context, Map<String, dynamic> o) => showModalBottomSheet<void>(
       context: context,
       backgroundColor: Tokens.surface,
@@ -265,4 +353,3 @@ Future<void> _manualSheet(BuildContext context, Map<String, dynamic> o) => showM
         ]),
       ),
     );
-

@@ -16,5 +16,5 @@ class Config {
   static const authScheme = String.fromEnvironment('AUTH_SCHEME', defaultValue: 'com.pufflecloud.app');
 
   /// Kept in sync with pubspec.yaml; a test fails when they differ.
-  static const versionLabel = '1.0.19';
+  static const versionLabel = '1.0.20';
 }
