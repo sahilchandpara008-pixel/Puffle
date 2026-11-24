@@ -48,5 +48,5 @@ create policy flixvault_reports_admin on public.flixvault_reports
   for select to authenticated using (public.is_admin());
 
 revoke all on public.flixvault_follows, public.flixvault_blocks, public.flixvault_reports from anon;
-grant select, insert, delete on public.flixvault_follows, public.flixvault_blocks to authenticated;
+grant select, insert, update, delete on public.flixvault_follows, public.flixvault_blocks to authenticated;
 grant select, insert on public.flixvault_reports to authenticated;
