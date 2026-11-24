@@ -15,6 +15,13 @@ class Config {
   static const apkReferrer = String.fromEnvironment('APK_REFERRER');
   static const authScheme = String.fromEnvironment('AUTH_SCHEME', defaultValue: 'com.pufflecloud.app');
 
+  /// Puffle's Firebase project (puffle-c343d), used for push notifications.
+  /// These are public client settings, not secrets.
+  static const firebaseApiKey = 'AIzaSyBlILUSyztMiSBVSjauw-5VwCvC4jCQDtI';
+  static const firebaseAppId = '1:749907003567:android:bca6deed3286cbfc56ac5a';
+  static const firebaseSenderId = '749907003567';
+  static const firebaseProjectId = 'puffle-c343d';
+
   /// Kept in sync with pubspec.yaml; a test fails when they differ.
-  static const versionLabel = '1.0.23';
+  static const versionLabel = '1.0.24';
 }

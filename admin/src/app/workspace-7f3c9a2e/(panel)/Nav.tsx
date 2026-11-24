@@ -21,6 +21,9 @@ const groups: { label: string; items: Item[] }[] = [
     { href: "/workspace-7f3c9a2e/payments", label: "Payments", icon: "M3 5h18v14H3z M3 9h18 M7 15h4", count: "payments", owner: true },
     { href: "/workspace-7f3c9a2e/plans", label: "Premium plans", icon: "M3 6l4 12h10l4-12-6 4-3-7-3 7z M7 21h10", owner: true },
   ] },
+  { label: "Engage", items: [
+    { href: "/workspace-7f3c9a2e/notifications", label: "Notifications", icon: "M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9 M13.7 21a2 2 0 0 1-3.4 0", owner: true },
+  ] },
   { label: "Growth", items: [
     { href: "/workspace-7f3c9a2e/analytics", label: "Analytics", icon: "M4 20V10 M10 20V4 M16 20v-8 M22 20H2", owner: true },
     { href: "/workspace-7f3c9a2e/google", label: "Google Ads setup", icon: "M4 20V10 M10 20V4 M16 20v-8 M22 20H2", owner: true },

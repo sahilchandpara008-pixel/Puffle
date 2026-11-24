@@ -37,7 +37,7 @@ class GoogleMeasurement {
    // Firebase warns that swapping app identity can lose analytics. Lock one identity per app release.
    if((bound!=null&&bound!=id)||(_appId!=null&&_appId!=id)){await _disable();return;}
    if(_analytics==null){
-    await Firebase.initializeApp(options:FirebaseOptions(apiKey:data['firebase_api_key'] as String,appId:id,messagingSenderId:data['firebase_sender_id'] as String,projectId:data['firebase_project_id'] as String));
+    if(Firebase.apps.isEmpty)await Firebase.initializeApp(options:FirebaseOptions(apiKey:data['firebase_api_key'] as String,appId:id,messagingSenderId:data['firebase_sender_id'] as String,projectId:data['firebase_project_id'] as String));
     _analytics=FirebaseAnalytics.instance;_appId=id;await p.setString('firebase_identity_${Config.versionLabel}',id);
    }
    await _analytics!.setConsent(analyticsStorageConsentGranted:true,adStorageConsentGranted:true,adUserDataConsentGranted:true,adPersonalizationSignalsConsentGranted:false);

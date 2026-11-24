@@ -6,6 +6,7 @@ import 'screens/consent_gate.dart';
 import 'screens/home_shell.dart';
 import 'services/app_scope.dart';
 import 'services/app_state.dart';
+import 'services/push.dart';
 import 'theme.dart';
 
 Future<void> main() async {
@@ -27,6 +28,8 @@ class PuffleApp extends StatelessWidget {
       child: MaterialApp(
         title: Config.appName,
         debugShowCheckedModeBanner: false,
+        navigatorKey: Push.navigatorKey,
+        scaffoldMessengerKey: Push.messengerKey,
         theme: buildTheme(),
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context).copyWith(textScaler: MediaQuery.textScalerOf(context).clamp(minScaleFactor: .9, maxScaleFactor: 1.1)),

@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config.dart';
 import 'measurement.dart';
+import 'push.dart';
 import 'install_attribution.dart';
 import 'google_measurement.dart';
 import '../models/status.dart';
@@ -50,6 +51,7 @@ class AppState extends ChangeNotifier {
     sb.auth.onAuthStateChange.listen((event) async {
       try { await InstallAttribution.record(); } catch (_) { /* Retry next launch; never interrupt login. */ }
       await refresh();
+      unawaited(Push.register());
       if(event.event==AuthChangeEvent.signedIn||event.event==AuthChangeEvent.userUpdated){await Measurement.instance.start();}
     });
   }

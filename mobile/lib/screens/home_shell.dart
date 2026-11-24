@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/app_scope.dart';
 import '../services/measurement.dart';
+import '../services/push.dart';
 import 'channels_screen.dart';
 import 'cloud_screen.dart';
 import 'explore_screen.dart';
@@ -29,6 +30,12 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Shown only after the first-run consent: ask for notifications once, then
+    // open the video/channel a tapped notification points to.
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await Push.askOnce();
+      await Push.openInitialMessage();
+    });
   }
 
   @override
