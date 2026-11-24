@@ -23,5 +23,5 @@ class Config {
   static const firebaseProjectId = 'puffle-c343d';
 
   /// Kept in sync with pubspec.yaml; a test fails when they differ.
-  static const versionLabel = '1.0.24';
+  static const versionLabel = '1.0.25';
 }

@@ -3,8 +3,9 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <!-- Advertising ID is excluded; optional Firebase measurement starts only after consent. -->
-    <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove" />
+    <!-- Advertising ID: read only after the user allows ad measurement, and only when
+         ad personalisation is not turned off on the phone (Meta ad matching). -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
 
     <queries>
         <intent><action android:name="android.intent.action.VIEW" /><data android:scheme="upi" /></intent>
@@ -58,5 +59,10 @@
         <meta-data android:name="google_analytics_default_allow_ad_user_data" android:value="false" />
         <meta-data android:name="google_analytics_default_allow_ad_personalization_signals" android:value="false" />
         <meta-data android:name="flutterEmbedding" android:value="2" />
+        <!-- Meta SDK (counts installs from Meta ads). Automatic events stay OFF until the
+             user allows ad measurement in the app; MetaIds then switches them on. -->
+        <meta-data android:name="com.facebook.sdk.ApplicationId" android:value="@string/facebook_app_id" />
+        <meta-data android:name="com.facebook.sdk.ClientToken" android:value="@string/facebook_client_token" />
+        <meta-data android:name="com.facebook.sdk.AutoLogAppEventsEnabled" android:value="false" />
     </application>
 </manifest>

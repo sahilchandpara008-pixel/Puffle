@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Meta (Facebook) SDK for Puffle's Meta app. Neither value is a secret:
+         both ship inside every app that uses the SDK. -->
+    <string name="facebook_app_id">1667782231695137</string>
+    <string name="facebook_client_token">CLIENT_TOKEN_NEEDED</string>
+</resources>

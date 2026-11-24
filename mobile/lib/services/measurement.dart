@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'google_measurement.dart';
 import 'install_attribution.dart';
+import 'meta_ids.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -113,6 +114,7 @@ class Measurement extends ChangeNotifier {
   Future<void> _sync() async {
     await _sb.rpc('set_measurement_preferences',params:{'p_analytics':analytics,'p_advertising':advertising,'p_context':await _context()});
     if(advertising){try{await InstallAttribution.record(forceLink:true);}catch(_){/* Attribution never blocks a consent choice. */}}
+    unawaited(MetaIds.sync(allowed: advertising));
   }
   Future<void> save(bool usage, bool ads, [bool googleAds = false]) => _writePreferences(() async {
     await _save(usage, ads, googleAds);
