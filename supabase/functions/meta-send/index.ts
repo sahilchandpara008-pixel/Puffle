@@ -41,7 +41,12 @@ async function flush(){
    if(e.user_id&&!emails.has(e.user_id)){
     const {data}=await admin.auth.admin.getUserById(e.user_id);emails.set(e.user_id,data.user?.email??null);
    }
-   const event=await buildEvent(e as QueuedEvent,e.user_id?emails.get(e.user_id):null);
+   let inst=null;
+   if(e.action_source==="app"&&e.anon_id){
+    const {data}=await admin.from("installs").select("fb_anon_id,ad_id,raw_referrer,referrer_status,attribution_source").eq("install_id",e.anon_id).maybeSingle();
+    inst=data;
+   }
+   const event=await buildEvent(e as QueuedEvent,e.user_id?emails.get(e.user_id):null,Date.now(),inst);
    const response=await graph(s.pixel_id,s.capi_token,{data:[event],...(s.test_event_code?{test_event_code:s.test_event_code}:{})},"/events");
    const status=s.test_event_code?"test_sent":"sent";
    const {error:saveError}=await admin.from("meta_events").update({status,sent_at:new Date().toISOString(),lease_until:null,last_error:null,meta_trace_id:response.fbtrace_id??null,response:{events_received:response.events_received,fbtrace_id:response.fbtrace_id??null}}).eq("id",e.id).eq("status","processing");

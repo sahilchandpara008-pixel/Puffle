@@ -5,7 +5,9 @@ export type QueuedEvent={
  source_url?:string|null;value_inr?:number|string|null;content_name?:string|null;custom_data?:Record<string,unknown>;
 };
 export async function hash(value:string){const bytes=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value));return [...new Uint8Array(bytes)].map(x=>x.toString(16).padStart(2,"0")).join("");}
-export async function buildEvent(e:QueuedEvent,email?:string|null,now=Date.now()){
+// Install details for Meta matching (from public.installs).
+export type InstallIds={fb_anon_id?:string|null;ad_id?:string|null;raw_referrer?:string|null;referrer_status?:string|null;attribution_source?:string|null};
+export async function buildEvent(e:QueuedEvent,email?:string|null,now=Date.now(),inst?:InstallIds|null){
  if(!e.advertising_consent)throw new Error("Advertising permission is required");
  const time=Math.floor(new Date(e.created_at).getTime()/1000);
  if(!Number.isFinite(time)||time>Math.floor(now/1000)+60||time<Math.floor(now/1000)-7*86400)throw new Error("Event is outside the delivery window");
@@ -18,13 +20,23 @@ export async function buildEvent(e:QueuedEvent,email?:string|null,now=Date.now()
  if(e.fbp)user.fbp=e.fbp;
  if(e.user_id)user.external_id=[await hash(e.user_id)];
  if(email?.trim())user.em=[await hash(email.trim().toLowerCase())];
- if(e.action_source==="app"&&e.anon_id)user.anon_id=e.anon_id;
+ if(e.action_source==="app"){
+  // The Meta SDK's install ID when the app sent it, else Puffle's own install ID.
+  const anon=inst?.fb_anon_id||e.anon_id;if(anon)user.anon_id=anon;
+  // Advertising ID (not hashed, as Meta asks); only stored when ad personalisation is on.
+  if(inst?.ad_id&&/^[0-9a-f-]{36}$/.test(inst.ad_id))user.madid=inst.ad_id;
+ }
  const event:Record<string,unknown>={event_name:e.event_name,event_id:e.event_id,event_time:time,action_source:e.action_source,user_data:user};
  if(e.action_source==="app"){
   const data=e.app_data;const ext=data?.extinfo;
   if(!data||!Array.isArray(ext)||ext.length!==16||ext[0]!=="a2"||ext[1]!=="com.pufflecloud.app"||!ext[4]||ext.some(x=>typeof x!=="string"))throw new Error("Valid Android app_data is required");
   if(data.application_tracking_enabled!==1||data.advertiser_tracking_enabled!==1)throw new Error("App advertising permission is disabled");
-  event.app_data={advertiser_tracking_enabled:1,application_tracking_enabled:1,extinfo:ext};
+  const app:Record<string,unknown>={advertiser_tracking_enabled:1,application_tracking_enabled:1,extinfo:ext};
+  // Installed from Google Play through a Meta ad: pass Meta's own click data on.
+  if(inst?.referrer_status==="play_ok"&&inst.attribution_source==="meta"&&inst.raw_referrer){
+   app.install_referrer=inst.raw_referrer.slice(0,2048);app.installer_package="com.android.vending";
+  }
+  event.app_data=app;
  }else if(e.source_url)event.event_source_url=e.source_url;
  const custom:Record<string,unknown>={};
  // A second allowlist prevents arbitrary file names, search text or content IDs from entering advertising payloads.
