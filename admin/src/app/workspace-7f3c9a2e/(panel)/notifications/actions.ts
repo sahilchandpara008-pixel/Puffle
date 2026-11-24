@@ -33,3 +33,23 @@ export async function savePushSettings(fd: FormData) {
   });
   flash(BACK, error, "Automation saved.");
 }
+
+export async function saveAuto(fd: FormData) {
+  const { sb } = await requireAdmin(true);
+  const { error } = await sb.rpc("admin_push_auto_save", {
+    p_kind: str(fd, "kind"), p_enabled: str(fd, "enabled") === "1",
+    p_title: str(fd, "title"), p_body: str(fd, "body"),
+    p_title2: str(fd, "title2") || null, p_body2: str(fd, "body2") || null,
+  });
+  flash(BACK, error, "Automatic message saved.");
+}
+
+export async function saveDaily(fd: FormData) {
+  const { sb } = await requireAdmin(true);
+  const hours = fd.getAll("hours").map((h) => Number(h)).filter((h) => Number.isInteger(h) && h >= 0 && h <= 23);
+  const msgs = fd.getAll("pos").map((p) => ({
+    pos: Number(p), title: str(fd, `title_${p}`), body: str(fd, `body_${p}`), enabled: str(fd, `on_${p}`) === "1",
+  }));
+  const { error } = await sb.rpc("admin_push_daily_save", { p_hours: hours, p_msgs: msgs });
+  flash(BACK, error, "Daily messages saved.");
+}
