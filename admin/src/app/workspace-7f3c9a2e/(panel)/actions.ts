@@ -247,7 +247,7 @@ export async function saveMeta(fd: FormData) {
   if (pixel && !/^\d{5,20}$/.test(pixel)) flash("/workspace-7f3c9a2e/meta", { message: "The Pixel ID is a number of about 15 or 16 digits. Copy it from Events Manager." }, "");
   const {data:old,error:readError}=await sb.from("meta_settings").select("capi_token").eq("id",1).single();
   if(readError)flash(path,readError,"");
-  const website="https://puffle-iota.vercel.app";
+  const website="https://puffle-web.vercel.app";
   const store=str(fd,"store_url")||"https://play.google.com/store/apps/details?id=com.pufflecloud.app";
   if(!/^https:\/\/play\.google\.com\/(store\/apps\/details|apps\/testing)\?id=com\.pufflecloud\.app(?:&[^\s]*)?$/.test(store))flash(path,{message:"Use Puffle's Google Play listing or tester link."},"");
   const patch: Record<string, unknown> = { pixel_id: pixel, test_event_code: str(fd, "test_event_code"), enabled: fd.get("enabled") === "on", updated_at: new Date().toISOString() };

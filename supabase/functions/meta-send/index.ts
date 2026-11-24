@@ -71,7 +71,7 @@ Deno.serve(async req=>{
   }
   if(action==="test"){
    if(!s.enabled||!s.pixel_id||!s.capi_token||!s.test_event_code)return json({ok:false,message:"Save enabled settings and a Meta Test Event Code first. No test is sent as a live purchase."});
-   const event={event_name:"MetaConfigurationTest",event_time:Math.floor(Date.now()/1000),event_id:"puffle-test-"+crypto.randomUUID(),action_source:"website",event_source_url:"https://puffle-iota.vercel.app",
+   const event={event_name:"MetaConfigurationTest",event_time:Math.floor(Date.now()/1000),event_id:"puffle-test-"+crypto.randomUUID(),action_source:"website",event_source_url:"https://puffle-web.vercel.app",
     user_data:{external_id:[await hash("puffle-admin-test")]},custom_data:{currency:"INR",value:1},
     };
    const data=await graph(s.pixel_id,s.capi_token,{data:[event],test_event_code:s.test_event_code},"/events");

@@ -42,7 +42,7 @@ export default async function Meta() {
       <PageHeader title="Meta Pixel" sub="One central configuration for the website Pixel and server-side app events. Replace the Dataset/Pixel ID and token here to change the destination; no app rebuild is needed." />
       <ErrorNote error={ms.error ?? ov.error} />
       <Card title="Your Meta ad link" className="mb-4">
-        <p className="break-all text-sm"><a className="underline" href="https://puffle-iota.vercel.app/get?utm_source=meta&utm_medium=paid_social&utm_campaign=puffle_meta" target="_blank" rel="noreferrer">https://puffle-iota.vercel.app/get?utm_source=meta&amp;utm_medium=paid_social&amp;utm_campaign=puffle_meta</a></p>
+        <p className="break-all text-sm"><a className="underline" href="https://puffle-web.vercel.app/get?utm_source=meta&utm_medium=paid_social&utm_campaign=puffle_meta" target="_blank" rel="noreferrer">https://puffle-web.vercel.app/get?utm_source=meta&amp;utm_medium=paid_social&amp;utm_campaign=puffle_meta</a></p>
         <p className="mt-2 text-sm text-gray-600">Use this landing-page link in your ads. Its Android download button offers the Ads APK. Reuse it as-is, or change only puffle_meta to a different campaign name for separate campaign reporting. Ordinary website visitors receive the Organic APK. The Google Play alternative requires an available Play release.</p>
       </Card>
       <div className="grid gap-4 lg:grid-cols-3">
