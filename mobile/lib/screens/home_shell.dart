@@ -17,6 +17,7 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   int _i = 2;
+  int _searchRequest = 0;
   void _tab(int index) {
     setState(() => _i = index);
     Measurement.instance.track('ScreenView', {
@@ -55,8 +56,8 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     final premiumTab = app.showPremiumEntry && !app.status.isPremium;
     final pages = [
       const CloudScreen(),
-      HomeScreen(onSearch: () => _tab(2), onProfile: () => _tab(4), onSeeAllChannels: () => _tab(3)),
-      const ExploreScreen(),
+      HomeScreen(onSearch: () { _searchRequest++; _tab(2); }, onProfile: () => _tab(4), onSeeAllChannels: () => _tab(3)),
+      ExploreScreen(searchRequest: _searchRequest),
       const ChannelsScreen(),
       const ProfileScreen(),
     ];
@@ -76,4 +77,3 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     );
   }
 }
-

@@ -24,5 +24,27 @@ void main() {
     await t.tap(find.byTooltip('Clear search')); await t.pumpAndSettle();
     expect(find.text('Travel'), findsOneWidget);
   });
-}
 
+  testWidgets('Discover can search available channels before joining', (tester) async {
+    final rows = <Map<String, dynamic>>[
+      {'id': 'one', 'name': 'Power Tools'},
+      {'id': 'two', 'name': 'Travel'},
+    ];
+    await tester.pumpWidget(MaterialApp(home: Builder(builder: (context) => Scaffold(
+      body: TextButton(
+        onPressed: () => showSearch<Map<String, dynamic>?>(
+          context: context,
+          delegate: JoinedChannelSearch(rows: rows, joined: {'one'}, onlyJoined: false),
+        ),
+        child: const Text('Search'),
+      ),
+    ))));
+    await tester.tap(find.text('Search'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'travel');
+    await tester.pumpAndSettle();
+    expect(find.text('Travel'), findsOneWidget);
+    expect(find.text('Power Tools'), findsNothing);
+    expect(find.text('Joined channel'), findsNothing);
+  });
+}

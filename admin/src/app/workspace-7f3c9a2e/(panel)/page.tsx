@@ -18,20 +18,20 @@ export default async function Dashboard() {
   const rows = rowsOf(camp.data);
   const date = new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Kolkata" }).format(new Date());
   return <>
-    <PageHeader title="Workspace overview" sub="A clear view of your content, community and business.">
+    <PageHeader title="Dashboard">
       <LinkButton href="/workspace-7f3c9a2e/posts/bulk" variant="primary">+ Upload content</LinkButton>
     </PageHeader>
-    <section className="admin-welcome mb-7 flex flex-wrap items-center justify-between gap-5 rounded-2xl p-6 sm:p-8">
-      <div><p className="text-[10px] font-semibold uppercase tracking-[.2em] text-teal-200">YOUR PUFFLE WORKSPACE</p><h2 className="mt-3 text-2xl font-semibold tracking-tight text-white sm:text-3xl">Good content starts here.</h2><p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-300">Publish new videos, review channels and keep your community moving.</p></div>
-      <div className="rounded-xl border border-white/15 bg-white/5 px-5 py-4"><p className="text-[10px] uppercase tracking-wider text-slate-400">Today · IST</p><p className="mt-2 text-sm font-medium text-white">{date}</p></div>
-    </section>
+    <p className="mb-5 text-sm text-slate-500">{date} · IST</p>
     {error && <p role="alert" className="mb-5 rounded-xl bg-red-50 p-4 text-sm text-red-700">Could not load overview: {error.message}</p>}
-    {owner && <div className="mb-6 grid gap-2 sm:grid-cols-2">
+    {owner && Object.values(a).some(count => count > 0) && <section aria-labelledby="admin-review-title" className="mb-7">
+      <h2 id="admin-review-title" className="mb-3 text-base font-semibold text-slate-900">Needs attention</h2>
+      <div className="grid gap-2 sm:grid-cols-2">
       <Alert count={a.channel_requests ?? 0} text="channel requests to review" href="/workspace-7f3c9a2e/channels" />
       <Alert count={a.organic_buyers_waiting ?? 0} text="organic users waiting for approval" href="/workspace-7f3c9a2e/approvals" />
       <Alert count={a.payments_to_verify ?? 0} text="payments to verify today" href="/workspace-7f3c9a2e/payments?verify=today" />
       <Alert count={a.open_requests ?? 0} text="open requests and reports" href="/workspace-7f3c9a2e/requests" />
-    </div>}
+      </div>
+    </section>}
     {owner && <div className="mb-5 grid grid-cols-2 gap-4 xl:grid-cols-4">
       <Stat label="Total app users" value={n(s.users)} />
       <Stat label="Premium members" value={n(s.premium_users)} />

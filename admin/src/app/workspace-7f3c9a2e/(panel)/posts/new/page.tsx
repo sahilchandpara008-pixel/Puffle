@@ -3,6 +3,7 @@ import { PageHeader, Card, LinkButton, Empty } from "@/components/admin/ui";
 import { SubmitButton } from "@/components/admin/client";
 import { createPost } from "../../actions";
 import PostFields from "../PostFields";
+import UploadModeNav from "../UploadModeNav";
 
 export default async function NewPost() {
   const { sb, role, user } = await requireAdmin();
@@ -13,6 +14,7 @@ export default async function NewPost() {
   return (
     <>
       <PageHeader title="New post" sub="Save the details first, then add the video on the next screen."><LinkButton href="/workspace-7f3c9a2e/posts">Back to posts</LinkButton></PageHeader>
+      <UploadModeNav active="single" />
       {(channels ?? []).length === 0 ? <Empty>Create and approve a channel first. Posts live inside channels.</Empty> : (
         <Card className="max-w-2xl">
           <form action={createPost} className="space-y-3">

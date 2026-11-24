@@ -14,6 +14,7 @@ import '../services/playback_access.dart';
 import '../services/measurement.dart';
 import '../theme.dart';
 import '../widgets/ui.dart';
+import 'channel_page.dart';
 import 'login_sheet.dart';
 import 'premium_screen.dart';
 
@@ -82,7 +83,7 @@ class _PostPageState extends State<PostPage> {
 
   Future<void> _load() async {
     try {
-      final p = await sb.from('posts').select('id,title,description,channel_id').eq('id', _postId).maybeSingle();
+      final p = await sb.from('posts').select('id,title,description,channel_id,channels(name)').eq('id', _postId).maybeSingle();
       final items = await sb.from('post_items').select('id,media_key,trailer_key,thumbnail_key,mime,is_premium,duration_s').eq('post_id', _postId).order('position');
       final tk = items.isEmpty ? null : items.first['thumbnail_key'] as String?;
       final poster = tk == null ? null : await _signed(tk, 'thumbnail');
@@ -97,7 +98,7 @@ class _PostPageState extends State<PostPage> {
         Measurement.instance.track('ViewContent',{'screen':'Post'});
         try {
           // RLS enforces approval, channel visibility and audience for every suggestion.
-          const fields = 'id,title,channel_id,status,hidden,channels(name),post_items(thumbnail_key,is_premium)';
+          const fields = 'id,title,channel_id,status,hidden,channels(name),post_items(thumbnail_key,is_premium,duration_s)';
           final same = await sb.from('posts').select(fields).eq('channel_id', p['channel_id']).neq('id', _postId).eq('status', 'published').eq('hidden', false).order('created_at', ascending: false).limit(6);
           final other = await sb.from('posts').select(fields).neq('channel_id', p['channel_id']).eq('status', 'published').eq('hidden', false).order('created_at', ascending: false).limit(6);
           final keys = <String>{
@@ -318,6 +319,11 @@ class _PostPageState extends State<PostPage> {
     final playing = vc != null && vc.value.isInitialized;
     final fs = playing && MediaQuery.orientationOf(context) == Orientation.landscape;
     _syncUi(fs);
+    final channelId = p?['channel_id'] as String?;
+    final channel = (p?['channels'] as Map?)?['name'] as String?;
+    final first = _items.isEmpty ? null : _items.first;
+    final canOpen = first != null && !_opening;
+    final isImage = (first?['mime'] as String? ?? '').startsWith('image/');
     if (fs) {
       return PopScope(
         canPop: false,
@@ -329,8 +335,9 @@ class _PostPageState extends State<PostPage> {
       );
     }
     return Scaffold(
-      appBar: AppBar(title: Text(p?['title'] ?? '', maxLines: 1, overflow: TextOverflow.ellipsis), actions: [
+      appBar: AppBar(title: const Text('Video details'), actions: [
         PopupMenuButton<String>(
+          enabled: p != null,
           onSelected: (v) => v == 'report' ? _report() : _block(),
           itemBuilder: (_) => const [PopupMenuItem(value: 'report', child: Text('Report')), PopupMenuItem(value: 'block', child: Text('Block channel'))],
         ),
@@ -356,9 +363,13 @@ class _PostPageState extends State<PostPage> {
                         ]),
                       ),
                   ] else if (_items.isNotEmpty)
-                    GestureDetector(
-                      onTap: _opening ? null : () => _play(_items.first),
-                      child: Stack(alignment: Alignment.center, children: [
+                    Semantics(
+                      button: true,
+                      label: isImage ? 'View image' : 'Play video',
+                      child: InkWell(
+                        onTap: first == null || !canOpen ? null : () => _play(first),
+                        borderRadius: BorderRadius.circular(16),
+                        child: Stack(alignment: Alignment.center, children: [
                         VideoThumb(url: _poster, premium: _items.first['is_premium'] == true, seconds: _items.first['duration_s'] as int?),
                         if (_opening)
                           const CircularProgressIndicator()
@@ -366,15 +377,35 @@ class _PostPageState extends State<PostPage> {
                           Container(
                             decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
                             padding: const EdgeInsets.all(12),
-                            child: Icon((_items.first['mime'] as String? ?? '').startsWith('image/') ? Icons.image_outlined : Icons.play_arrow_rounded, size: 42, color: Colors.white, semanticLabel: (_items.first['mime'] as String? ?? '').startsWith('image/') ? 'View image' : 'Play'),
+                            child: Icon(isImage ? Icons.image_outlined : Icons.play_arrow_rounded, size: 42, color: Colors.white),
                           ),
-                      ]),
+                        ]),
+                      ),
                     ),
                   const SizedBox(height: 14),
-                  Text((p['title'] as String?) ?? '', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-                  if (((p['description'] as String?) ?? '').isNotEmpty)
-                    Padding(padding: const EdgeInsets.only(top: 6), child: Text(p['description'] as String, style: const TextStyle(color: Tokens.muted, fontSize: 13, height: 1.4))),
-                  const SizedBox(height: 14),
+                  Text((p['title'] as String?) ?? '', style: Theme.of(context).textTheme.headlineSmall),
+                  if (((p['description'] as String?) ?? '').trim().isNotEmpty)
+                    _PostDescription(key: ValueKey(_postId), description: p['description'] as String),
+                  if (!playing && _imageUrl == null && first != null) ...[
+                    const SizedBox(height: 12),
+                    FilledButton.icon(
+                      onPressed: _opening ? null : () => _play(first),
+                      icon: Icon(isImage ? Icons.image_outlined : Icons.play_arrow_rounded),
+                      label: Text(isImage ? 'View image' : 'Play'),
+                    ),
+                  ],
+                  if (channelId != null && channel != null) ...[
+                    const SizedBox(height: 12),
+                    Card(child: ListTile(
+                      leading: InitialAvatar(name: channel, size: 38),
+                      title: Text(channel, maxLines: 1, overflow: TextOverflow.ellipsis),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: () => Navigator.push(context, MaterialPageRoute(
+                        builder: (_) => ChannelPage(channelId: channelId, name: channel),
+                      )),
+                    )),
+                  ],
+                  const SizedBox(height: 16),
                   if (_items.isEmpty && ((p['description'] as String?) ?? '').isEmpty) const EmptyState(icon: Icons.hourglass_empty_rounded, title: 'No video yet', message: 'The creator has not added a video to this post.'),
                   if (_suggestions.isNotEmpty) ...[
                     const Text('Up next', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
@@ -394,6 +425,7 @@ class _PostPageState extends State<PostPage> {
                           title: video['title'] as String? ?? 'Video',
                           channel: video['channel_id'] == p['channel_id'] ? 'From this channel' : ((video['channels'] as Map?)?['name'] as String? ?? 'Another channel'),
                           url: thumbnail,
+                          seconds: items.isEmpty ? null : (items.first as Map)['duration_s'] as int?,
                           premium: items.any((item) => item['is_premium'] == true),
                           onTap: () => _switchVideo(video['id'] as String),
                         );
@@ -417,6 +449,41 @@ class _PostPageState extends State<PostPage> {
                 ]),
     );
   }
+}
+
+class _PostDescription extends StatefulWidget {
+  const _PostDescription({super.key, required this.description});
+  final String description;
+
+  @override
+  State<_PostDescription> createState() => _PostDescriptionState();
+}
+
+class _PostDescriptionState extends State<_PostDescription> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(builder: (context, constraints) {
+    const style = TextStyle(color: Tokens.muted, fontSize: 13, height: 1.4);
+    final painter = TextPainter(
+      text: TextSpan(text: widget.description, style: style),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      maxLines: 3,
+    )..layout(maxWidth: constraints.maxWidth);
+    final canExpand = painter.didExceedMaxLines;
+    painter.dispose();
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const SizedBox(height: 6),
+      Text(widget.description, style: style,
+        maxLines: _expanded ? null : 3, overflow: _expanded ? null : TextOverflow.ellipsis),
+      if (canExpand)
+        TextButton(
+          onPressed: () => setState(() => _expanded = !_expanded),
+          child: Text(_expanded ? 'See less' : 'See more', style: const TextStyle(color: Tokens.accent)),
+        ),
+    ]);
+  });
 }
 
 /// Puffle player with accessible transport controls and gesture shortcuts.
@@ -774,5 +841,3 @@ class _PlayerState extends State<_Player> {
         );
       });
 }
-
-

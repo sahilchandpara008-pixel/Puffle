@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../services/app_scope.dart';
@@ -6,14 +8,16 @@ import '../services/stream_media.dart';
 import '../services/measurement.dart';
 import '../theme.dart';
 import '../widgets/ui.dart';
+import 'channel_page.dart';
 import 'post_page.dart';
 import 'premium_screen.dart';
 
 /// Shared post list used by Explore (all) and Feed (joined channels).
 class PostList extends StatefulWidget {
-  const PostList({super.key, this.joinedOnly = false, this.category, this.query = '', this.channelId});
+  const PostList({super.key, this.joinedOnly = false, this.category, this.query = '', this.channelId, this.onDiscover});
   final bool joinedOnly;
   final String? channelId;
+  final VoidCallback? onDiscover;
   final String? category;
   final String query;
   @override
@@ -43,6 +47,7 @@ class _PostListState extends State<PostList> {
   final _thumbs = <String, String>{};
   bool _loading = true, _more = true, _fetching = false;
   int _gen = 0;
+  bool _failed = false;
   static const _page = 20;
 
   @override
@@ -61,7 +66,7 @@ class _PostListState extends State<PostList> {
     if (_fetching && !reset) return;
     _fetching = true;
     final gen = ++_gen;
-    if (reset) { _rows.clear(); _more = true; }
+    if (reset) { _rows.clear(); _thumbs.clear(); _more = true; _failed = false; }
     if (mounted) setState(() => _loading = true);
     try {
       // Hidden / wrong-audience rows are never returned: that is enforced by RLS, not here.
@@ -70,6 +75,7 @@ class _PostListState extends State<PostList> {
         final uid = sb.auth.currentUser?.id;
         final m = uid == null ? [] : await sb.from('channel_members').select('channel_id').eq('user_id', uid);
         joined = [for (final r in m) r['channel_id'] as String];
+        if (gen != _gen || !mounted) return;
         if (joined.isEmpty) { _more = false; _fetching = false; if (mounted) setState(() => _loading = false); return; }
       }
       // !inner so a category filter really filters the posts (not just the embedded channel).
@@ -79,15 +85,15 @@ class _PostListState extends State<PostList> {
       if (widget.category != null) q = q.eq('channels.category', widget.category!);
       if (joined != null) q = q.inFilter('channel_id', joined);
       if (widget.query.trim().isNotEmpty) q = q.ilike('title', '%${widget.query.trim().replaceAll('%', '')}%');
-      final data = await q.order('created_at', ascending: false).range(_rows.length, _rows.length + _page - 1);
-      if (gen != _gen) return; // a newer search/filter replaced this one
+      final data = await q.order('created_at', ascending: false).order('id').range(_rows.length, _rows.length + _page - 1);
+      if (gen != _gen || !mounted) return;
       final fresh = List<Map<String, dynamic>>.from(data);
+      await _signThumbs(fresh, gen);
+      if (gen != _gen || !mounted) return;
       _rows.addAll(fresh);
-      await _signThumbs(fresh);
-      if (gen != _gen) return;
       _more = data.length == _page;
     } catch (_) {
-      if (gen == _gen) _more = false;
+      if (gen == _gen) { _failed = true; _more = false; }
     }
     if (gen != _gen) return;
     _fetching = false;
@@ -102,14 +108,15 @@ class _PostListState extends State<PostList> {
   }
 
   /// Short-lived links for the thumbnails on this page. Posts without a thumbnail just show the placeholder.
-  Future<void> _signThumbs(List<Map<String, dynamic>> rows) async {
+  Future<void> _signThumbs(List<Map<String, dynamic>> rows, int generation) async {
     final keys = <String>{
       for (final r in rows)
         if (_first(r)?['thumbnail_key'] is String) _first(r)!['thumbnail_key'] as String,
     }..removeAll(_thumbs.keys);
     if (keys.isEmpty) return;
     try {
-      _thumbs.addAll(await signMedia(keys, kind: 'thumbnail'));
+      final links = await signMedia(keys, kind: 'thumbnail');
+      if (mounted && generation == _gen) _thumbs.addAll(links);
     } catch (_) {/* cards fall back to the placeholder */}
   }
 
@@ -121,7 +128,20 @@ class _PostListState extends State<PostList> {
     return RefreshIndicator(
       onRefresh: () => _load(reset: true),
       child: _rows.isEmpty
-          ? ListView(physics: const AlwaysScrollableScrollPhysics(), children: [const SizedBox(height: 40), EmptyState(icon: Icons.video_library_outlined, title: widget.query.isNotEmpty ? 'No results' : 'No posts yet', message: widget.query.isNotEmpty ? 'Try a different word.' : 'New videos will show up here.')])
+          ? ListView(physics: const AlwaysScrollableScrollPhysics(), children: [
+              const SizedBox(height: 24),
+              if (_failed)
+                EmptyState(icon: Icons.cloud_off_outlined, title: 'Could not load videos',
+                  message: 'Check your connection and try again.', actionLabel: 'Retry', onAction: () => _load(reset: true))
+              else if (widget.query.isNotEmpty)
+                const EmptyState(icon: Icons.search_off_rounded, title: 'No matching videos', message: 'Try another title or clear your filters.')
+              else if (widget.joinedOnly)
+                EmptyState(icon: Icons.video_library_outlined, title: 'Your feed is empty',
+                  message: 'Videos from channels you join will appear here.',
+                  actionLabel: 'Discover channels', onAction: widget.onDiscover)
+              else
+                const EmptyState(icon: Icons.video_library_outlined, title: 'No videos here yet', message: 'Try another category or check back later.'),
+            ])
           : VideoGrid(
               itemCount: _rows.length + (_more ? 1 : 0),
               itemBuilder: (_, i) {
@@ -157,24 +177,79 @@ class _Skeleton extends StatelessWidget {
 }
 
 class ExploreScreen extends StatefulWidget {
-  const ExploreScreen({super.key});
+  const ExploreScreen({super.key, this.searchRequest = 0});
+  final int searchRequest;
   @override
   State<ExploreScreen> createState() => _ExploreScreenState();
 }
 
 class _ExploreScreenState extends State<ExploreScreen> {
+  final _search = TextEditingController();
+  final _focus = FocusNode();
+  Timer? _debounce;
   String? _cat;
   String _q = '';
+  bool _showSearch = false;
+  bool _searchChannels = false;
   static const cats = ['Movies', 'Music', 'Education', 'Gaming', 'Lifestyle', 'Tech', 'Other'];
+
+  void _updateQuery(String value) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      if (mounted) setState(() => _q = value.trim());
+    });
+  }
+
+  @override
+  void didUpdateWidget(ExploreScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.searchRequest != oldWidget.searchRequest) {
+      _showSearch = true;
+      _focusSearch();
+    }
+  }
+
+  void _focusSearch() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _showSearch) _focus.requestFocus();
+    });
+  }
+
+  void _toggleSearch() {
+    _debounce?.cancel();
+    setState(() {
+      _showSearch = !_showSearch;
+      if (!_showSearch) {
+        _search.clear();
+        _q = '';
+        _searchChannels = false;
+      }
+    });
+    if (_showSearch) _focusSearch();
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _search.dispose();
+    _focus.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final app = AppScope.of(context);
-    return Column(children: [
+    final status = app.status;
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 8, 0),
+        padding: const EdgeInsets.fromLTRB(16, 12, 8, 4),
         child: Row(children: [
-          const Expanded(child: Text('Explore', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700))),
+          const Expanded(child: Text('Explore', style: TextStyle(fontSize: 27, fontWeight: FontWeight.w700))),
+          IconButton(
+            tooltip: _showSearch ? 'Close search' : 'Search videos and channels',
+            icon: Icon(_showSearch ? Icons.close_rounded : Icons.search_rounded),
+            onPressed: _toggleSearch,
+          ),
           if (app.showPremiumEntry)
             IconButton(
               tooltip: 'Premium',
@@ -183,29 +258,108 @@ class _ExploreScreenState extends State<ExploreScreen> {
             ),
         ]),
       ),
-      Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-        child: TextField(
-          key: const Key('explore_search'),
-          textInputAction: TextInputAction.search,
-          decoration: const InputDecoration(hintText: 'Search videos', prefixIcon: Icon(Icons.search), isDense: true),
-          onSubmitted: (v) {setState(() => _q = v);if(v.trim().isNotEmpty)Measurement.instance.track('SearchUsed');},
+      if (_showSearch) ...[
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+          child: TextField(
+            key: const Key('explore_search'),
+            controller: _search,
+            focusNode: _focus,
+            textInputAction: TextInputAction.search,
+            decoration: const InputDecoration(hintText: 'Search videos and channels', prefixIcon: Icon(Icons.search), isDense: true),
+            onChanged: _updateQuery,
+            onSubmitted: (value) {
+              _debounce?.cancel();
+              setState(() => _q = value.trim());
+              if (_q.isNotEmpty) Measurement.instance.track('SearchUsed');
+            },
+          ),
         ),
-      ),
-      SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        child: Row(children: [
-          for (final c in [null, ...cats])
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 4),
-              child: ChoiceChip(visualDensity: VisualDensity.compact, label: Text(c ?? 'All', style: const TextStyle(fontSize: 13)), selected: _cat == c, onSelected: (_) => setState(() => _cat = c)),
-            ),
-        ]),
-      ),
-      Expanded(child: PostList(category: _cat, query: _q)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Wrap(spacing: 8, children: [
+            ChoiceChip(label: const Text('Videos'), selected: !_searchChannels, onSelected: (_) => setState(() => _searchChannels = false)),
+            ChoiceChip(label: const Text('Channels'), selected: _searchChannels, onSelected: (_) => setState(() => _searchChannels = true)),
+          ]),
+        ),
+      ],
+      if (!_searchChannels)
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: Row(children: [
+            for (final c in [null, ...cats])
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: ChoiceChip(visualDensity: VisualDensity.compact, label: Text(c ?? 'All videos'), selected: _cat == c, onSelected: (_) => setState(() => _cat = c)),
+              ),
+          ]),
+        ),
+      Expanded(child: _searchChannels
+          ? _ExploreChannelResults(
+              key: ValueKey((status.raw['user_id'], status.source, status.isGuest, status.isPremium, status.hasAdsAccess, status.accessStatus)),
+              query: _q,
+            )
+          : PostList(category: _cat, query: _q)),
     ]);
   }
 }
 
+class _ExploreChannelResults extends StatefulWidget {
+  const _ExploreChannelResults({super.key, required this.query});
+  final String query;
 
+  @override
+  State<_ExploreChannelResults> createState() => _ExploreChannelResultsState();
+}
+
+class _ExploreChannelResultsState extends State<_ExploreChannelResults> {
+  late Future<List<Map<String, dynamic>>> _matches = _load();
+
+  @override
+  void didUpdateWidget(_ExploreChannelResults oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.query != oldWidget.query) _matches = _load();
+  }
+
+  Future<List<Map<String, dynamic>>> _load() async {
+    final term = widget.query.replaceAll('%', '').replaceAll('_', '');
+    if (term.isEmpty) return [];
+    return sb.from('channels').select('id,name,category')
+        .ilike('name', '%$term%').order('name').limit(30);
+  }
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder(
+    future: _matches,
+    builder: (context, snapshot) {
+      if (snapshot.connectionState != ConnectionState.done) return const Center(child: CircularProgressIndicator());
+      if (snapshot.hasError) {
+        return ListView(children: [EmptyState(icon: Icons.cloud_off_outlined, title: 'Could not load channels',
+          actionLabel: 'Retry', onAction: () => setState(() => _matches = _load()))]);
+      }
+      final results = snapshot.data ?? [];
+      if (results.isEmpty) {
+        return ListView(children: [EmptyState(icon: Icons.search_rounded,
+          title: widget.query.isEmpty ? 'Search for a channel' : 'No matching channels')]);
+      }
+      return ListView.separated(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        itemCount: results.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 8),
+        itemBuilder: (context, index) {
+          final row = results[index];
+          final name = row['name'] as String? ?? '';
+          final category = row['category'] as String?;
+          return Card(child: ListTile(
+            leading: InitialAvatar(name: name),
+            title: Text(name, maxLines: 2, overflow: TextOverflow.ellipsis),
+            subtitle: category == null || category.isEmpty ? null : Text(category),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChannelPage(channelId: row['id'] as String, name: name))),
+          ));
+        },
+      );
+    },
+  );
+}

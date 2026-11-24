@@ -6,6 +6,7 @@ import '../services/stream_media.dart';
 import '../theme.dart';
 import '../widgets/ui.dart';
 import 'channel_page.dart';
+import 'explore_screen.dart';
 import 'post_page.dart';
 
 /// Home: channels row + latest posts grid. Hidden / wrong-audience rows never come back (RLS).
@@ -39,6 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> _posts = [];
   final Map<String, String> _thumbs = {};
   bool _loading = true;
+  bool _following = false;
 
   @override
   void initState() {
@@ -89,72 +91,84 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final app = AppScope.of(context);
-    return RefreshIndicator(
-      onRefresh: _load,
-      child: ListView(physics: const AlwaysScrollableScrollPhysics(), padding: const EdgeInsets.fromLTRB(16, 16, 16, 24), children: [
+    final header = Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          ClipRRect(borderRadius: BorderRadius.circular(14), child: Image.asset('assets/icon.png', width: 44, height: 44)),
-          const SizedBox(width: 12),
-          const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Puffle', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700)), Text('Your cloud & channels', style: TextStyle(color: Tokens.muted, fontSize: 12))])),
-          _SquareButton(key: const Key('home_search'), onTap: widget.onSearch, child: const Icon(Icons.search)),
-          const SizedBox(width: 10),
-          _SquareButton(key: const Key('home_avatar'), onTap: widget.onProfile, child: Text(_initial(app), style: const TextStyle(color: Tokens.primary, fontWeight: FontWeight.w700, fontSize: 16))),
+          const Expanded(child: Text('Feed', style: TextStyle(fontSize: 27, fontWeight: FontWeight.w700))),
+          _SquareButton(key: const Key('home_search'), onTap: widget.onSearch, child: const Icon(Icons.search, semanticLabel: 'Explore search')),
+          const SizedBox(width: 8),
+          _SquareButton(key: const Key('home_avatar'), onTap: widget.onProfile, child: Text(_initial(app), semanticsLabel: 'Account', style: const TextStyle(color: Tokens.accent, fontWeight: FontWeight.w700, fontSize: 16))),
         ]),
-        const SizedBox(height: 12),
-        TextButton.icon(onPressed: widget.onSearch, icon: const Icon(Icons.explore_outlined, color: Tokens.accent), label: const Text('Find your next watch', style: TextStyle(color: Tokens.accent))),
-        const SizedBox(height: 12),
-        Row(children: [
-          const Expanded(child: Text('Channels', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600))),
-          TextButton(style: TextButton.styleFrom(visualDensity: VisualDensity.compact, padding: const EdgeInsets.symmetric(horizontal: 8)), onPressed: widget.onSeeAllChannels, child: const Text('See all', style: TextStyle(color: Tokens.accent, fontSize: 13))),
+        const SizedBox(height: 10),
+        Wrap(spacing: 8, children: [
+          ChoiceChip(label: const Text('Latest'), selected: !_following, onSelected: (_) => setState(() => _following = false)),
+          ChoiceChip(label: const Text('Following'), selected: _following, onSelected: (_) => setState(() => _following = true)),
         ]),
-        SizedBox(
-          height: 104 * (MediaQuery.textScalerOf(context).scale(12) / 12),
-          child: _channels.isEmpty
-              ? Center(child: Text(_loading ? '' : 'No channels yet', style: const TextStyle(color: Tokens.muted)))
-              : ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _channels.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 12),
-                  itemBuilder: (_, i) {
-                    final name = (_channels[i]['name'] as String?) ?? '';
-                    return GestureDetector(
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChannelPage(channelId: _channels[i]['id'] as String, name: name))),
-                      child: SizedBox(width: 80, child: Column(children: [
-                        InitialAvatar(name: name, size: 52),
-                        const SizedBox(height: 4),
-                        Text(name, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Tokens.muted, fontSize: 12)),
-                      ])),
-                    );
-                  },
-                ),
-        ),
-        const SizedBox(height: 10),
-        const Text('Latest', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 10),
-        if (_loading)
-          const Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator()))
-        else if (_posts.isEmpty)
-          const EmptyState(icon: Icons.movie_outlined, title: 'No shows yet', message: 'New videos from channels will appear here.')
-        else
-          Padding(padding: const EdgeInsets.symmetric(horizontal: 0), child: VideoGrid(
-            padding: const EdgeInsets.only(top: 8, bottom: 24),
-            shrinkWrap: true,
-            itemCount: _posts.length,
-            itemBuilder: (_, i) {
-              final post = _posts[i];
-              final items = (post['post_items'] as List?) ?? const [];
-              return VideoCard(
-                title: post['title'] as String? ?? '',
-                channel: (post['channels'] as Map?)?['name'] as String? ?? '',
-                url: _thumbFor(post),
-                seconds: items.isEmpty ? null : (items.first as Map)['duration_s'] as int?,
-                premium: items.any((item) => item['is_premium'] == true),
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PostPage(postId: post['id'] as String))),
-              );
-            },
-          )),
       ]),
     );
+    return Column(children: [
+      header,
+      Expanded(
+        child: _following
+            ? PostList(joinedOnly: true, onDiscover: widget.onSeeAllChannels)
+            : RefreshIndicator(
+                onRefresh: _load,
+                child: ListView(physics: const AlwaysScrollableScrollPhysics(), padding: const EdgeInsets.fromLTRB(16, 4, 16, 24), children: [
+                  Row(children: [
+                    const Expanded(child: Text('Channels', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600))),
+                    TextButton(style: TextButton.styleFrom(visualDensity: VisualDensity.compact, padding: const EdgeInsets.symmetric(horizontal: 8)), onPressed: widget.onSeeAllChannels, child: const Text('See all', style: TextStyle(color: Tokens.accent, fontSize: 13))),
+                  ]),
+                  SizedBox(
+                    height: 104 * (MediaQuery.textScalerOf(context).scale(12) / 12),
+                    child: _channels.isEmpty
+                        ? Center(child: Text(_loading ? '' : 'No channels yet', style: const TextStyle(color: Tokens.muted)))
+                        : ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: _channels.length,
+                            separatorBuilder: (_, __) => const SizedBox(width: 12),
+                            itemBuilder: (_, i) {
+                              final name = (_channels[i]['name'] as String?) ?? '';
+                              return GestureDetector(
+                                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChannelPage(channelId: _channels[i]['id'] as String, name: name))),
+                                child: SizedBox(width: 80, child: Column(children: [
+                                  InitialAvatar(name: name, size: 52),
+                                  const SizedBox(height: 4),
+                                  Text(name, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Tokens.muted, fontSize: 12)),
+                                ])),
+                              );
+                            },
+                          ),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text('Latest videos', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 10),
+                  if (_loading)
+                    const Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator()))
+                  else if (_posts.isEmpty)
+                    const EmptyState(icon: Icons.movie_outlined, title: 'No shows yet', message: 'New videos from channels will appear here.')
+                  else
+                    Padding(padding: const EdgeInsets.symmetric(horizontal: 0), child: VideoGrid(
+                      padding: const EdgeInsets.only(top: 8, bottom: 24),
+                      shrinkWrap: true,
+                      itemCount: _posts.length,
+                      itemBuilder: (_, i) {
+                        final post = _posts[i];
+                        final items = (post['post_items'] as List?) ?? const [];
+                        return VideoCard(
+                          title: post['title'] as String? ?? '',
+                          channel: (post['channels'] as Map?)?['name'] as String? ?? '',
+                          url: _thumbFor(post),
+                          seconds: items.isEmpty ? null : (items.first as Map)['duration_s'] as int?,
+                          premium: items.any((item) => item['is_premium'] == true),
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PostPage(postId: post['id'] as String))),
+                        );
+                      },
+                    )),
+                ]),
+              ),
+      ),
+    ]);
   }
 }
 
@@ -169,4 +183,3 @@ class _SquareButton extends StatelessWidget {
         child: Container(width: 44, height: 44, decoration: BoxDecoration(color: Tokens.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: Tokens.border)), alignment: Alignment.center, child: child),
       );
 }
-

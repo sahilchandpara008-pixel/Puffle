@@ -37,7 +37,7 @@ body { @apply bg-bg text-white font-sans antialiased; }
 .admin-brand-mark { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 13px; background: #187c7b; color: #d6fffa; box-shadow: 0 4px 14px #0002; }
 .admin-brand-caption { display: block; margin-top: 2px; font-size: 8px; font-weight: 500; letter-spacing: 2px; color: #8199a1; }
 .admin-nav { display: flex; gap: 8px; overflow-x: auto; }
-.admin-nav-group { display: flex; gap: 4px; }
+.admin-nav-group, .admin-nav-items { display: flex; gap: 4px; }
 .admin-nav-label { display: none; }
 .admin-nav-link { display: flex; align-items: center; gap: 11px; padding: 11px 12px; border-radius: 10px; white-space: nowrap; font-size: 12px; font-weight: 500; color: #a6bbc3; transition: background .15s, color .15s; }
 .admin-nav-link:hover { color: #fff; background: #ffffff0a; }
@@ -76,7 +76,7 @@ body { @apply bg-bg text-white font-sans antialiased; }
 @media (min-width: 768px) {
   .admin-sidebar { position: fixed; inset: 0 auto 0 0; z-index: 30; display: flex; width: 248px; flex-direction: column; }
   .admin-nav { min-height: 0; flex: 1; flex-direction: column; gap: 18px; overflow-x: hidden; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #3c555c transparent; padding: 0 3px; }
-  .admin-nav-group { display: flex; flex-direction: column; gap: 4px; }
+  .admin-nav-group, .admin-nav-items { flex-direction: column; }
   .admin-nav-label { display: block; padding: 0 12px; margin-bottom: 5px; font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.6px; color: #718f99; }
   .admin-main { margin-left: 248px; }
   .admin-account { display: block; padding: 18px 6px 0; margin-top: 20px; border-top: 1px solid #29414a; }
@@ -129,3 +129,20 @@ body { @apply bg-bg text-white font-sans antialiased; }
 .privacy-choice .btn-ghost { color:#d4e3e9; border-color:#486470; }
 @media(max-width:640px){.site-preview{transform:none;}.privacy-choice{padding:18px;bottom:12px;}}
 
+
+/* Preserve grouped navigation on narrow admin screens. */
+@media (max-width: 767px) {
+  .admin-sidebar { padding: 14px 12px 8px; }
+  .admin-brand { padding: 0 4px 10px; }
+  .admin-nav { padding: 4px; scroll-padding: 4px; }
+  .admin-nav-group {
+    flex: 0 0 auto;
+    flex-direction: column;
+    padding-right: 8px;
+    border-right: 1px solid #29414a;
+  }
+  .admin-nav-label { display: block; padding: 0 10px; font-size: 10px; color: #a6bbc3; }
+  .admin-nav-link { gap: 8px; padding: 9px 10px; }
+  .admin-topbar { min-height: 52px; padding: 10px 16px; }
+  .admin-content { padding: 20px 16px; }
+}
