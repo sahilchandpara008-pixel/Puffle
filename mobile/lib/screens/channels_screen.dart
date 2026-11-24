@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../services/app_scope.dart';
-import '../services/app_state.dart';
+import '../services/flixvault.dart';
 import '../services/measurement.dart';
 import '../theme.dart';
 import '../widgets/ui.dart';
 import 'channel_page.dart';
 import 'login_sheet.dart';
-import 'premium_screen.dart';
 
 class ChannelsScreen extends StatefulWidget {
   const ChannelsScreen({super.key, this.standalone = false});
@@ -56,17 +54,12 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
   Future<void> _load() async {
     final generation = ++_loadGeneration;
     try {
-      // RLS returns only approved, visible, audience-matching channels (plus the user's own pending ones).
-      final uid = sb.auth.currentUser?.id;
-      final data = await sb.from('channels').select('id,name,description,category,members_count,review_status,created_by,created_at').order('members_count', ascending: false);
-      final memberships = uid == null
-          ? <Map<String, dynamic>>[]
-          : await sb.from('channel_members').select('channel_id').eq('user_id', uid);
+      // Flixvault channels this user may see (its server applies ads/organic); follows are Puffle's own.
+      final data = await Flixvault.channels();
+      final follows = await Flixvault.followedIds();
       if (!mounted || generation != _loadGeneration) return;
-      _joined = {for (final row in memberships) row['channel_id'] as String};
-      _rows = widget.standalone
-          ? data.where((row) => (uid != null && row['created_by'] == uid) || _joined.contains(row['id'])).toList()
-          : data;
+      _joined = follows;
+      _rows = widget.standalone ? data.where((row) => _joined.contains(row['id'])).toList() : data;
     } catch (_) {}
     if (mounted && generation == _loadGeneration) setState(() => _loading = false);
   }
@@ -75,34 +68,12 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
     if (!await requireAccount(context) || !mounted) return;
     final messenger = ScaffoldMessenger.of(context);
     try {
-      final uid = sb.auth.currentUser!.id;
-      if (_joined.contains(id)) {
-        await sb.from('channel_members').delete().eq('channel_id', id).eq('user_id', uid);
-      } else {
-        await sb.from('channel_members').insert({'channel_id': id, 'user_id': uid});
-        Measurement.instance.track('ChannelJoined');
-      }
+      final follow = !_joined.contains(id);
+      await Flixvault.setFollowing(id, follow);
+      if (follow) Measurement.instance.track('ChannelJoined');
     } catch (_) {
       messenger.showSnackBar(const SnackBar(content: Text('Could not update. Please try again.')));
     }
-    await _load();
-  }
-
-  Future<void> _create() async {
-    final app = AppScope.of(context);
-    if (!app.status.isPremium) {
-      await Navigator.push(context, MaterialPageRoute(builder: (_) => const PremiumScreen()));
-      return;
-    }
-    if (!await requireAccount(context) || !mounted) return;
-    final ok = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (_) => const _CreateChannelSheet(),
-    );
-    if (ok != true || !mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Channel created and sent for approval. The admin will choose who can see it.')));
     await _load();
   }
 
@@ -137,7 +108,6 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
         automaticallyImplyLeading: widget.standalone,
         actions: [IconButton(tooltip: widget.standalone || _showJoined ? 'Search joined channels' : 'Search channels', icon: const Icon(Icons.search_rounded), onPressed: _loading ? null : _search)],
       ),
-      floatingActionButton: FloatingActionButton.extended(onPressed: _create, icon: const Icon(Icons.add), label: const Text('Create')),
       body: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         if (!widget.standalone)
           Padding(
@@ -166,10 +136,10 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
                       const SizedBox(height: 56),
                       EmptyState(
                         icon: Icons.live_tv_rounded,
-                        title: _showJoined ? 'No joined channels' : widget.standalone ? 'No channels of your own yet' : 'No channels yet',
-                        message: _showJoined ? 'Channels you join will appear here.' : widget.standalone ? 'Channels you create or join show up here.' : 'Start the first one. New channels are reviewed before everyone can see them.',
-                        actionLabel: _showJoined ? 'Discover channels' : 'Create a channel',
-                        onAction: _showJoined ? () => setState(() => _showJoined = false) : _create,
+                        title: _showJoined ? 'No joined channels' : widget.standalone ? 'No joined channels yet' : 'No channels yet',
+                        message: _showJoined ? 'Channels you join will appear here.' : widget.standalone ? 'Channels you join show up here.' : 'Check back soon.',
+                        actionLabel: _showJoined ? 'Discover channels' : null,
+                        onAction: _showJoined ? () => setState(() => _showJoined = false) : null,
                       ),
                     ])
                   : ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 88), physics: const AlwaysScrollableScrollPhysics(), children: [
@@ -248,90 +218,4 @@ class JoinedChannelSearch extends SearchDelegate<Map<String, dynamic>?> {
         subtitle: onlyJoined ? const Text('Joined channel') : null, onTap: () => close(context, row));
     });
   }
-}
-
-/// Bottom sheet for starting a channel. Returns true once the channel is saved.
-class _CreateChannelSheet extends StatefulWidget {
-  const _CreateChannelSheet();
-  @override
-  State<_CreateChannelSheet> createState() => _CreateChannelSheetState();
-}
-
-class _CreateChannelSheetState extends State<_CreateChannelSheet> {
-  final _name = TextEditingController();
-  final _desc = TextEditingController();
-  bool _busy = false;
-  String? _err;
-
-  @override
-  void dispose() {
-    _name.dispose();
-    _desc.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submit() async {
-    final name = _name.text.trim();
-    if (name.length < 3) return setState(() => _err = 'Give your channel a name of at least 3 letters.');
-    setState(() { _busy = true; _err = null; });
-    try {
-      await sb.from('channels').insert({'name': name, 'description': _desc.text.trim()});
-      Measurement.instance.track('ChannelCreated');
-      if (mounted) Navigator.pop(context, true);
-      return;
-    } on PostgrestException catch (e) {
-      _err = e.message;
-    } catch (_) {
-      _err = 'Could not create the channel. Check your connection and try again.';
-    }
-    if (mounted) setState(() => _busy = false);
-  }
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: EdgeInsets.fromLTRB(20, 10, 20, MediaQuery.of(context).viewInsets.bottom + 20),
-        child: SingleChildScrollView(
-          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            const SheetHandle(),
-            const SizedBox(height: 18),
-            const Text('Create a channel', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 4),
-            const Text('A place to share your videos with members.', style: TextStyle(color: Tokens.muted, fontSize: 13)),
-            const SizedBox(height: 18),
-            TextField(
-              key: const Key('channel_name'),
-              controller: _name,
-              maxLength: 40,
-              autofocus: true,
-              textCapitalization: TextCapitalization.words,
-              textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(labelText: 'Channel name', prefixIcon: Icon(Icons.live_tv_rounded, size: 20)),
-            ),
-            const SizedBox(height: 6),
-            TextField(
-              controller: _desc,
-              maxLength: 200,
-              minLines: 3,
-              maxLines: 4,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(labelText: 'What is it about? (optional)', alignLabelWithHint: true),
-            ),
-            const SizedBox(height: 6),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: Tokens.primary.withValues(alpha: .08), borderRadius: BorderRadius.circular(12)),
-              child: const Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Icon(Icons.verified_user_outlined, size: 18, color: Tokens.primary),
-                SizedBox(width: 10),
-                Expanded(child: Text('We review every new channel. You can post as soon as it is approved.', style: TextStyle(color: Tokens.muted, fontSize: 12, height: 1.4))),
-              ]),
-            ),
-            if (_err != null) Padding(padding: const EdgeInsets.only(top: 10), child: Text(_err!, style: const TextStyle(color: Tokens.danger, fontSize: 13))),
-            const SizedBox(height: 16),
-            GradientButton(label: _busy ? 'Creating…' : 'Create', onPressed: _busy ? null : _submit),
-            const SizedBox(height: 4),
-            TextButton(onPressed: _busy ? null : () => Navigator.pop(context, false), child: const Text('Cancel', style: TextStyle(color: Tokens.muted))),
-          ]),
-        ),
-      );
 }

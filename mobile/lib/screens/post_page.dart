@@ -9,7 +9,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../services/app_scope.dart';
 import '../services/app_state.dart';
-import '../services/stream_media.dart';
+import '../services/flixvault.dart';
 import '../services/playback_access.dart';
 import '../services/measurement.dart';
 import '../theme.dart';
@@ -83,35 +83,31 @@ class _PostPageState extends State<PostPage> {
 
   Future<void> _load() async {
     try {
-      final p = await sb.from('posts').select('id,title,description,channel_id,channels(name)').eq('id', _postId).maybeSingle();
-      final items = await sb.from('post_items').select('id,media_key,trailer_key,thumbnail_key,mime,is_premium,duration_s').eq('post_id', _postId).order('position');
-      final tk = items.isEmpty ? null : items.first['thumbnail_key'] as String?;
-      final poster = tk == null ? null : await _signed(tk, 'thumbnail');
+      // A Flixvault post; Flixvault's server decides whether this user may see it.
+      final p = await Flixvault.post(_postId);
+      final items = List<Map<String, dynamic>>.from((p?['post_items'] as List?) ?? const []);
+      final poster = items.isEmpty ? null : items.first['thumbnail_key'] as String?;
       if (!mounted) return;
       setState(() {
         _poster = poster;
         _post = p;
-        _items = List<Map<String, dynamic>>.from(items);
+        _items = items;
         if (p == null) _error = 'This post is not available.';
       });
       if (p != null) {
         Measurement.instance.track('ViewContent',{'screen':'Post'});
         try {
-          // RLS enforces approval, channel visibility and audience for every suggestion.
-          const fields = 'id,title,channel_id,status,hidden,channels(name),post_items(thumbnail_key,is_premium,duration_s)';
-          final same = await sb.from('posts').select(fields).eq('channel_id', p['channel_id']).neq('id', _postId).eq('status', 'published').eq('hidden', false).order('created_at', ascending: false).limit(6);
-          final other = await sb.from('posts').select(fields).neq('channel_id', p['channel_id']).eq('status', 'published').eq('hidden', false).order('created_at', ascending: false).limit(6);
-          final keys = <String>{
-            for (final video in [...same, ...other])
-              for (final item in (video['post_items'] as List? ?? []))
-                if (item['thumbnail_key'] is String) item['thumbnail_key'] as String,
-          };
-          if (keys.isNotEmpty) {
-            try {
-              _suggestionThumbs.addAll(await signMedia(keys, kind: 'thumbnail'));
-            } catch (_) { /* Poster placeholders remain usable. */ }
+          final same = ((await Flixvault.channel(p['channel_id'] as String))?.posts ?? const <Map<String, dynamic>>[])
+              .where((x) => x['id'] != _postId).take(6).toList();
+          final other = (await Flixvault.explore(tab: 'popular'))
+              .where((x) => x['channel_id'] != p['channel_id']).take(6).toList();
+          for (final video in [...same, ...other]) {
+            for (final item in (video['post_items'] as List? ?? [])) {
+              final t = item['thumbnail_key'];
+              if (t is String) _suggestionThumbs[t] = t;
+            }
           }
-          if (mounted) setState(() => _suggestions = List<Map<String, dynamic>>.from([...same, ...other]));
+          if (mounted) setState(() => _suggestions = [...same, ...other]);
         } catch (_) { /* Recommendations never block playback. */ }
       }
     } catch (_) {
@@ -119,21 +115,17 @@ class _PostPageState extends State<PostPage> {
     }
   }
 
-  /// Signed URL, short-lived. The storage policy decides whether the full file is allowed.
-  Future<String?> _signed(String key, String kind) async {
-    try {
-      return (await signMedia([key], kind: kind))[key];
-    } catch (_) {
-      return null;
-    }
-  }
-
   Future<void> _play(Map<String, dynamic> it) async {
     final app = AppScope.of(context);
     final premium = it['is_premium'] == true;
-    final mainKey = it['media_key'] as String?;
-    final hasAutomatic = mainKey != null && isStreamKey(mainKey) && app.status.source == 'ads';
-    final hasPreview = it['trailer_key'] != null || hasAutomatic;
+    if ((it['mime'] as String? ?? '').startsWith('image/')) {
+      final old = _vc;
+      setState(() { _vc = null; _imageUrl = it['thumbnail_key'] as String?; _trailer = false; });
+      await old?.dispose();
+      return;
+    }
+    // The server checks again; this only decides which button flow to show.
+    final hasPreview = it['has_preview'] == true;
     var access = playbackAccess(app.status, premium: premium, hasTrailer: hasPreview);
     if (access == PlaybackAccess.login) {
       if (!await requireAccount(context) || !mounted) return;
@@ -141,19 +133,22 @@ class _PostPageState extends State<PostPage> {
       if (access == PlaybackAccess.login) return;
     }
     final allowed = access == PlaybackAccess.full;
-    // Ads users who are not premium get the trailer; everyone else without access sees the lock.
-    final trailerKey = it['trailer_key'] as String?;
-    final key = allowed ? mainKey : trailerKey ?? (hasAutomatic ? mainKey : null);
-    if (key == null) {
+    if (!allowed && !hasPreview) {
       _lockedMessage(app);
       return;
     }
     if (_opening) return;
     setState(() => _opening = true);
-    var url = await _signed(key, allowed ? 'full' : trailerKey == null ? 'preview' : 'trailer');
-    if (url == null && !allowed && trailerKey != null && mainKey != null && hasAutomatic) {
-      url = await _signed(mainKey, 'preview');
-    }
+    String? url;
+    var full = allowed;
+    try {
+      url = await Flixvault.play(it['id'] as String, kind: allowed ? 'video' : 'preview');
+    } on FlixvaultError catch (e) {
+      if (allowed && e.code == 'premium_required' && hasPreview) {
+        full = false;
+        try { url = await Flixvault.play(it['id'] as String, kind: 'preview'); } catch (_) {}
+      }
+    } catch (_) {}
     if (!mounted) return;
     if (url == null) {
       setState(() => _opening = false);
@@ -161,13 +156,7 @@ class _PostPageState extends State<PostPage> {
       return;
     }
     final old = _vc;
-    if ((it['mime'] as String? ?? '').startsWith('image/')) {
-      setState(() { _vc = null; _imageUrl = url; _opening = false; _trailer = false; });
-      await old?.dispose();
-      return;
-    }
-    final c = VideoPlayerController.networkUrl(Uri.parse(url),
-        formatHint: isStreamKey(key) || url.contains('/functions/v1/bunny-stream?') ? VideoFormat.hls : null);
+    final c = VideoPlayerController.networkUrl(Uri.parse(url), formatHint: VideoFormat.hls);
     try {
       await c.initialize();
     } catch (_) {
@@ -187,9 +176,9 @@ class _PostPageState extends State<PostPage> {
     _previewEnd.reset();
     _progressSent.clear();
     _mediaPremium=premium;
-    Measurement.instance.track("VideoStart",{"media_type":"video","premium":premium,"preview":premium&&!allowed});
+    Measurement.instance.track("VideoStart",{"media_type":"video","premium":premium,"preview":!full});
     c.play();
-    setState(() { _vc = c; _imageUrl = null; _opening = false; _trailer = premium && !allowed; });
+    setState(() { _vc = c; _imageUrl = null; _opening = false; _trailer = !full; });
     await old?.dispose();
   }
 
@@ -293,7 +282,7 @@ class _PostPageState extends State<PostPage> {
     );
     if (reason == null) return;
     try {
-      await sb.rpc('report_content', params: {'p_target_type': 'post', 'p_target_id': _postId, 'p_reason': reason, 'p_details': ''});
+      await Flixvault.report(_postId, reason);
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Thanks, we will review it.')));
     } on PostgrestException catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
@@ -304,7 +293,7 @@ class _PostPageState extends State<PostPage> {
     if (!await requireAccount(context) || _post == null || !mounted) return;
     final messenger = ScaffoldMessenger.of(context);
     try {
-      await sb.from('blocked_channels').upsert({'user_id': sb.auth.currentUser!.id, 'channel_id': _post!['channel_id']});
+      await Flixvault.block(_post!['channel_id'] as String);
       messenger.showSnackBar(const SnackBar(content: Text('Channel blocked. You will not see its posts.')));
       if (mounted) Navigator.pop(context);
     } catch (_) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/app_scope.dart';
 import '../services/app_state.dart';
+import '../services/flixvault.dart';
 import '../services/stream_media.dart';
 import '../theme.dart';
 import '../widgets/ui.dart';
@@ -52,12 +53,13 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _load() async {
     final generation = ++_loadGeneration;
     try {
-      final c = await sb.from('channels').select('id,name').order('created_at', ascending: false).limit(10);
+      // Flixvault channels and videos this user may see.
+      final c = await Flixvault.channels(sort: 'latest');
       if (!mounted || generation != _loadGeneration) return;
-      _channels = List<Map<String, dynamic>>.from(c);
-      final p = await sb.from('posts').select('id,title,channels(name),post_items(thumbnail_key,position,is_premium,duration_s)').order('created_at', ascending: false).limit(12);
+      _channels = c.take(10).toList();
+      final p = await Flixvault.explore(tab: 'latest');
       if (!mounted || generation != _loadGeneration) return;
-      _posts = List<Map<String, dynamic>>.from(p);
+      _posts = p.take(12).toList();
       final keys = <String>[
         for (final r in _posts)
           for (final it in ((r['post_items'] as List?) ?? const []))

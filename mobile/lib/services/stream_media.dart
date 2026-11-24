@@ -10,9 +10,11 @@ final _virtualKey = RegExp(r'^[0-9a-f-]{36}/bunny/[0-9a-f-]{36}$');
 bool isStreamKey(String key) => _virtualKey.hasMatch(key);
 
 Future<Map<String, String>> signMedia(Iterable<String> keys, {required String kind}) async {
+  // Flixvault thumbnails already arrive as public https links: use them as they are.
+  final result = <String, String>{for (final key in keys) if (key.startsWith('https://')) key: key};
+  keys = keys.where((key) => !key.startsWith('https://'));
   final ordinary = keys.where((key) => !isStreamKey(key)).toSet().toList();
   final stream = keys.where(isStreamKey).toSet().toList();
-  final result = <String, String>{};
   if (ordinary.isNotEmpty) {
     final links = await sb.storage.from('media').createSignedUrls(ordinary, 3600);
     for (final link in links) {

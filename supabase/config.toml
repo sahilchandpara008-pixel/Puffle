@@ -15,3 +15,6 @@ verify_jwt = false
 
 [functions.deletion-request]
 verify_jwt = false
+
+[functions.flixvault-feed]
+verify_jwt = true

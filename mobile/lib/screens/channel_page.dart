@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 import 'package:video_thumbnail/video_thumbnail.dart' as vt;
 
 import '../services/app_state.dart';
+import '../services/flixvault.dart';
 import '../services/stream_media.dart';
 import '../services/measurement.dart';
 import '../theme.dart';
@@ -36,13 +37,10 @@ class _ChannelPageState extends State<ChannelPage> {
 
   Future<void> _load() async {
     try {
-      final c = await sb.from('channels').select('id,name,description,members_count,review_status,created_by').eq('id', widget.channelId).maybeSingle();
-      final uid = sb.auth.currentUser?.id;
-      var joined = false;
-      if (uid != null && c != null) {
-        final m = await sb.from('channel_members').select('channel_id').eq('channel_id', widget.channelId).eq('user_id', uid);
-        joined = m.isNotEmpty;
-      }
+      // A Flixvault channel; following is kept in Puffle.
+      final r = await Flixvault.channel(widget.channelId);
+      final c = r?.channel;
+      final joined = c != null && (await Flixvault.followedIds()).contains(widget.channelId);
       _ch = c;
       _joined = joined;
     } catch (_) {}
@@ -57,13 +55,8 @@ class _ChannelPageState extends State<ChannelPage> {
     final messenger = ScaffoldMessenger.of(context);
     setState(() => _busy = true);
     try {
-      final uid = sb.auth.currentUser!.id;
-      if (_joined) {
-        await sb.from('channel_members').delete().eq('channel_id', widget.channelId).eq('user_id', uid);
-      } else {
-        await sb.from('channel_members').insert({'channel_id': widget.channelId, 'user_id': uid});
-        Measurement.instance.track('ChannelJoined');
-      }
+      await Flixvault.setFollowing(widget.channelId, !_joined);
+      if (!_joined) Measurement.instance.track('ChannelJoined');
       await _load();
     } catch (_) {
       messenger.showSnackBar(const SnackBar(content: Text('Could not update. Please try again.')));

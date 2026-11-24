@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../services/app_scope.dart';
-import '../services/app_state.dart';
+import '../services/flixvault.dart';
 import '../services/stream_media.dart';
 import '../services/measurement.dart';
 import '../theme.dart';
@@ -48,7 +48,6 @@ class _PostListState extends State<PostList> {
   bool _loading = true, _more = true, _fetching = false;
   int _gen = 0;
   bool _failed = false;
-  static const _page = 20;
 
   @override
   void initState() {
@@ -69,29 +68,22 @@ class _PostListState extends State<PostList> {
     if (reset) { _rows.clear(); _thumbs.clear(); _more = true; _failed = false; }
     if (mounted) setState(() => _loading = true);
     try {
-      // Hidden / wrong-audience rows are never returned: that is enforced by RLS, not here.
-      List<String>? joined;
+      // Videos come from Flixvault; its server decides what this user may see.
+      final List<Map<String, dynamic>> data;
       if (widget.joinedOnly) {
-        final uid = sb.auth.currentUser?.id;
-        final m = uid == null ? [] : await sb.from('channel_members').select('channel_id').eq('user_id', uid);
-        joined = [for (final r in m) r['channel_id'] as String];
-        if (gen != _gen || !mounted) return;
-        if (joined.isEmpty) { _more = false; _fetching = false; if (mounted) setState(() => _loading = false); return; }
+        data = _rows.isEmpty ? await Flixvault.following() : const [];
+      } else if (widget.channelId != null) {
+        final last = _rows.isEmpty ? null : _rows.last['published_at'] as String?;
+        data = (await Flixvault.channel(widget.channelId!, before: last))?.posts ?? const [];
+      } else {
+        data = await Flixvault.explore(tab: widget.category ?? 'all', offset: _rows.length, search: widget.query);
       }
-      // !inner so a category filter really filters the posts (not just the embedded channel).
-      final ch = widget.category != null ? 'channels!inner(name,category)' : 'channels(name,category)';
-      var q = sb.from('posts').select('id,title,description,created_at,channel_id,$ch,post_items(thumbnail_key,is_premium,duration_s,position)');
-      if (widget.channelId != null) q = q.eq('channel_id', widget.channelId!);
-      if (widget.category != null) q = q.eq('channels.category', widget.category!);
-      if (joined != null) q = q.inFilter('channel_id', joined);
-      if (widget.query.trim().isNotEmpty) q = q.ilike('title', '%${widget.query.trim().replaceAll('%', '')}%');
-      final data = await q.order('created_at', ascending: false).order('id').range(_rows.length, _rows.length + _page - 1);
       if (gen != _gen || !mounted) return;
       final fresh = List<Map<String, dynamic>>.from(data);
       await _signThumbs(fresh, gen);
       if (gen != _gen || !mounted) return;
       _rows.addAll(fresh);
-      _more = data.length == _page;
+      _more = !widget.joinedOnly && data.length >= (widget.channelId != null ? 50 : 30);
     } catch (_) {
       if (gen == _gen) { _failed = true; _more = false; }
     }
@@ -137,10 +129,10 @@ class _PostListState extends State<PostList> {
                 const EmptyState(icon: Icons.search_off_rounded, title: 'No matching videos', message: 'Try another title or clear your filters.')
               else if (widget.joinedOnly)
                 EmptyState(icon: Icons.video_library_outlined, title: 'Your feed is empty',
-                  message: 'Videos from channels you join will appear here.',
+                  message: 'Videos from channels you follow will appear here.',
                   actionLabel: 'Discover channels', onAction: widget.onDiscover)
               else
-                const EmptyState(icon: Icons.video_library_outlined, title: 'No videos here yet', message: 'Try another category or check back later.'),
+                const EmptyState(icon: Icons.video_library_outlined, title: 'No videos here yet', message: 'Check back later.'),
             ])
           : VideoGrid(
               itemCount: _rows.length + (_more ? 1 : 0),
@@ -191,7 +183,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   String _q = '';
   bool _showSearch = false;
   bool _searchChannels = false;
-  static const cats = ['Movies', 'Music', 'Education', 'Gaming', 'Lifestyle', 'Tech', 'Other'];
+  static const tabs = {'all': 'All', 'latest': 'Latest', 'popular': 'Popular', 'most_watched': 'Most watched'};
 
   void _updateQuery(String value) {
     _debounce?.cancel();
@@ -288,10 +280,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: Row(children: [
-            for (final c in [null, ...cats])
+            for (final t in tabs.entries)
               Padding(
                 padding: const EdgeInsets.only(right: 8),
-                child: ChoiceChip(visualDensity: VisualDensity.compact, label: Text(c ?? 'All videos'), selected: _cat == c, onSelected: (_) => setState(() => _cat = c)),
+                child: ChoiceChip(visualDensity: VisualDensity.compact, label: Text(t.value), selected: (_cat ?? 'all') == t.key, onSelected: (_) => setState(() => _cat = t.key)),
               ),
           ]),
         ),
@@ -323,10 +315,9 @@ class _ExploreChannelResultsState extends State<_ExploreChannelResults> {
   }
 
   Future<List<Map<String, dynamic>>> _load() async {
-    final term = widget.query.replaceAll('%', '').replaceAll('_', '');
+    final term = widget.query.trim();
     if (term.isEmpty) return [];
-    return sb.from('channels').select('id,name,category')
-        .ilike('name', '%$term%').order('name').limit(30);
+    return Flixvault.channels(search: term);
   }
 
   @override
