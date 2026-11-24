@@ -19,6 +19,9 @@
 //   post      { post_id }
 //   play      { item_id, kind: "video" | "preview" }
 //   following { }            newest posts of the Flixvault channels the user follows
+//
+// Browsing uses Puffle's own copy of Flixvault (see flixvault-sync); only play
+// calls Flixvault, so Puffle traffic barely touches Flixvault's database.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.8";
 
@@ -95,27 +98,48 @@ Deno.serve(async (req) => {
   };
   const dropBlocked = (posts: any[], b: Set<string>) => posts.filter((p) => !b.has(p?.channel_id));
 
+  // Browsing reads Puffle's own copy (flixvault_* tables, refreshed by
+  // flixvault-sync); the table policies apply the ads/organic rule. Only "play"
+  // asks Flixvault, which checks the rules again and signs the video link.
+  const rpc = async (fn: string, args: Record<string, unknown>) => {
+    const { data, error } = await sb.rpc(fn, args);
+    if (error) throw new Error(error.message);
+    return data;
+  };
+  const str = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim().slice(0, 100) : null);
+  const num = (v: unknown) => (Number.isFinite(Number(v)) ? Math.max(0, Math.trunc(Number(v))) : 0);
+  const id = (v: unknown) => (typeof v === "string" && UUID.test(v) ? v : null);
+
+  try {
   switch (action) {
     case "explore": {
-      const [r, b] = await Promise.all([
-        feed({ action, audience, tab: body.tab, offset: body.offset, limit: 30, search: body.search }),
+      const tab = ["all", "latest", "popular", "most_watched"].includes(String(body.tab)) ? String(body.tab) : "all";
+      const [posts, b] = await Promise.all([
+        rpc("fv_explore", { p_tab: tab, p_offset: num(body.offset), p_limit: 30, p_search: str(body.search) }),
         blocked(),
       ]);
-      if (r.status !== 200) return json(r.data, r.status);
-      return json({ posts: dropBlocked(r.data.posts ?? [], b) });
+      return json({ posts: dropBlocked(posts ?? [], b) });
     }
     case "channels": {
-      const [r, b] = await Promise.all([feed({ action, audience, sort: body.sort, search: body.search }), blocked()]);
-      if (r.status !== 200) return json(r.data, r.status);
-      return json({ channels: (r.data.channels ?? []).filter((c: any) => !b.has(c?.id)) });
+      const sort = ["trending", "latest", "top"].includes(String(body.sort)) ? String(body.sort) : "trending";
+      const [channels, b] = await Promise.all([rpc("fv_channels", { p_sort: sort, p_search: str(body.search) }), blocked()]);
+      return json({ channels: (channels ?? []).filter((c: any) => !b.has(c?.id)) });
     }
     case "channel": {
-      const r = await feed({ action, audience, channel_id: body.channel_id, before: body.before });
-      return json(r.data, r.status);
+      const cid = id(body.channel_id);
+      if (!cid) return json({ error: "channel_id required" }, 400);
+      const before = typeof body.before === "string" && !isNaN(Date.parse(body.before)) ? body.before : null;
+      const data = await rpc("fv_channel", { p_channel_id: cid, p_before: before });
+      return data ? json(data) : json({ error: "not found" }, 404);
     }
     case "post": {
-      const r = await feed({ action, audience, post_id: body.post_id });
-      return json(r.data, r.status);
+      const pid = id(body.post_id);
+      if (!pid) return json({ error: "post_id required" }, 400);
+      const post = await rpc("fv_post", { p_post_id: pid });
+      return post ? json({ post }) : json({ error: "not found" }, 404);
+    }
+    case "following": {
+      return json({ posts: (await rpc("fv_following", {})) ?? [] });
     }
     case "play": {
       // Puffle's own rule: organic guests must log in before any media plays.
@@ -126,17 +150,10 @@ Deno.serve(async (req) => {
       });
       return json(r.data, r.status);
     }
-    case "following": {
-      const { data: rows } = await sb.from("flixvault_follows").select("channel_id")
-        .order("created_at", { ascending: false }).limit(20);
-      const ids = (rows ?? []).map((r: { channel_id: string }) => r.channel_id).filter((id: string) => UUID.test(id));
-      if (ids.length === 0) return json({ posts: [] });
-      const pages = await Promise.all(ids.map((id: string) => feed({ action: "channel", audience, channel_id: id })));
-      const posts = pages.filter((p) => p.status === 200).flatMap((p) => p.data.posts ?? []);
-      posts.sort((a: any, b: any) => String(b.published_at).localeCompare(String(a.published_at)));
-      return json({ posts: dropBlocked(posts, await blocked()).slice(0, 100) });
-    }
     default:
       return json({ error: "unknown action" }, 400);
+  }
+  } catch {
+    return json({ error: "unavailable" }, 503);
   }
 });

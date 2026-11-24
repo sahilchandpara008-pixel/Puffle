@@ -18,3 +18,6 @@ verify_jwt = false
 
 [functions.flixvault-feed]
 verify_jwt = true
+
+[functions.flixvault-sync]
+verify_jwt = false
