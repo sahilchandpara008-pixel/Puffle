@@ -47,10 +47,14 @@ class Flixvault {
   }
 
   /// The channel and its newest posts, or null when it is not available to this user.
-  static Future<({Map<String, dynamic> channel, List<Map<String, dynamic>> posts})?> channel(String id, {String? before}) async {
+  static Future<({Map<String, dynamic> channel, List<Map<String, dynamic>> posts, List<Map<String, dynamic>> folders})?> channel(String id, {String? before}) async {
     try {
       final data = await _call({'action': 'channel', 'channel_id': id, if (before != null) 'before': before});
-      return (channel: _channel(Map<String, dynamic>.from(data['channel'] as Map)), posts: _posts(data['posts']));
+      return (
+        channel: _channel(Map<String, dynamic>.from(data['channel'] as Map)),
+        posts: _posts(data['posts']),
+        folders: [for (final f in (data['folders'] as List? ?? const [])) Map<String, dynamic>.from(f as Map)],
+      );
     } on FlixvaultError catch (e) {
       if (e.code == 'not found') return null;
       rethrow;
@@ -94,6 +98,19 @@ class Flixvault {
     await sb.from('flixvault_follows').delete().eq('channel_id', channelId);
   }
 
+  /// Channels this user blocked, with names, so they can be unblocked.
+  static Future<List<Map<String, dynamic>>> blockedChannels() async {
+    if (sb.auth.currentUser == null) return const [];
+    final ids = [for (final r in await sb.from('flixvault_blocks').select('channel_id')) r['channel_id'] as String];
+    if (ids.isEmpty) return const [];
+    final rows = await sb.from('flixvault_channels').select('id,name,icon_url').inFilter('id', ids).order('name');
+    final named = {for (final r in rows) r['id'] as String: Map<String, dynamic>.from(r)};
+    return [for (final id in ids) named[id] ?? {'id': id, 'name': 'Channel no longer available', 'icon_url': null}];
+  }
+
+  static Future<void> unblock(String channelId) =>
+      sb.from('flixvault_blocks').delete().eq('channel_id', channelId);
+
   static Future<void> report(String postId, String reason) =>
       sb.from('flixvault_reports').insert({'post_id': postId, 'reason': reason});
 
@@ -128,6 +145,7 @@ class Flixvault {
       'created_at': p['published_at'],
       'published_at': p['published_at'],
       'channel_id': p['channel_id'],
+      'folder_id': p['folder_id'],
       'view_count': p['view_count'],
       'channels': {'name': ch['name'] ?? '', 'category': null, 'icon_url': ch['icon_url']},
       'post_items': items,
@@ -141,6 +159,7 @@ class Flixvault {
     'category': c['category'],
     'icon_url': c['icon_url'],
     'members_count': (c['members_count'] as num?)?.toInt() ?? 0,
+    'rating': (c['rating'] as num?)?.toDouble() ?? 0,
     'review_status': 'approved',
     'created_by': null,
     'created_at': c['created_at'],

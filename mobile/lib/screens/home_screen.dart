@@ -134,7 +134,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               return GestureDetector(
                                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChannelPage(channelId: _channels[i]['id'] as String, name: name))),
                                 child: SizedBox(width: 80, child: Column(children: [
-                                  InitialAvatar(name: name, size: 52),
+                                  InitialAvatar(name: name, size: 52, url: _channels[i]['icon_url'] as String?),
                                   const SizedBox(height: 4),
                                   Text(name, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Tokens.muted, fontSize: 12)),
                                 ])),

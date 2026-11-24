@@ -10,6 +10,7 @@ const groups: { label: string; items: Item[] }[] = [
   { label: "Content", items: [
     { href: "/workspace-7f3c9a2e/channels", label: "Channels", icon: "M4 7h16v14H4z M8 3l4 4 4-4 M9 12l6 3-6 3z", count: "channels" },
     { href: "/workspace-7f3c9a2e/posts", label: "Videos & posts", icon: "M3 5h18v14H3z M10 9l5 3-5 3z" },
+    { href: "/workspace-7f3c9a2e/flixvault", label: "Flixvault content", icon: "M4 7h16v14H4z M8 3l4 4 4-4 M9 12l6 3-6 3z" },
   ] },
   { label: "People", items: [
     { href: "/workspace-7f3c9a2e/users", label: "Users", icon: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M17 4a4 4 0 0 1 0 7 M22 21v-2a4 4 0 0 0-3-4", owner: true },

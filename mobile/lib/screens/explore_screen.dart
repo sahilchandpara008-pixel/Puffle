@@ -14,9 +14,11 @@ import 'premium_screen.dart';
 
 /// Shared post list used by Explore (all) and Feed (joined channels).
 class PostList extends StatefulWidget {
-  const PostList({super.key, this.joinedOnly = false, this.category, this.query = '', this.channelId, this.onDiscover});
+  const PostList({super.key, this.joinedOnly = false, this.category, this.query = '', this.channelId, this.folderId, this.onDiscover});
   final bool joinedOnly;
   final String? channelId;
+  /// Only posts in this channel folder (Flixvault folders).
+  final String? folderId;
   final VoidCallback? onDiscover;
   final String? category;
   final String query;
@@ -48,6 +50,8 @@ class _PostListState extends State<PostList> {
   bool _loading = true, _more = true, _fetching = false;
   int _gen = 0;
   bool _failed = false;
+  int _pageSize = 0;
+  String? _cursor;
 
   @override
   void initState() {
@@ -58,7 +62,7 @@ class _PostListState extends State<PostList> {
   @override
   void didUpdateWidget(PostList old) {
     super.didUpdateWidget(old);
-    if (old.category != widget.category || old.query != widget.query || old.channelId != widget.channelId) _load(reset: true);
+    if (old.category != widget.category || old.query != widget.query || old.channelId != widget.channelId || old.folderId != widget.folderId) _load(reset: true);
   }
 
   Future<void> _load({bool reset = false}) async {
@@ -73,8 +77,10 @@ class _PostListState extends State<PostList> {
       if (widget.joinedOnly) {
         data = _rows.isEmpty ? await Flixvault.following() : const [];
       } else if (widget.channelId != null) {
-        final last = _rows.isEmpty ? null : _rows.last['published_at'] as String?;
-        data = (await Flixvault.channel(widget.channelId!, before: last))?.posts ?? const [];
+        final page = (await Flixvault.channel(widget.channelId!, before: _rows.isEmpty ? null : _cursor))?.posts ?? const <Map<String, dynamic>>[];
+        _pageSize = page.length;
+        if (page.isNotEmpty) _cursor = page.last['published_at'] as String?;
+        data = widget.folderId == null ? page : page.where((p) => p['folder_id'] == widget.folderId).toList();
       } else {
         data = await Flixvault.explore(tab: widget.category ?? 'all', offset: _rows.length, search: widget.query);
       }
@@ -83,7 +89,7 @@ class _PostListState extends State<PostList> {
       await _signThumbs(fresh, gen);
       if (gen != _gen || !mounted) return;
       _rows.addAll(fresh);
-      _more = !widget.joinedOnly && data.length >= (widget.channelId != null ? 50 : 30);
+      _more = !widget.joinedOnly && (widget.channelId != null ? _pageSize >= 50 : data.length >= 30);
     } catch (_) {
       if (gen == _gen) { _failed = true; _more = false; }
     }
@@ -343,7 +349,7 @@ class _ExploreChannelResultsState extends State<_ExploreChannelResults> {
           final name = row['name'] as String? ?? '';
           final category = row['category'] as String?;
           return Card(child: ListTile(
-            leading: InitialAvatar(name: name),
+            leading: InitialAvatar(name: name, url: row['icon_url'] as String?),
             title: Text(name, maxLines: 2, overflow: TextOverflow.ellipsis),
             subtitle: category == null || category.isEmpty ? null : Text(category),
             trailing: const Icon(Icons.chevron_right_rounded),

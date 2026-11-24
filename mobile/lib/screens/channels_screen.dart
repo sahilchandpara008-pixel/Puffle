@@ -17,7 +17,7 @@ class ChannelsScreen extends StatefulWidget {
   State<ChannelsScreen> createState() => _ChannelsScreenState();
 }
 
-enum _ChannelOrder { members, latest }
+enum _ChannelOrder { members, latest, top }
 
 class _ChannelsScreenState extends State<ChannelsScreen> {
   String? _accessKey;
@@ -77,6 +77,16 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
     await _load();
   }
 
+  Future<void> _showBlocked() async {
+    final changed = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => const _BlockedChannelsSheet(),
+    );
+    if (changed == true && mounted) await _load();
+  }
+
   Future<void> _search() async {
     final joinedOnly = widget.standalone || _showJoined;
     final selected = await showSearch<Map<String, dynamic>?>(
@@ -95,6 +105,10 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
     AppScope.of(context);
     final rows = _rows.where((row) => !_showJoined || _joined.contains(row['id'])).toList();
     rows.sort((first, second) {
+      if (_order == _ChannelOrder.top) {
+        final rating = ((second['rating'] as num?) ?? 0).compareTo((first['rating'] as num?) ?? 0);
+        if (rating != 0) return rating;
+      }
       if (_order == _ChannelOrder.members) {
         final members = (second['members_count'] as int? ?? 0).compareTo(first['members_count'] as int? ?? 0);
         if (members != 0) return members;
@@ -106,7 +120,14 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
       appBar: AppBar(
         title: Text(widget.standalone ? 'My channels' : 'Channels'),
         automaticallyImplyLeading: widget.standalone,
-        actions: [IconButton(tooltip: widget.standalone || _showJoined ? 'Search joined channels' : 'Search channels', icon: const Icon(Icons.search_rounded), onPressed: _loading ? null : _search)],
+        actions: [
+          IconButton(tooltip: widget.standalone || _showJoined ? 'Search joined channels' : 'Search channels', icon: const Icon(Icons.search_rounded), onPressed: _loading ? null : _search),
+          PopupMenuButton<String>(
+            tooltip: 'More',
+            onSelected: (_) => _showBlocked(),
+            itemBuilder: (_) => const [PopupMenuItem(value: 'blocked', child: Text('Blocked channels'))],
+          ),
+        ],
       ),
       body: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         if (!widget.standalone)
@@ -123,6 +144,7 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
                 itemBuilder: (_) => const [
                   PopupMenuItem(value: _ChannelOrder.members, child: Text('Most members')),
                   PopupMenuItem(value: _ChannelOrder.latest, child: Text('Latest')),
+                  PopupMenuItem(value: _ChannelOrder.top, child: Text('Top rated')),
                 ],
               ),
             ]),
@@ -154,7 +176,7 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
                                 await Navigator.push(context, MaterialPageRoute(builder: (_) => ChannelPage(channelId: r['id'] as String, name: (r['name'] as String?) ?? '')));
                                 _load();
                               },
-                              leading: InitialAvatar(name: (r['name'] as String?) ?? '', size: 42),
+                              leading: InitialAvatar(name: (r['name'] as String?) ?? '', size: 42, url: r['icon_url'] as String?),
                               title: Text(r['name'] ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
                               subtitle: Text(
                                 r['review_status'] == 'pending' ? 'Waiting for approval' : r['review_status'] == 'rejected' ? 'Not approved' : '${NumberFormat.compact().format(r['members_count'] ?? 0)} members',
@@ -214,8 +236,70 @@ class JoinedChannelSearch extends SearchDelegate<Map<String, dynamic>?> {
     return ListView.builder(itemCount: matches.length, itemBuilder: (context, index) {
       final row = matches[index];
       final name = row['name'] as String? ?? '';
-      return ListTile(leading: InitialAvatar(name: name, size: 42), title: Text(name),
+      return ListTile(leading: InitialAvatar(name: name, size: 42, url: row['icon_url'] as String?), title: Text(name),
         subtitle: onlyJoined ? const Text('Joined channel') : null, onTap: () => close(context, row));
     });
   }
+}
+
+/// Blocked channels, each with an Unblock button. Returns true when something changed.
+class _BlockedChannelsSheet extends StatefulWidget {
+  const _BlockedChannelsSheet();
+  @override
+  State<_BlockedChannelsSheet> createState() => _BlockedChannelsSheetState();
+}
+
+class _BlockedChannelsSheetState extends State<_BlockedChannelsSheet> {
+  late Future<List<Map<String, dynamic>>> _rows = Flixvault.blockedChannels();
+  bool _changed = false;
+
+  Future<void> _unblock(String id) async {
+    try {
+      await Flixvault.unblock(id);
+      _changed = true;
+      setState(() => _rows = Flixvault.blockedChannels());
+    } catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not unblock. Please try again.')));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => PopScope(
+    canPop: false,
+    onPopInvokedWithResult: (didPop, _) { if (!didPop) Navigator.pop(context, _changed); },
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        const SheetHandle(),
+        const SizedBox(height: 12),
+        const Text('Blocked channels', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 8),
+        FutureBuilder<List<Map<String, dynamic>>>(
+          future: _rows,
+          builder: (context, snap) {
+            if (snap.connectionState != ConnectionState.done) {
+              return const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator()));
+            }
+            final rows = snap.data ?? const [];
+            if (rows.isEmpty) {
+              return const Padding(padding: EdgeInsets.all(24), child: Text('You have not blocked any channels.', textAlign: TextAlign.center));
+            }
+            return ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * .6),
+              child: ListView(shrinkWrap: true, children: [
+                for (final r in rows)
+                  ListTile(
+                    leading: InitialAvatar(name: r['name'] as String? ?? '', size: 40, url: r['icon_url'] as String?),
+                    title: Text(r['name'] as String? ?? '', maxLines: 1, overflow: TextOverflow.ellipsis),
+                    trailing: OutlinedButton(onPressed: () => _unblock(r['id'] as String), child: const Text('Unblock')),
+                  ),
+              ]),
+            );
+          },
+        ),
+        const SizedBox(height: 8),
+        TextButton(onPressed: () => Navigator.pop(context, _changed), child: const Text('Done')),
+      ]),
+    ),
+  );
 }

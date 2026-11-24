@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'package:video_thumbnail/video_thumbnail.dart' as vt;
@@ -27,6 +28,8 @@ class ChannelPage extends StatefulWidget {
 class _ChannelPageState extends State<ChannelPage> {
   Map<String, dynamic>? _ch;
   bool _joined = false, _loading = true, _busy = false;
+  List<Map<String, dynamic>> _folders = [];
+  String? _folder;
   int _rev = 0;
 
   @override
@@ -40,6 +43,7 @@ class _ChannelPageState extends State<ChannelPage> {
       // A Flixvault channel; following is kept in Puffle.
       final r = await Flixvault.channel(widget.channelId);
       final c = r?.channel;
+      _folders = r?.folders ?? [];
       final joined = c != null && (await Flixvault.followedIds()).contains(widget.channelId);
       _ch = c;
       _joined = joined;
@@ -64,6 +68,19 @@ class _ChannelPageState extends State<ChannelPage> {
     if (mounted) setState(() => _busy = false);
   }
 
+  Future<void> _blockChannel() async {
+    if (!await requireAccount(context) || !mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    try {
+      await Flixvault.block(widget.channelId);
+      messenger.showSnackBar(const SnackBar(content: Text('Channel blocked. You can unblock it from Channels.')));
+      navigator.pop();
+    } catch (_) {
+      messenger.showSnackBar(const SnackBar(content: Text('Could not block this channel. Please try again.')));
+    }
+  }
+
   Future<void> _newPost() async {
     final done = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => NewPostScreen(channelId: widget.channelId)));
     if (done == true && mounted) {
@@ -77,7 +94,13 @@ class _ChannelPageState extends State<ChannelPage> {
     final c = _ch;
     final name = (c?['name'] as String?) ?? widget.name;
     return Scaffold(
-      appBar: AppBar(title: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis)),
+      appBar: AppBar(title: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis), actions: [
+        if (c != null)
+          PopupMenuButton<String>(
+            onSelected: (_) => _blockChannel(),
+            itemBuilder: (_) => const [PopupMenuItem(value: 'block', child: Text('Block channel'))],
+          ),
+      ]),
       floatingActionButton: _mine && _approved ? FloatingActionButton.extended(key: const Key('new_post'), onPressed: _newPost, icon: const Icon(Icons.add), label: const Text('New post')) : null,
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -89,13 +112,13 @@ class _ChannelPageState extends State<ChannelPage> {
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(color: Tokens.surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: Tokens.border)),
                     child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      InitialAvatar(name: name, size: 48),
+                      InitialAvatar(name: name, size: 48, url: c['icon_url'] as String?),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                           Text(name, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                           const SizedBox(height: 2),
-                          Text(_approved ? '${c['members_count'] ?? 0} members' : (c['review_status'] == 'rejected' ? 'Not approved' : 'Waiting for approval'), style: const TextStyle(color: Tokens.muted, fontSize: 12)),
+                          Text(_approved ? '${NumberFormat.compact().format(c['members_count'] ?? 0)} members' : (c['review_status'] == 'rejected' ? 'Not approved' : 'Waiting for approval'), style: const TextStyle(color: Tokens.muted, fontSize: 12)),
                           if (((c['description'] as String?) ?? '').isNotEmpty)
                             Padding(padding: const EdgeInsets.only(top: 6), child: Text(c['description'] as String, maxLines: 3, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Tokens.muted, fontSize: 13))),
                         ]),
@@ -119,7 +142,24 @@ class _ChannelPageState extends State<ChannelPage> {
                         Expanded(child: Text('You can add posts after this channel is approved.', style: TextStyle(color: Tokens.muted, fontSize: 13))),
                       ]),
                     ),
-                  Expanded(child: PostList(key: ValueKey(_rev), channelId: widget.channelId)),
+                  if (_folders.isNotEmpty)
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+                      child: Row(children: [
+                        for (final f in [null, ..._folders])
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: ChoiceChip(
+                              visualDensity: VisualDensity.compact,
+                              label: Text(f == null ? 'All' : (f['name'] as String? ?? '')),
+                              selected: _folder == f?['id'],
+                              onSelected: (_) => setState(() => _folder = f?['id'] as String?),
+                            ),
+                          ),
+                      ]),
+                    ),
+                  Expanded(child: PostList(key: ValueKey(_rev), channelId: widget.channelId, folderId: _folder)),
                 ]),
     );
   }

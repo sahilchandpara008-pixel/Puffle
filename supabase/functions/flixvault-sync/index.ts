@@ -76,7 +76,13 @@ Deno.serve(async (req) => {
     ]);
     const channels = withAudience(chAds, chOrg);
     const posts = withAudience(poAds, poOrg);
-    const { data, error } = await db.rpc("flixvault_apply", { p: { channels, posts } });
+    // Folders: one small read per channel (as an audience that can see it).
+    const folders: any[] = [];
+    for (const c of channels) {
+      const r = await feed({ action: "channel", audience: c.audience === "organic" ? "organic" : "ads", channel_id: c.id });
+      for (const f of r.folders ?? []) folders.push({ ...f, channel_id: c.id });
+    }
+    const { data, error } = await db.rpc("flixvault_apply", { p: { channels, posts, folders } });
     if (error) throw new Error(error.message);
     return json(data);
   } catch (e) {

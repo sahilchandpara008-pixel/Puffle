@@ -46,17 +46,28 @@ class SheetHandle extends StatelessWidget {
 
 /// Square avatar with the first letter of a name on the brand gradient.
 class InitialAvatar extends StatelessWidget {
-  const InitialAvatar({super.key, required this.name, this.size = 44});
+  const InitialAvatar({super.key, required this.name, this.size = 44, this.url});
   final String name;
   final double size;
+  /// Channel photo; the letter is shown when there is none or it fails to load.
+  final String? url;
   @override
-  Widget build(BuildContext context) => Container(
-        width: size,
-        height: size,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(gradient: Tokens.gradient, borderRadius: BorderRadius.circular(size * .3)),
-        child: Text(name.trim().isEmpty ? '?' : name.trim()[0].toUpperCase(), style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: size * .42)),
-      );
+  Widget build(BuildContext context) {
+    final letter = Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(gradient: Tokens.gradient, borderRadius: BorderRadius.circular(size * .3)),
+      child: Text(name.trim().isEmpty ? '?' : name.trim()[0].toUpperCase(), style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: size * .42)),
+    );
+    final photo = url;
+    if (photo == null || !photo.startsWith('https://')) return letter;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(size * .3),
+      child: Image.network(photo, width: size, height: size, fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => letter),
+    );
+  }
 }
 
 /// A tappable row for choosing a file: icon, label, what is chosen, and a clear button.

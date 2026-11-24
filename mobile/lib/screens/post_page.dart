@@ -386,7 +386,7 @@ class _PostPageState extends State<PostPage> {
                   if (channelId != null && channel != null) ...[
                     const SizedBox(height: 12),
                     Card(child: ListTile(
-                      leading: InitialAvatar(name: channel, size: 38),
+                      leading: InitialAvatar(name: channel, size: 38, url: (p['channels'] as Map?)?['icon_url'] as String?),
                       title: Text(channel, maxLines: 1, overflow: TextOverflow.ellipsis),
                       trailing: const Icon(Icons.chevron_right_rounded),
                       onTap: () => Navigator.push(context, MaterialPageRoute(
@@ -427,7 +427,13 @@ class _PostPageState extends State<PostPage> {
                     const SizedBox(height: 8),
                     for (var i = 0; i < _items.length; i++)
                       Card(margin: const EdgeInsets.only(bottom: 8), child: ListTile(
-                        leading: Icon((_items[i]['mime'] as String? ?? '').startsWith('video') ? Icons.play_circle_outline : Icons.image_outlined, color: Tokens.primary),
+                        leading: _items[i]['thumbnail_key'] is String
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(_items[i]['thumbnail_key'] as String, width: 64, height: 36, fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Icon((_items[i]['mime'] as String? ?? '').startsWith('video') ? Icons.play_circle_outline : Icons.image_outlined, color: Tokens.primary)),
+                              )
+                            : Icon((_items[i]['mime'] as String? ?? '').startsWith('video') ? Icons.play_circle_outline : Icons.image_outlined, color: Tokens.primary),
                         title: Text('Part ${i + 1}${_items[i]['is_premium'] == true ? ' · Premium' : ''}'),
                         trailing: _items[i]['is_premium'] == true && !AppScope.of(context).status.canPlayPremium
                             ? const Icon(Icons.lock, color: Tokens.gold, semanticLabel: 'Locked')
