@@ -264,7 +264,7 @@ class PaymentConfirmationDialog extends StatelessWidget {
         side: const BorderSide(color: Tokens.border),
       ),
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      titlePadding: const EdgeInsets.fromLTRB(16, 10, 8, 4),
+      titlePadding: const EdgeInsets.fromLTRB(14, 4, 6, 0),
       title: Row(children: [
         const Icon(Icons.workspace_premium, color: Tokens.accent, size: 24),
         const SizedBox(width: 8),
@@ -275,7 +275,7 @@ class PaymentConfirmationDialog extends StatelessWidget {
           icon: const Icon(Icons.close_rounded),
         ),
       ]),
-      contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+      contentPadding: const EdgeInsets.fromLTRB(14, 0, 14, 0),
       content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Wrap(alignment: WrapAlignment.spaceBetween, spacing: 10, runSpacing: 4,
           crossAxisAlignment: WrapCrossAlignment.center, children: [
@@ -283,9 +283,9 @@ class PaymentConfirmationDialog extends StatelessWidget {
             Text(amount, style: const TextStyle(color: Tokens.accent, fontSize: 22, fontWeight: FontWeight.w700)),
           ]),
         if (perks.isNotEmpty) ...[
-          const SizedBox(height: 10),
+          const SizedBox(height: 7),
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(color: Tokens.background, borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Tokens.border)),
             child: Column(children: [
@@ -299,9 +299,9 @@ class PaymentConfirmationDialog extends StatelessWidget {
             ]),
           ),
         ],
-        const SizedBox(height: 10),
+        const SizedBox(height: 7),
         Container(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(color: Tokens.primary.withValues(alpha: .15), borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Tokens.primary)),
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -311,20 +311,24 @@ class PaymentConfirmationDialog extends StatelessWidget {
               style: const TextStyle(fontSize: 13, height: 1.35))),
           ]),
         ),
-        const SizedBox(height: 10),
-        const Text("Money debited but Premium hasn't activated? Check the payment status or email support with your order reference before paying again.", style: secondary),
-        const SizedBox(height: 8),
-        const Text('By paying, you accept the Terms & Refund Policy.', style: secondary),
-        Wrap(spacing: 4, children: [
+        const SizedBox(height: 7),
+        const Text("Debited but still waiting? Check your status or email support with the order reference before retrying.", style: secondary),
+        Wrap(crossAxisAlignment: WrapCrossAlignment.center, children: [
+          const Text('By paying you accept the', style: secondary),
           TextButton(onPressed: () => launchUrl(Uri.parse('${Config.websiteUrl}/terms'), mode: LaunchMode.externalApplication),
-            child: const Text('Terms', style: TextStyle(color: Tokens.accent))),
+            style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 5)),
+            child: const Text('Terms', style: TextStyle(color: Tokens.accent, fontSize: 12))),
+          const Text('and', style: secondary),
           TextButton(onPressed: () => launchUrl(Uri.parse('${Config.websiteUrl}/refund'), mode: LaunchMode.externalApplication),
-            child: const Text('Refund Policy', style: TextStyle(color: Tokens.accent))),
+            style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 5)),
+            child: const Text('Refund Policy', style: TextStyle(color: Tokens.accent, fontSize: 12))),
           TextButton(onPressed: () => launchUrl(Uri(scheme: 'mailto', path: Config.supportEmail)),
-            child: const Text('Email support', style: TextStyle(color: Tokens.accent))),
+            style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 5)),
+            child: const Text('Email support', style: TextStyle(color: Tokens.accent, fontSize: 12))),
         ]),
+
       ]),
-      actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      actionsPadding: const EdgeInsets.fromLTRB(14, 2, 14, 12),
       actions: [
         SizedBox(width: double.infinity, child: GradientButton(
           label: 'Pay $amount securely',

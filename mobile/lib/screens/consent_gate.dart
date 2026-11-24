@@ -9,16 +9,7 @@ import '../services/measurement.dart';
 import '../theme.dart';
 
 const consentPrefKey = 'terms_accepted_v1';
-Future<void> _saveMeasurementChoice(bool allow) async {
-  final m = Measurement.instance;
-  if (!m.ready) await m.start();
-  if (!m.ready) {
-    if (!allow) return;
-    throw StateError('Session not ready');
-  }
-  await m.save(allow, allow, allow);
-}
-
+Future<void> _saveMeasurementChoice(bool allow) => Measurement.instance.saveOnboardingChoice(allow);
 
 Future<void> _askNotifications() async {
   try {
@@ -84,7 +75,7 @@ class _ConsentDialogState extends State<ConsentDialog> {
       await p.setString('consent_notice_accepted_at', DateTime.now().toUtc().toIso8601String());
       if (mounted) Navigator.pop(context, true);
     } catch (_) {
-      if (mounted) setState(() { saving = false; error = 'Could not save your choice. Check your connection and try again.'; });
+      if (mounted) setState(() { saving = false; error = 'Could not save your choice on this device. Please try again.'; });
     }
   }
   late final TapGestureRecognizer _privacy;
@@ -111,26 +102,26 @@ class _ConsentDialogState extends State<ConsentDialog> {
     const link = TextStyle(color: Tokens.accent, decoration: TextDecoration.underline, decorationColor: Tokens.accent);
     return Dialog(
       backgroundColor: Tokens.surface,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28), side: BorderSide(color: Tokens.primary.withValues(alpha: .35))),
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          ClipRRect(borderRadius: BorderRadius.circular(22), child: Image.asset('assets/icon.png', width: 76, height: 76, errorBuilder: (_, __, ___) => const SizedBox(width: 76, height: 76))),
-          const SizedBox(height: 20),
+          ClipRRect(borderRadius: BorderRadius.circular(22), child: Image.asset('assets/icon.png', width: 46, height: 46, errorBuilder: (_, __, ___) => const SizedBox(width: 46, height: 46))),
+          const SizedBox(height: 8),
           const Text('Terms of Service and Privacy Policy', textAlign: TextAlign.center, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 14),
+          const SizedBox(height: 8),
           Text.rich(
-            TextSpan(style: const TextStyle(color: Tokens.muted, height: 1.5), children: [
+            TextSpan(style: const TextStyle(color: Tokens.muted, fontSize: 13, height: 1.4), children: [
               const TextSpan(text: 'Welcome to ${Config.appName}. Please review our '),
               TextSpan(text: 'Privacy Policy', style: link, recognizer: _privacy),
               const TextSpan(text: ' and '),
               TextSpan(text: 'Terms & Conditions', style: link, recognizer: _terms),
-              const TextSpan(text: '. Agree and continue accepts these terms and allows app analytics plus advertising measurement with Meta and Google. We share app activity, device/session identifiers and verified purchase events; Meta may also receive hashed account details, IP address and basic device information. We do not share passwords, payment credentials or private files. Choose Continue without optional sharing to accept the terms without this measurement. You can change each choice later in Account → Measurement preferences. Your plan, storage, playback and payments work the same with either choice.'),
+              const TextSpan(text: '. Either button accepts the terms. Agree and continue also allows optional analytics and ad measurement with Meta and Google. This can include app activity, device and session identifiers, and verified purchases. Meta may also receive hashed account details, IP address, and basic device information. Manage these choices in Account → Measurement preferences.'),
             ]),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 22),
+          const SizedBox(height: 12),
           if (error != null) Padding(padding: const EdgeInsets.only(bottom: 12), child: Text(error!, style: TextStyle(color: Theme.of(context).colorScheme.error))),
           SizedBox(width: double.infinity, child: GradientButton(label: saving ? 'Saving…' : 'Agree and continue', onPressed: saving ? null : () => _accept(true))),
           SizedBox(width: double.infinity, child: OutlinedButton(onPressed: saving ? null : () => _accept(false), child: const Text('Continue without optional sharing'))),
@@ -139,4 +130,3 @@ class _ConsentDialogState extends State<ConsentDialog> {
     );
   }
 }
-

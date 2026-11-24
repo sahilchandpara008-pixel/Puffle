@@ -41,7 +41,12 @@ class AppState extends ChangeNotifier {
         .channel('mode')
         .onPostgresChanges(event: PostgresChangeEvent.all, schema: 'public', table: 'app_mode', callback: (_) => refresh())
         .subscribe();
-    _poll = Timer.periodic(const Duration(seconds:60),(_){refresh();GoogleMeasurement.instance.sync(Measurement.instance.google,force:true);Measurement.instance.flush();});
+    _poll = Timer.periodic(const Duration(seconds:60),(_) async {
+      refresh();
+      await Measurement.instance.retryOnboardingChoice();
+      GoogleMeasurement.instance.sync(Measurement.instance.googleSharingEnabled, force: true);
+      Measurement.instance.flush();
+    });
     sb.auth.onAuthStateChange.listen((event) async {
       try { await InstallAttribution.record(); } catch (_) { /* Retry next launch; never interrupt login. */ }
       await refresh();
@@ -96,7 +101,7 @@ class AppState extends ChangeNotifier {
   Future<Map<String, dynamic>> createOrder(String planId) async {
     final r = await sb.rpc('create_order', params: {'p_plan': planId});
     final order=Map<String,dynamic>.from(r as Map);
-    await GoogleMeasurement.instance.sync(Measurement.instance.google,force:true);
+    await GoogleMeasurement.instance.sync(Measurement.instance.googleSharingEnabled,force:true);
     unawaited(GoogleMeasurement.instance.checkout(order));
     return order;
   }
@@ -143,4 +148,3 @@ class AppState extends ChangeNotifier {
     super.dispose();
   }
 }
-

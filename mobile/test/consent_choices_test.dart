@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:puffle/screens/consent_gate.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
   for (final allow in [true, false]) {
@@ -26,6 +27,24 @@ void main() {
       expect(prefs.getString('consent_notice_version'), isNotNull);
     });
   }
+  testWidgets('first-run agreement is stored even before a session exists', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await Supabase.initialize(url: 'https://example.test', anonKey: 'test-key',
+      authOptions: const FlutterAuthClientOptions(autoRefreshToken: false));
+    expect(Supabase.instance.client.auth.currentSession, isNull);
+    await tester.pumpWidget(MaterialApp(home: ConsentGate(
+      requestNotifications: () async {},
+      child: const Text('Home'),
+    )));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Agree and continue'));
+    await tester.pumpAndSettle();
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getBool(consentPrefKey), true);
+    expect(prefs.getString('pending_onboarding_measurement'), contains('"allow":true'));
+    expect(find.byType(ConsentDialog), findsNothing);
+  });
+
   testWidgets('failed consent save stays open and can retry', (t) async {
     SharedPreferences.setMockInitialValues({});
     var tries = 0;

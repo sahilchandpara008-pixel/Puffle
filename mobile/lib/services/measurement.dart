@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'google_measurement.dart';
 import 'install_attribution.dart';
 import 'package:flutter/foundation.dart';
@@ -21,9 +22,62 @@ class Measurement extends ChangeNotifier {
   bool _busy=false;
   Future<void> _writing=Future.value();
   Future<void> _serial(Future<void> Function() f) {final next=_writing.then((_)=>f());_writing=next.catchError((Object _){});return next;}
-  Future<void> start() async {
+  static const _pendingKey = 'pending_onboarding_measurement';
+  bool _choicePending = false;
+  Future<void> _preferences = Future.value();
+
+  Future<void> _writePreferences(Future<void> Function() operation) {
+    final next = _preferences.then((_) => operation());
+    _preferences = next.catchError((Object _) {});
+    return next;
+  }
+
+  Future<void> saveOnboardingChoice(bool allow) async {
+    final prefs = await SharedPreferences.getInstance();
+    final stored = await prefs.setString(_pendingKey,
+      jsonEncode({'uid': _sb.auth.currentUser?.id, 'allow': allow}));
+    if (!stored) throw StateError('Could not write the local preference');
+    _choicePending = true;
+    unawaited(start());
+  }
+
+  Future<void> start() => _writePreferences(_start);
+
+  bool get googleSharingEnabled => !_choicePending && google;
+
+  Future<void> retryOnboardingChoice() async {
+    if (_choicePending) await start();
+  }
+
+  Future<void> _start() async {
     final uid=_sb.auth.currentUser?.id;
+    final prefs = await SharedPreferences.getInstance();
+    final pending = prefs.getString(_pendingKey);
+    _choicePending = pending != null;
     if(uid==null)return;
+    if (pending != null) {
+      final choice = jsonDecode(pending) as Map;
+      if (choice['uid'] == null || choice['uid'] == uid) {
+        _uid = uid;
+        if (choice['uid'] == null) {
+          await prefs.setString(_pendingKey, jsonEncode({'uid': uid, 'allow': choice['allow']}));
+        }
+        try {
+          final allow = choice['allow'] == true;
+          await _save(allow, allow, allow);
+        } catch (_) {
+          ready = false;
+          notifyListeners();
+          return;
+        }
+        await prefs.remove(_pendingKey);
+        _choicePending = false;
+        await track('AppOpen');
+        return;
+      }
+      await prefs.remove(_pendingKey);
+      _choicePending = false;
+    }
     if(_uid!=uid){_uid=uid;ready=false;analytics=false;advertising=false;google=false;hasChoice=false;
       final p=await SharedPreferences.getInstance();
       hasChoice=p.containsKey('measurement_choice_$uid');
@@ -41,17 +95,34 @@ class Measurement extends ChangeNotifier {
     if(!advertising)return {};
     final p=await SharedPreferences.getInstance();
     final id=p.getString('install_id')??_uuid.v4();await p.setString('install_id',id);
-    final native=await const MethodChannel('app/measurement').invokeMapMethod<String,dynamic>('context')??{};
+    Map<String, dynamic> native = {};
+    try {
+      native = await const MethodChannel('app/measurement').invokeMapMethod<String, dynamic>('context') ?? {};
+    } on PlatformException {
+      // Fall back to the runtime version if Android metadata is temporarily unavailable.
+    } on MissingPluginException {
+      // A missing optional metadata channel must not prevent saving the choice.
+    }
+    final nativeOs = (native['os'] as String?)?.trim() ?? '';
+    final os = nativeOs.isEmpty ? Platform.operatingSystemVersion.trim() : nativeOs;
     final view=PlatformDispatcher.instance.views.first;
     return {'install_id':id,'extinfo':['a2','com.pufflecloud.app','14',Config.versionLabel,
-      '${native['os']??''}','${native['model']??''}',PlatformDispatcher.instance.locale.toLanguageTag(),DateTime.now().timeZoneName,'',
-      view.physicalSize.width.round().toString(),view.physicalSize.height.round().toString(),view.devicePixelRatio.toString(),'${native['cores']??''}','','','']};
+      os,'${native['model']??''}',PlatformDispatcher.instance.locale.toLanguageTag(),DateTime.now().timeZoneName,'',
+      view.physicalSize.width.round().toString(),view.physicalSize.height.round().toString(),view.devicePixelRatio.toString(),'${native['cores']??''}','','',''].map((value) => value.length > 120 ? value.substring(0, 120) : value).toList()};
   }
   Future<void> _sync() async {
     await _sb.rpc('set_measurement_preferences',params:{'p_analytics':analytics,'p_advertising':advertising,'p_context':await _context()});
     if(advertising){try{await InstallAttribution.record(forceLink:true);}catch(_){/* Attribution never blocks a consent choice. */}}
   }
-  Future<void> save(bool usage,bool ads,[bool googleAds=false]) async{
+  Future<void> save(bool usage, bool ads, [bool googleAds = false]) => _writePreferences(() async {
+    await _save(usage, ads, googleAds);
+    if (_choicePending) {
+      await (await SharedPreferences.getInstance()).remove(_pendingKey);
+      _choicePending = false;
+    }
+  });
+
+  Future<void> _save(bool usage,bool ads,bool googleAds) async{
     final oldA=analytics,oldD=advertising,oldG=google;analytics=usage;advertising=ads;google=googleAds;
     try{await _sync();await _sb.rpc('set_google_preferences',params:{'p_enabled':google});}catch(_){analytics=oldA;advertising=oldD;google=oldG;rethrow;}
     await GoogleMeasurement.instance.sync(google,force:true);if(!google)await GoogleMeasurement.instance.revoke();
@@ -62,11 +133,12 @@ class Measurement extends ChangeNotifier {
     notifyListeners();if(usage||ads||google){await track('AppOpen');unawaited(flush());}
   }
   Future<void> resumed() async{
+    await retryOnboardingChoice();
     if(DateTime.now().difference(_lastActive)>const Duration(minutes:30))_session=_uuid.v4();
     _lastActive=DateTime.now();await track('AppOpen');unawaited(flush());
   }
   Future<void> track(String name,[Map<String,dynamic> properties=const {}]) async{
-    if(!ready||_uid!=_sb.auth.currentUser?.id)return;
+    if(_choicePending||!ready||_uid!=_sb.auth.currentUser?.id)return;
     unawaited(GoogleMeasurement.instance.track(name,properties));
     // Registration is authoritative on the server for Meta; only Firebase needs this SDK signal.
     if(name=='CompleteRegistration')return;
@@ -77,7 +149,7 @@ class Measurement extends ChangeNotifier {
   }
   List<Map<String,dynamic>> _read(SharedPreferences p){try{return (jsonDecode(p.getString('measurement_queue')??'[]') as List).map((x)=>Map<String,dynamic>.from(x as Map)).where((x)=>DateTime.tryParse(x['p_occurred_at'] as String? ??'')?.isAfter(DateTime.now().subtract(const Duration(days:1)))??false).toList();}catch(_){return [];}}
   Future<void> flush() async{
-    if(_busy||!ready||(!analytics&&!advertising))return;_busy=true;
+    if(_choicePending||_busy||!ready||(!analytics&&!advertising))return;_busy=true;
     try{
       for(var i=0;i<200;i++){
         final p=await SharedPreferences.getInstance();Map<String,dynamic>? row;
@@ -85,10 +157,9 @@ class Measurement extends ChangeNotifier {
         if(row==null)break;
         if(row!['uid']==_sb.auth.currentUser?.id){final params=Map<String,dynamic>.from(row!)..remove('uid');await _sb.rpc('record_activity',params:params);}
         await _serial(()async{final rows=_read(p)..removeWhere((x)=>x['p_event_id']==row!['p_event_id']);await p.setString('measurement_queue',jsonEncode(rows));});
-        if(!analytics&&!advertising)break;
+        if(_choicePending||(!analytics&&!advertising))break;
       }
     }catch(_){/* Best-effort bounded retry, never blocks app use or payments. */}
     finally{_busy=false;}
   }
 }
-

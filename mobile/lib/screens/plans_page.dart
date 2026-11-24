@@ -248,10 +248,17 @@ class _PlanTile extends StatelessWidget {
                       Text('${plan['name']} Plan', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
                       Text(durationLabel(days, hours), style: detailStyle),
                       if (badge != null || (!free && savings > 0))
-                        Wrap(spacing: 6, children: [
+                        Wrap(spacing: 6, runSpacing: 2, crossAxisAlignment: WrapCrossAlignment.center, children: [
                           if (badge != null)
                             Text(badge == 'Popular' ? 'MOST POPULAR' : badge.toUpperCase(), style: badgeStyle),
-                          if (!free && savings > 0) Text('SAVE $savings%', style: badgeStyle),
+                          if (!free && savings > 0)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(color: Tokens.accent, borderRadius: BorderRadius.circular(6)),
+                              child: Text('SAVE $savings%', style: const TextStyle(
+                                color: Tokens.background, fontSize: 11, fontWeight: FontWeight.w800,
+                              )),
+                            ),
                         ]),
                     ]),
                   ),
