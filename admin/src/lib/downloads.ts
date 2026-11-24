@@ -1,4 +1,3 @@
-/** Verified Puffle release, shared by every website download button. */
-export const APK_URL = "https://github.com/smitkhachariya2002-collab/Puffle/releases/download/v1.0.13/Puffle.apk";
-export const ADS_APK_URL = "https://github.com/smitkhachariya2002-collab/Puffle/releases/download/v1.0.13/Puffle-ads.apk";
-
+/** Latest verified APKs published by the Android release workflow. */
+export const APK_URL = "https://github.com/smitkhachariya2002-collab/Puffle/releases/download/latest/Puffle.apk";
+export const ADS_APK_URL = "https://github.com/smitkhachariya2002-collab/Puffle/releases/download/latest/Puffle-ads.apk";
